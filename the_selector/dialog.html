@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>The Selector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 15px;
+            overflow: hidden;
+        }
+        .container {
+            background: #fff;
+            padding: 15px 20px 20px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 18px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 4px;
+            color: #555;
+        }
+        select, input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 13px;
+        }
+        .attr-row {
+            display: flex;
+            gap: 6px;
+        }
+        .attr-row select {
+            flex: 1;
+        }
+        .btn-action {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 0 12px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-action:hover {
+            background-color: #27ae60;
+        }
+        .btn-manage {
+            background-color: #e67e22;
+        }
+        .btn-manage:hover {
+            background-color: #d35400;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+            margin-bottom: 12px;
+        }
+        .checkbox-group input {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+        }
+        .checkbox-group label {
+            margin-bottom: 0;
+            cursor: pointer;
+            color: #2980b9;
+        }
+        #attribute-section {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px dashed #ccc;
+            display: none;
+            margin-bottom: 15px;
+        }
+        button.submit-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            width: 100%;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 5px;
+        }
+        button.submit-btn:hover {
+            background-color: #2980b9;
+        }
+
+        /* Modal Keren untuk Kelola Atribut */
+        #modalOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        .modal-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            width: 280px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .modal-box h3 {
+            margin-top: 0;
+            font-size: 15px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .modal-box input {
+            margin-bottom: 10px;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 6px;
+            margin-top: 12px;
+        }
+        .modal-buttons button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .btn-save { background: #2ecc71; color: white; }
+        .btn-cancel { background: #e74c3c; color: white; }
+        
+        .attr-list-container {
+            max-height: 100px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background: #fafafa;
+        }
+        .attr-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 12px;
+        }
+        .attr-item button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 2px 6px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="mainContainer">
+    <h2>The Selector</h2>
+    
+    <!-- Tag Utama -->
+    <div class="form-group">
+        <label>Pilih Tag Utama (Level 1):</label>
+        <select id="tagUtamaSelect">
+            <option value="(Semua Tag / Abaikan)">(Semua Tag / Abaikan)</option>
+        </select>
+    </div>
+
+    <!-- Tag Kedua (Tambahan) -->
+    <div class="form-group">
+        <label>Pilih Tag Tambahan / Sub-Tag (Column):</label>
+        <select id="tagKeduaSelect">
+            <option value="(Semua Tag / Abaikan)">(Semua Tag / Abaikan)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Tipe Pencarian Nama:</label>
+        <select id="searchType">
+            <option value="Instance Name">Instance Name</option>
+            <option value="Definition Name">Definition Name</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Kata Kunci Nama:</label>
+        <input type="text" id="keyword" placeholder="Contoh: Kolom-01">
+    </div>
+
+    <div class="checkbox-group">
+        <input type="checkbox" id="useAttr" onclick="toggleAttributeSection()">
+        <label for="useAttr">Gunakan Filter Atribut Custom</label>
+    </div>
+
+    <div id="attribute-section">
+        <div class="form-group">
+            <label>Nama Atribut (Key):</label>
+            <div class="attr-row">
+                <select id="attrKeySelect">
+                    <!-- Diisi lewat Ruby -->
+                </select>
+                <button type="button" class="btn-action btn-manage" onclick="openModal()" title="Kelola / Hapus Atribut">⚙️</button>
+                <button type="button" class="btn-action" onclick="openModal()" title="Tambah Atribut Baru">+</button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Nilai Atribut (Value):</label>
+            <input type="text" id="attrVal" placeholder="Contoh: pojok">
+        </div>
+    </div>
+
+    <button class="submit-btn" onclick="submitData()">Jalankan Seleksi</button>
+</div>
+
+<!-- Modal Keren untuk Tambah/Hapus Atribut -->
+<div id="modalOverlay">
+    <div class="modal-box">
+        <h3>Kelola Atribut (Key)</h3>
+        <label>Daftar Atribut Tersimpan:</label>
+        <div class="attr-list-container" id="attrListContainer"></div>
+        
+        <label>Tambah Atribut Baru:</label>
+        <input type="text" id="newKeyInput" placeholder="Ketik key baru...">
+        
+        <div class="modal-buttons">
+            <button class="btn-cancel" onclick="closeModal()">Tutup</button>
+            <button class="btn-save" onclick="addNewKey()">Simpan Baru</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.onload = function() {
+        if (typeof sketchup !== 'undefined') {
+            sketchup.get_init_data();
+        }
+    };
+
+    setInterval(function() {
+        if (typeof sketchup !== 'undefined') {
+            let x = window.screenX;
+            let y = window.screenY;
+            if (x > 10 && y > 10) {
+                sketchup.save_position(JSON.stringify({ left: x, top: y }));
+            }
+        }
+    }, 1500);
+
+    function initUIData(data) {
+        let tagUtamaSelect = document.getElementById('tagUtamaSelect');
+        let tagKeduaSelect = document.getElementById('tagKeduaSelect');
+        
+        data.tags.forEach(tag => {
+            let opt1 = document.createElement('option');
+            opt1.value = tag;
+            opt1.innerHTML = tag;
+            tagUtamaSelect.appendChild(opt1);
+
+            let opt2 = document.createElement('option');
+            opt2.value = tag;
+            opt2.innerHTML = tag;
+            tagKeduaSelect.appendChild(opt2);
+        });
+
+        updateAttrDropdown(data.keys);
+    }
+
+    function updateAttrDropdown(keys) {
+        let attrSelect = document.getElementById('attrKeySelect');
+        attrSelect.innerHTML = "";
+        keys.forEach(key => {
+            let opt = document.createElement('option');
+            opt.value = key;
+            opt.innerHTML = key;
+            attrSelect.appendChild(opt);
+        });
+        
+        let container = document.getElementById('attrListContainer');
+        container.innerHTML = "";
+        keys.forEach(key => {
+            let item = document.createElement('div');
+            item.className = 'attr-item';
+            item.innerHTML = `<span>${key}</span> <button onclick="deleteKey('${key}')">Hapus</button>`;
+            container.appendChild(item);
+        });
+    }
+
+    function openModal() {
+        document.getElementById('modalOverlay').style.display = 'flex';
+        document.getElementById('newKeyInput').value = '';
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').style.display = 'none';
+    }
+
+    function addNewKey() {
+        let input = document.getElementById('newKeyInput');
+        let newKey = input.value.trim().toLowerCase();
+        if (newKey !== "") {
+            let attrSelect = document.getElementById('attrKeySelect');
+            let keys = [];
+            for (let i = 0; i < attrSelect.options.length; i++) {
+                keys.push(attrSelect.options[i].value);
+            }
+
+            if (!keys.includes(newKey)) {
+                keys.push(newKey);
+                updateAttrDropdown(keys);
+                attrSelect.value = newKey;
+
+                if (typeof sketchup !== 'undefined') {
+                    sketchup.save_new_key(newKey);
+                }
+            } else {
+                attrSelect.value = newKey;
+            }
+            closeModal();
+        }
+    }
+
+    function deleteKey(keyToDelete) {
+        let attrSelect = document.getElementById('attrKeySelect');
+        let keys = [];
+        for (let i = 0; i < attrSelect.options.length; i++) {
+            if (attrSelect.options[i].value !== keyToDelete) {
+                keys.push(attrSelect.options[i].value);
+            }
+        }
+        
+        if (keys.length === 0) keys = ["a_posisi"];
+        updateAttrDropdown(keys);
+
+        if (typeof sketchup !== 'undefined') {
+            sketchup.delete_key(keyToDelete);
+        }
+    }
+
+    function toggleAttributeSection() {
+        let checkBox = document.getElementById('useAttr');
+        let attrSection = document.getElementById('attribute-section');
+        
+        if (checkBox.checked == true) {
+            attrSection.style.display = "block";
+            if (typeof sketchup !== 'undefined') {
+                sketchup.resize_dialog(620); // Ditinggikan untuk mengakomodasi dua dropdown tag
+            }
+        } else {
+            attrSection.style.display = "none";
+            if (typeof sketchup !== 'undefined') {
+                sketchup.resize_dialog(480);
+            }
+        }
+    }
+
+    function submitData() {
+        let data = {
+            tag_utama: document.getElementById('tagUtamaSelect').value,
+            tag_kedua: document.getElementById('tagKeduaSelect').value,
+            search_type: document.getElementById('searchType').value,
+            keyword: document.getElementById('keyword').value,
+            use_attr: document.getElementById('useAttr').checked,
+            attr_key: document.getElementById('attrKeySelect').value,
+            attr_val: document.getElementById('attrVal').value,
+            left: window.screenX,
+            top: window.screenY
+        };
+
+        if (typeof sketchup !== 'undefined') {
+            sketchup.perform_selection(JSON.stringify(data));
+        }
+    }
+</script>
+
+</body>
+</html>
