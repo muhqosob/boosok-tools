@@ -21,7 +21,7 @@ module MyCustomPlugins
       return if busy? || @state[:status] == 'done'
 
       set(status: 'checking', error: nil, progress: nil)
-      fetch(VERSION_URL, CHECK_TIMEOUT, manual) do |body|
+      on_version = lambda do |body|
         data = JSON.parse(body)
         if Gem::Version.new(data["version"]) > Gem::Version.new(PLUGIN_VERSION)
           set(status: 'available', latest: data["version"],
@@ -31,6 +31,11 @@ module MyCustomPlugins
           set(status: 'latest')
         end
       end
+      # API dulu biar rilis baru langsung kelihatan; kena limit/gagal -> raw (bisa telat ~5 menit)
+      fetch(VERSION_API_URL, CHECK_TIMEOUT, manual,
+            headers: { 'Accept' => 'application/vnd.github.raw' },
+            on_fail: ->(_e) { fetch(VERSION_URL, CHECK_TIMEOUT, manual, &on_version) },
+            &on_version)
     end
 
     def self.download
@@ -81,7 +86,8 @@ module MyCustomPlugins
 
     # Pakai Sketchup::Http (bukan Net::HTTP di Thread): thread Ruby di SketchUp
     # berhenti jalan saat idle. Redirect diikuti manual. Error cuma ditampilkan kalau loud.
-    def self.fetch(url, timeout, loud, hops = 0, &on_ok)
+    # on_fail: ganti penanganan error default (mis. untuk fallback ke URL lain)
+    def self.fetch(url, timeout, loud, headers: {}, on_fail: nil, hops: 0, &on_ok)
       done = false
       finish = lambda do |msg = nil, &blk|
         next if done
@@ -89,13 +95,16 @@ module MyCustomPlugins
         begin
           blk ? blk.call : raise(msg)
         rescue => e
-          loud ? fail_with(e.message) : set(status: 'idle')
+          if on_fail then on_fail.call(e)
+          elsif loud then fail_with(e.message)
+          else set(status: 'idle')
+          end
         end
       end
 
       # Simpan referensi, kalau tidak request bisa kena GC dan callback tidak pernah jalan
       @request = req = Sketchup::Http::Request.new(url, Sketchup::Http::GET)
-      req.headers = { 'User-Agent' => 'BoosokTools-SketchupExtension' }
+      req.headers = { 'User-Agent' => 'BoosokTools-SketchupExtension' }.merge(headers)
       if req.respond_to?(:set_download_progress_callback)
         req.set_download_progress_callback do |cur, total|
           set(progress: cur * 100 / total) if @state[:status] == 'downloading' && total.to_i > 0
@@ -109,7 +118,7 @@ module MyCustomPlugins
           if [301, 302, 303, 307, 308].include?(code) && hops < MAX_REDIRECTS
             loc = res.headers.find { |k, _| k.to_s.downcase == 'location' }&.last
             raise "Redirect tanpa tujuan" unless loc
-            next fetch(loc, timeout, loud, hops + 1, &on_ok)
+            next fetch(loc, timeout, loud, headers: headers, on_fail: on_fail, hops: hops + 1, &on_ok)
           end
           raise "HTTP #{code}" unless code == 200
           on_ok.call(res.body)

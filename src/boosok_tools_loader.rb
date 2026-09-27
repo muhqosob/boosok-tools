@@ -4,10 +4,12 @@ require 'json'
 
 module MyCustomPlugins
   # Naikkan angka ini lalu push ke main: GitHub Actions otomatis bikin release + update version.json
-  PLUGIN_VERSION = "1.0.12"
+  PLUGIN_VERSION = "1.0.13"
 
   # Semua versi yang sudah dirilis (1.0.10+) membaca URL ini. Jangan dipindah.
   VERSION_URL = "https://raw.githubusercontent.com/muhqosob/boosok-tools/main/the_bosok/version.json"
+  # File yang sama lewat API: tidak kena cache CDN raw (~5 menit), tapi limit 60 request/jam per IP.
+  VERSION_API_URL = "https://api.github.com/repos/muhqosob/boosok-tools/contents/the_bosok/version.json"
   RELEASES_URL = "https://github.com/muhqosob/boosok-tools/releases/latest"
 
   unless file_loaded?(__FILE__)
