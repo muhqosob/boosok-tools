@@ -1,6 +1,10 @@
 module HideOnSceneManager
   def self.run
     require 'json'
+    require 'set'
+
+    # Satu dialog saja. Buka ulang supaya daftar scene/tag ikut ter-refresh.
+    @dialog.close if @dialog && @dialog.visible?
 
     model = Sketchup.active_model
 
@@ -520,7 +524,7 @@ module HideOnSceneManager
     HTML
 
     # --- BUAT DIALOG UI ---
-    dialog = UI::HtmlDialog.new(
+    dialog = @dialog = UI::HtmlDialog.new(
       {
         :dialog_title => "Hide on Scene",
         :preferences_key => "com.sketchup.hidemanager.pro",
@@ -565,7 +569,7 @@ module HideOnSceneManager
         end
 
         # ALGORITMA PENCARIAN SILSILAH GRUP:
-        parents_to_keep = []
+        selected = selection.to_set
         queue = selection.dup
         visited = {}
         
@@ -573,7 +577,6 @@ module HideOnSceneManager
           ent = queue.shift
           next if visited[ent]
           visited[ent] = true
-          parents_to_keep << ent
 
           if ent.respond_to?(:parent)
             p = ent.parent
@@ -591,7 +594,7 @@ module HideOnSceneManager
           entities.each do |ent|
             next unless ent.is_a?(Sketchup::Drawingelement)
 
-            if selection.include?(ent)
+            if selected.include?(ent)
               # Jika persis objek yang dipilih, Unhide (tampilkan)
               if page
                 page.set_drawingelement_visibility(ent, true)
@@ -599,7 +602,7 @@ module HideOnSceneManager
               else
                 ent.hidden = false
               end
-            elsif parents_to_keep.include?(ent)
+            elsif visited[ent] # grup induk dari objek terpilih
               # Jika ini adalah grup induk/bungkusan luarnya, tetap tampilkan
               if page
                 page.set_drawingelement_visibility(ent, true)
@@ -631,13 +634,12 @@ module HideOnSceneManager
         dialog.execute_script("resetIsolateBtn();")
         
         nama_scene = page ? page.name : "Model Global"
-        dialog.execute_script("showToast('Sukses mengisolasi objek di scene: #{nama_scene}', 'success');")
+        dialog.execute_script("showToast(#{("Sukses mengisolasi objek di scene: " + nama_scene).to_json}, 'success');")
         
       rescue => e
         model.abort_operation
         dialog.execute_script("resetIsolateBtn();")
-        pesan_error = e.message.gsub("'", "\\'") 
-        dialog.execute_script("showToast('Kesalahan Sistem: #{pesan_error}', 'error');")
+        dialog.execute_script("showToast(#{("Kesalahan Sistem: " + e.message).to_json}, 'error');")
       end
     end
 
@@ -645,24 +647,31 @@ module HideOnSceneManager
     dialog.add_action_callback("prosesHideTags") do |action_context, scene_terpilih, tag_terpilih, action_type|
       model = Sketchup.active_model
       model.start_operation("#{action_type.capitalize} Multiple Tags", true)
-      
-      visibility_status = (action_type == 'unhide')
-      
-      scene_terpilih.each do |nama_scene|
-        page = model.pages[nama_scene]
-        next unless page
-        
-        page.use_hidden_layers = true
-        tag_terpilih.each do |nama_tag|
-          layer = model.layers[nama_tag]
-          next unless layer
-          
-          page.set_visibility(layer, visibility_status)
-          layer.visible = visibility_status if model.pages.selected_page == page # REFRESH VIEWPORT
+      begin
+
+        visibility_status = (action_type == 'unhide')
+
+        scene_terpilih.each do |nama_scene|
+          page = model.pages[nama_scene]
+          next unless page
+
+          page.use_hidden_layers = true
+          tag_terpilih.each do |nama_tag|
+            layer = model.layers[nama_tag]
+            next unless layer
+
+            page.set_visibility(layer, visibility_status)
+            layer.visible = visibility_status if model.pages.selected_page == page # REFRESH VIEWPORT
+          end
         end
+        model.commit_operation
+      rescue => e
+        model.abort_operation
+        dialog.execute_script("resetTagButton();")
+        dialog.execute_script("showToast(#{("Kesalahan Sistem: " + e.message).to_json}, 'error');")
+        next
       end
-      
-      model.commit_operation
+
       dialog.execute_script("resetTagButton();")
       
       aksi_teks = visibility_status ? "menampilkan" : "menyembunyikan"
@@ -716,8 +725,7 @@ module HideOnSceneManager
       rescue => e
         model.abort_operation
         dialog.execute_script("resetObjButton();")
-        pesan_error = e.message.gsub("'", "\\'") 
-        dialog.execute_script("showToast('Kesalahan Sistem: #{pesan_error}', 'error');")
+        dialog.execute_script("showToast(#{("Kesalahan Sistem: " + e.message).to_json}, 'error');")
       end
     end
 

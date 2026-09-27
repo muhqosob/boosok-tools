@@ -384,35 +384,42 @@ module ConvertToCleanGroup
       main_layer = item.layer
 
       model.start_operation("Convert to Clean Group", true)
+      begin
 
-      # 1. Jadikan unik agar instans lain aman
-      item = item.make_unique
+        # 1. Jadikan unik agar instans lain aman
+        item = item.make_unique
 
-      tr = item.transformation
-      parent_ents = item.parent.entities
-      source_defn = item.definition
+        tr = item.transformation
+        parent_ents = item.parent.entities
+        source_defn = item.definition
 
-      # 2. Hapus 2d__Line di source_defn
-      remove_target_completely(source_defn.entities)
-      purge_attributes(source_defn)
+        # 2. Hapus 2d__Line di source_defn
+        remove_target_completely(source_defn.entities)
+        purge_attributes(source_defn)
 
-      # 3. Buat Group Master
-      master_group = parent_ents.add_group
-      master_group.transformation = tr
-      master_group.layer = main_layer if main_layer
+        # 3. Buat Group Master
+        master_group = parent_ents.add_group
+        master_group.transformation = tr
+        master_group.layer = main_layer if main_layer
 
-      # 4. Masukkan isi ke dalam master group
-      temp_inst = master_group.entities.add_instance(source_defn, Geom::Transformation.new)
-      temp_inst.explode if temp_inst
+        # 4. Masukkan isi ke dalam master group
+        temp_inst = master_group.entities.add_instance(source_defn, Geom::Transformation.new)
+        temp_inst.explode if temp_inst
 
-      # 5. Hapus komponen asli
-      item.erase!
+        # 5. Hapus komponen asli
+        item.erase!
 
-      # 6. Ubah seluruh struktur di dalamnya menjadi grup dan bersihkan atribut
-      purge_attributes(master_group)
-      convert_remaining_to_groups(master_group.entities)
+        # 6. Ubah seluruh struktur di dalamnya menjadi grup dan bersihkan atribut
+        purge_attributes(master_group)
+        convert_remaining_to_groups(master_group.entities)
 
-      model.commit_operation
+        model.commit_operation
+      rescue => e
+        model.abort_operation
+        @@dialog.execute_script("resetExecButton();")
+        @@dialog.execute_script("showToast(#{("Gagal: " + e.message).to_json});")
+        next
+      end
       model.selection.clear
 
       @@dialog.execute_script("resetExecButton();")
