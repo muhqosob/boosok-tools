@@ -14,7 +14,7 @@ module UntagUnpaintManager
         :style => UI::HtmlDialog::STYLE_DIALOG
       }
     )
-    dialog.set_file(File.join(__dir__, 'untagnpaint.html'))
+    dialog.set_file(File.join(__dir__, 'html', 'untagnpaint.html'))
 
     # --- CALLBACK PROCESS ---
     dialog.add_action_callback("prosesAction") do |context, action_type, deep_process|

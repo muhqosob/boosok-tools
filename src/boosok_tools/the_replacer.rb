@@ -30,7 +30,7 @@ module TheReplacer
       }
     )
 
-    @@dialog.set_file(File.join(__dir__, 'replacer.html'))
+    @@dialog.set_file(File.join(__dir__, 'html', 'replacer.html'))
 
     if @@last_pos.is_a?(Array) && @@last_pos.length == 2
       @@dialog.set_position(@@last_pos[0], @@last_pos[1])

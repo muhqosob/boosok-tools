@@ -97,7 +97,7 @@ module ConvertToCleanGroup
       }
     )
 
-    @@dialog.set_file(File.join(__dir__, 'cleangroup.html'))
+    @@dialog.set_file(File.join(__dir__, 'html', 'cleangroup.html'))
 
     if @@last_pos.is_a?(Array) && @@last_pos.length == 2
       @@dialog.set_position(@@last_pos[0], @@last_pos[1])

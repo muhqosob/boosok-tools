@@ -12,7 +12,7 @@ module TheResetScale
       width: 360, height: 380,
       style: UI::HtmlDialog::STYLE_DIALOG
     )
-    dialog.set_file(File.join(__dir__, 'reset.html'))
+    dialog.set_file(File.join(__dir__, 'html', 'reset.html'))
 
     dialog.add_action_callback("close") { dialog.close }
 

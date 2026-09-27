@@ -3,7 +3,7 @@ require 'json'
 require 'tmpdir'
 
 module MyCustomPlugins
-  # Update di dalam SketchUp: cek -> download .rbz -> install -> minta restart.
+  # Update di dalam SketchUp: cek -> download .rbz -> install -> hot reload langsung aktif.
   # Satu state di Ruby, dialog cuma render state itu (render(state) di update.html).
   #
   # status: idle | checking | latest | available | downloading | installing | done | error
@@ -12,13 +12,12 @@ module MyCustomPlugins
     DOWNLOAD_TIMEOUT = 180 # detik
     MAX_REDIRECTS = 5      # link release GitHub redirect ke CDN
 
-    @state = { status: 'idle' }
+    @state ||= { status: 'idle' }
 
     # manual = dari menu. Cek otomatis saat startup diam saja kecuali ada update.
     def self.check(manual = false)
       show_dialog if manual
-      # done: versi baru baru aktif setelah restart, jangan cek ulang (bakal "available" lagi)
-      return if busy? || @state[:status] == 'done'
+      return if busy? || (@state[:status] == 'done' && !manual)
 
       set(status: 'checking', error: nil, progress: nil)
       on_version = lambda do |body|
@@ -57,11 +56,47 @@ module MyCustomPlugins
       rescue ArgumentError
         Sketchup.install_from_archive(path) # SketchUp lama: tanpa argumen show_messages
       end
+
+      # Muat ulang semua modul plugin ke memori agar langsung aktif tanpa restart
+      reload_plugin
+
       set(status: 'done')
     rescue Exception => e # install_from_archive bisa raise Interrupt kalau user batal
       fail_with("Gagal memasang: #{e.message}")
     ensure
       File.delete(path) rescue nil
+    end
+
+    def self.reload_plugin
+      old_verbose = $VERBOSE
+      $VERBOSE = nil
+      begin
+        base_dir = File.dirname(__FILE__)
+
+        # Muat ulang loader utama (memperbarui PLUGIN_VERSION dan konstanta lainnya)
+        loader_file = File.expand_path('../boosok_tools_loader.rb', base_dir)
+        load loader_file if File.exist?(loader_file)
+
+        # Muat ulang semua file modul plugin
+        ruby_files = [
+          'main.rb',
+          'the_replacer.rb',
+          'the_cleangroup.rb',
+          'the_reset.rb',
+          'the_hideonscenemanager.rb',
+          'untagnpaint.rb',
+          'updater.rb'
+        ]
+
+        ruby_files.each do |f|
+          file_path = File.join(base_dir, f)
+          load file_path if File.exist?(file_path)
+        end
+      rescue => e
+        puts "[Boosok Tools] Gagal reload plugin: #{e.message}"
+      ensure
+        $VERBOSE = old_verbose
+      end
     end
 
     # --- internal ---
@@ -145,7 +180,7 @@ module MyCustomPlugins
         width: 380, height: 420,
         style: UI::HtmlDialog::STYLE_DIALOG
       )
-      @dialog.set_file(File.join(__dir__, 'update.html'))
+      @dialog.set_file(File.join(__dir__, 'html', 'update.html'))
 
       @dialog.add_action_callback("ready")    { push }
       @dialog.add_action_callback("check")    { check(true) }

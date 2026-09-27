@@ -23,7 +23,7 @@ module HideOnSceneManager
         :style => UI::HtmlDialog::STYLE_DIALOG
       }
     )
-    dialog.set_file(File.join(__dir__, 'hidescene.html'))
+    dialog.set_file(File.join(__dir__, 'html', 'hidescene.html'))
 
     dialog.add_action_callback("ready") do |action_context|
       data = { scenes: model.pages.map(&:name), tags: model.layers.map(&:name) }

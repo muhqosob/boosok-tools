@@ -32,7 +32,7 @@ module TheSelectorPlugin
 
       dialog.set_position(last_x, last_y)
 
-      html_path = File.join(File.dirname(__FILE__), 'selector.html')
+      html_path = File.join(File.dirname(__FILE__), 'html', 'selector.html')
       dialog.set_file(html_path)
 
       dialog.add_action_callback("closeDialog") do |action_context|
