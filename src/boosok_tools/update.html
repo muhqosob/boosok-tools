@@ -5,146 +5,296 @@
   <title>Boosok Tools Update</title>
   <style>
     :root {
-      --primary: #4f46e5;
-      --primary-hover: #4338ca;
-      --success: #10b981;
-      --danger: #ef4444;
-      --bg-main: #f3f4f6;
-      --bg-card: #ffffff;
-      --border: #e5e7eb;
-      --text-main: #111827;
-      --text-muted: #6b7280;
+      --bg: #f7f7f8;
+      --surface: #ffffff;
+      --line: #e6e6e9;
+      --line-strong: #d4d4d8;
+      --ink: #18181b;
+      --muted: #71717a;
+      --accent: #4f46e5;
+      --accent-soft: #eef0ff;
+      --ok: #16a34a;
+      --ok-soft: #ecfdf3;
+      --err: #dc2626;
+      --err-soft: #fef2f2;
+      --r: 10px;
+      --ease: cubic-bezier(.2,.8,.2,1);
     }
     * { box-sizing: border-box; }
     html, body {
-      margin: 0; height: 100vh; padding: 10px;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      font-size: 13px; color: var(--text-main); background: var(--bg-main);
-      display: flex; flex-direction: column;
+      margin: 0; height: 100vh; overflow: hidden;
+      background: var(--bg); color: var(--ink);
+      font: 13px/1.45 "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      -webkit-font-smoothing: antialiased; user-select: none;
     }
-    .card {
-      flex: 1; display: flex; flex-direction: column; gap: 12px;
-      background: var(--bg-card); padding: 20px; border-radius: 16px;
-      border: 1px solid rgba(0,0,0,.05);
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,.05), 0 4px 6px -2px rgba(0,0,0,.025);
+    body { display: flex; flex-direction: column; padding: 18px 16px 16px; gap: 16px; }
+    svg { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Header */
+    .head { display: flex; align-items: center; gap: 12px; }
+    .mark { width: 36px; height: 36px; border-radius: 10px; background: var(--ink); color: #fff; display: grid; place-items: center; }
+    .head .txt { flex: 1; }
+    .head h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+    .head p { margin: 1px 0 0; font-size: 12px; color: var(--muted); }
+    .pill {
+      display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px;
+      background: var(--surface); border: 1px solid var(--line);
+      font-size: 11.5px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums;
     }
-    .icon {
-      width: 48px; height: 48px; border-radius: 50%; margin: 4px auto 0;
-      display: grid; place-items: center; font-size: 22px; font-weight: 800; color: #fff;
-      background: var(--primary);
-    }
-    .icon.ok { background: var(--success); }
-    .icon.err { background: var(--danger); }
-    .spinner {
-      width: 40px; height: 40px; margin: 8px auto 0; border-radius: 50%;
-      border: 4px solid var(--border); border-top-color: var(--primary);
-      animation: spin .8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    h1 { margin: 0; font-size: 18px; font-weight: 800; text-align: center; letter-spacing: -.02em; }
-    .muted { margin: 0; color: var(--text-muted); text-align: center; line-height: 1.5; }
+    .pill:empty { display: none; }
+    .pill.new { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+
+    /* Panel per state */
+    #app { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; }
+    #app.enter > * { animation: rise .35s var(--ease) both; }
+    #app.enter > *:nth-child(2) { animation-delay: .04s; }
+    #app.enter > *:nth-child(3) { animation-delay: .08s; }
+    #app.enter > *:nth-child(4) { animation-delay: .12s; }
+    #app.enter > *:nth-child(5) { animation-delay: .16s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+
+    .hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding-top: 6px; }
+    .hero h2 { margin: 10px 0 0; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+    .hero p { margin: 0; color: var(--muted); font-size: 12.5px; }
+
     .badge {
-      display: inline-block; padding: 2px 8px; border-radius: 999px;
-      background: #eef2ff; color: var(--primary); font-weight: 600; font-size: 12px;
+      width: 52px; height: 52px; border-radius: 14px; position: relative;
+      display: grid; place-items: center;
+      background: var(--accent-soft); color: var(--accent);
     }
-    .changelog {
-      flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 10px 12px;
-      background: #f9fafb; border: 1px solid var(--border); border-radius: 8px;
-      white-space: pre-wrap; font: inherit; font-size: 12px; line-height: 1.6;
+    .badge svg { width: 24px; height: 24px; }
+    .badge.ok { background: var(--ok-soft); color: var(--ok); }
+    .badge.err { background: var(--err-soft); color: var(--err); animation: shake .4s var(--ease); }
+    .badge.pulse::before, .badge.pulse::after {
+      content: ""; position: absolute; inset: 0; border-radius: inherit;
+      border: 1.5px solid var(--accent); opacity: 0;
+      animation: ring 1.8s var(--ease) infinite;
     }
-    .bar { height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; }
-    .bar > div { height: 100%; width: 0; background: var(--primary); transition: width .2s; }
-    .bar.indeterminate > div { width: 35%; animation: slide 1.2s ease-in-out infinite; }
+    .badge.pulse::after { animation-delay: .9s; }
+    @keyframes ring { from { opacity: .5; transform: scale(1); } to { opacity: 0; transform: scale(1.6); } }
+    @keyframes shake { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
+
+    /* Centang yang "tergambar" */
+    .draw svg { stroke-dasharray: 24; stroke-dashoffset: 24; animation: draw .5s .2s var(--ease) forwards; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+    .bob svg { animation: bob 1.4s ease-in-out infinite; }
+    @keyframes bob { 50% { transform: translateY(2px); } }
+    .spin svg { animation: spin .9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .versions { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: -4px; color: var(--muted); }
+    .versions svg { width: 14px; height: 14px; }
+
+    /* Changelog */
+    .card {
+      flex: 1; min-height: 0; display: flex; flex-direction: column;
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+    }
+    .card .cap { padding: 10px 12px 0; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+    .card ul { margin: 0; padding: 4px 12px 12px; list-style: none; overflow-y: auto; }
+    .card li { position: relative; padding-left: 14px; font-size: 12.5px; line-height: 1.55; margin-top: 4px; user-select: text; }
+    .card li::before { content: ""; position: absolute; left: 2px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+    .card ul::-webkit-scrollbar { width: 8px; }
+    .card ul::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 8px; border: 2px solid var(--surface); }
+
+    /* Progress */
+    .progress { display: flex; flex-direction: column; gap: 8px; }
+    .progress .meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+    .progress .meta b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .bar { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
+    .bar > div {
+      height: 100%; width: 0; border-radius: inherit;
+      background: var(--accent) linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent) no-repeat;
+      background-size: 60px 100%;
+      animation: shimmer 1.2s linear infinite;
+      transition: width .3s var(--ease);
+    }
+    .bar.indeterminate > div { width: 35% !important; animation: slide 1.2s ease-in-out infinite; }
+    @keyframes shimmer { from { background-position: -60px 0; } to { background-position: 360px 0; } }
     @keyframes slide { from { margin-left: -35%; } to { margin-left: 100%; } }
-    .error {
-      margin: 0; padding: 10px 12px; border-radius: 8px; font-size: 12px;
-      background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; word-break: break-word;
+
+    .note {
+      display: flex; gap: 10px; padding: 10px 12px; border-radius: var(--r);
+      background: var(--surface); border: 1px solid var(--line); font-size: 12px; color: var(--muted);
     }
+    .note svg { width: 16px; height: 16px; margin-top: 1px; }
+    .note.err { background: var(--err-soft); border-color: #fecaca; color: #b91c1c; word-break: break-word; user-select: text; }
+
     .spacer { flex: 1; }
+
+    /* Tombol custom (bukan <button> native) */
     .actions { display: flex; flex-direction: column; gap: 8px; }
-    button {
-      width: 100%; padding: 11px; border-radius: 8px; border: 1px solid transparent;
-      font: inherit; font-weight: 600; cursor: pointer; transition: background .15s;
+    .actions.row { flex-direction: row; }
+    .actions.row > * { flex: 1; }
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      height: 38px; padding: 0 14px; border-radius: var(--r); cursor: pointer;
+      font-weight: 600; font-size: 12.5px;
+      transition: background .15s, border-color .15s, color .15s, transform .08s;
     }
-    button.primary { background: var(--primary); color: #fff; }
-    button.primary:hover { background: var(--primary-hover); }
-    button.ghost { background: transparent; color: var(--text-muted); border-color: var(--border); }
-    button.ghost:hover { background: #f9fafb; color: var(--text-main); }
-    button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .btn svg { width: 16px; height: 16px; transition: transform .2s var(--ease); }
+    .btn:active { transform: scale(.98); }
+    .btn.primary { background: var(--ink); color: #fff; }
+    .btn.primary:hover { background: #27272a; }
+    .btn.primary:hover svg { transform: translateX(2px); }
+    .btn.ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+    .btn.ghost:hover { border-color: var(--line-strong); }
+    .btn.ghost:hover svg { transform: rotate(-60deg); }
+    .btn.link { height: auto; padding: 2px; color: var(--muted); font-weight: 500; font-size: 12px; }
+    .btn.link:hover { color: var(--ink); }
+    .btn.link svg { width: 14px; height: 14px; }
+    .btn:focus { outline: none; }
+    .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .locked .btn { opacity: .55; pointer-events: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+    }
   </style>
 </head>
 <body>
-  <div class="card" id="app" aria-live="polite"></div>
+  <!-- Ikon custom: 24x24 stroke, satu gaya dengan Untag & Unpaint -->
+  <svg style="display:none">
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4M12 17h.01"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8M7 6.3a7 7 0 1 0 10 0"/></symbol>
+    <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+  </svg>
+
+  <header class="head">
+    <div class="mark"><svg><use href="#i-box"/></svg></div>
+    <div class="txt">
+      <h1>Boosok Tools</h1>
+      <p>Pembaruan plugin</p>
+    </div>
+    <span class="pill" id="cur"></span>
+  </header>
+
+  <main id="app" aria-live="polite"></main>
 
   <script>
     // Semua state ada di Ruby (Updater). Halaman ini cuma render(state) + kirim aksi.
     var app = document.getElementById('app');
+    var lastStatus = null;
 
     function esc(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
       });
     }
-    function btn(action, label, kind) {
-      return '<button class="' + kind + '" data-action="' + action + '">' + label + '</button>';
+    function icon(id) { return '<svg><use href="#i-' + id + '"/></svg>'; }
+    function btn(action, label, kind, ic) {
+      return '<div class="btn ' + kind + '" role="button" tabindex="0" data-action="' + action + '">' +
+        '<span>' + label + '</span>' + (ic ? icon(ic) : '') + '</div>';
+    }
+    function hero(badge, title, sub) {
+      return '<div class="hero">' + badge + '<h2>' + title + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>';
+    }
+    function badge(ic, cls) { return '<div class="badge ' + (cls || '') + '">' + icon(ic) + '</div>'; }
+    function v(x, cls) { return '<span class="pill ' + (cls || '') + '">v' + esc(x) + '</span>'; }
+
+    // "- a\n- b" -> <li>a</li><li>b</li>
+    function changelog(text) {
+      var items = String(text || '').split(/\r?\n/)
+        .map(function (l) { return l.replace(/^\s*[-*•]\s*/, '').trim(); })
+        .filter(Boolean);
+      if (!items.length) items = ['Tidak ada catatan perubahan.'];
+      return items.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('');
     }
 
     var views = {
-      idle: function () { return views.checking(); },
+      idle: function (s) { return views.checking(s); },
       checking: function () {
-        return '<div class="spinner"></div><h1>Memeriksa pembaruan…</h1>' +
-          '<p class="muted">Sebentar ya.</p><div class="spacer"></div>' +
-          '<div class="actions">' + btn('close', 'Tutup', 'ghost') + '</div>';
+        return hero(badge('search', 'pulse bob'), 'Memeriksa pembaruan', 'Menghubungi server…') +
+          '<div class="spacer"></div><div class="actions">' + btn('close', 'Tutup', 'ghost') + '</div>';
       },
       latest: function (s) {
-        return '<div class="icon ok">✓</div><h1>Sudah versi terbaru</h1>' +
-          '<p class="muted">Boosok Tools <span class="badge">v' + esc(s.current) + '</span></p>' +
-          '<div class="spacer"></div><div class="actions">' +
-          btn('check', 'Cek lagi', 'ghost') + btn('close', 'Tutup', 'primary') + '</div>';
+        return hero(badge('check', 'ok draw'), 'Sudah versi terbaru',
+          'Boosok Tools ' + v(s.current) + ' sudah paling baru.') +
+          '<div class="spacer"></div><div class="actions row">' +
+          btn('check', 'Cek lagi', 'ghost', 'refresh') + btn('close', 'Selesai', 'primary') + '</div>';
       },
       available: function (s) {
-        return '<div class="icon">↑</div><h1>Update tersedia</h1>' +
-          '<p class="muted"><span class="badge">v' + esc(s.current) + '</span> → ' +
-          '<span class="badge">v' + esc(s.latest) + '</span></p>' +
-          '<pre class="changelog">' + esc(s.changelog || 'Tidak ada catatan perubahan.') + '</pre>' +
-          '<div class="actions">' + btn('download', 'Update sekarang', 'primary') +
-          btn('close', 'Nanti saja', 'ghost') + '</div>';
+        return hero(badge('up', 'pulse'), 'Update tersedia') +
+          '<div class="versions">' + v(s.current) + icon('arrow') + v(s.latest, 'new') + '</div>' +
+          '<div class="card"><div class="cap">Yang baru</div><ul>' + changelog(s.changelog) + '</ul></div>' +
+          '<div class="actions row">' + btn('close', 'Nanti', 'ghost') +
+          btn('download', 'Update sekarang', 'primary', 'arrow') + '</div>';
       },
       downloading: function (s) {
         var known = s.progress > 0;
-        return '<div class="icon">↓</div><h1>Mengunduh v' + esc(s.latest) + '</h1>' +
-          '<p class="muted">' + (known ? s.progress + '%' : 'Mengunduh…') + '</p>' +
-          '<div class="bar' + (known ? '' : ' indeterminate') + '"><div style="width:' +
-          (known ? s.progress : 35) + '%"></div></div><div class="spacer"></div>';
+        return hero(badge('down', 'bob'), 'Mengunduh ' + v(s.latest, 'new')) +
+          '<div class="progress"><div class="meta"><span>Mengunduh paket</span><b id="pct">' +
+          (known ? s.progress + '%' : '…') + '</b></div>' +
+          '<div class="bar' + (known ? '' : ' indeterminate') + '" id="bar"><div style="width:' +
+          (known ? s.progress : 0) + '%"></div></div></div><div class="spacer"></div>' +
+          '<div class="note">' + icon('info') + '<span>Boleh lanjut kerja, jendela ini kasih tahu kalau sudah selesai.</span></div>';
       },
       installing: function (s) {
-        return '<div class="spinner"></div><h1>Memasang v' + esc(s.latest) + '</h1>' +
-          '<p class="muted">Jangan tutup SketchUp dulu.</p><div class="spacer"></div>';
+        return hero(badge('gear', 'spin'), 'Memasang ' + v(s.latest, 'new'), 'Jangan tutup SketchUp dulu.') +
+          '<div class="progress"><div class="bar indeterminate"><div></div></div></div><div class="spacer"></div>';
       },
       done: function (s) {
-        return '<div class="icon ok">✓</div><h1>Update terpasang!</h1>' +
-          '<p class="muted">Boosok Tools <span class="badge">v' + esc(s.latest) + '</span> sudah terpasang.<br>' +
-          'Buka ulang SketchUp supaya versi baru aktif.</p><div class="spacer"></div>' +
-          '<div class="actions">' + btn('quit', 'Tutup SketchUp sekarang', 'primary') +
-          btn('close', 'Nanti saja', 'ghost') + '</div>';
+        return hero(badge('check', 'ok draw'), 'Update terpasang',
+          'Buka ulang SketchUp supaya ' + v(s.latest, 'new') + ' aktif.') +
+          '<div class="spacer"></div><div class="note">' + icon('info') +
+          '<span>SketchUp tetap tanya dulu kalau ada model yang belum disimpan.</span></div>' +
+          '<div class="actions row">' + btn('close', 'Nanti', 'ghost') +
+          btn('quit', 'Tutup SketchUp', 'primary', 'power') + '</div>';
       },
       error: function (s) {
-        return '<div class="icon err">!</div><h1>Ada masalah</h1>' +
-          '<p class="error">' + esc(s.error) + '</p><div class="spacer"></div>' +
-          '<div class="actions">' + btn('check', 'Coba lagi', 'primary') +
-          btn('browser', 'Download manual di browser', 'ghost') + btn('close', 'Tutup', 'ghost') + '</div>';
+        return hero(badge('alert', 'err'), 'Gagal memperbarui') +
+          '<div class="note err">' + icon('alert') + '<span>' + esc(s.error || 'Terjadi kesalahan.') + '</span></div>' +
+          '<div class="spacer"></div><div class="actions">' +
+          '<div class="actions row">' + btn('close', 'Tutup', 'ghost') + btn('check', 'Coba lagi', 'primary', 'refresh') + '</div>' +
+          btn('browser', 'Download manual di browser', 'link', 'ext') + '</div>';
       }
     };
 
     function render(state) {
+      document.getElementById('cur').textContent = state.current ? 'v' + state.current : '';
+
+      // Progress di-push berkali-kali: cukup geser bar, jangan render ulang (animasi tidak restart)
+      if (state.status === lastStatus && state.status === 'downloading') {
+        if (state.progress > 0) {
+          var bar = document.getElementById('bar');
+          bar.classList.remove('indeterminate');
+          bar.firstChild.style.width = state.progress + '%';
+          document.getElementById('pct').textContent = state.progress + '%';
+        }
+        return;
+      }
+
+      lastStatus = state.status;
+      app.classList.remove('locked', 'enter');
       app.innerHTML = (views[state.status] || views.error)(state);
+      void app.offsetWidth; // restart animasi masuk
+      app.classList.add('enter');
     }
 
+    function act(el) {
+      if (app.classList.contains('locked')) return; // cegah double klik
+      var a = el.dataset.action;
+      // Kunci cuma untuk aksi yang pasti dibalas render() dari Ruby.
+      // browser/quit/close tidak (quit bisa dibatalkan user) -> tombol jangan macet.
+      if (a === 'check' || a === 'download') app.classList.add('locked');
+      sketchup[a]();
+    }
     app.addEventListener('click', function (e) {
-      var b = e.target.closest('button[data-action]');
-      if (!b) return;
-      app.querySelectorAll('button').forEach(function (x) { x.disabled = true; }); // cegah double klik
-      sketchup[b.dataset.action]();
+      var b = e.target.closest('[data-action]');
+      if (b) act(b);
+    });
+    app.addEventListener('keydown', function (e) {
+      var b = e.target.closest('[data-action]');
+      if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); act(b); }
     });
 
     render({ status: 'checking' });

@@ -8,301 +8,245 @@ module UntagUnpaintManager
     <html>
     <head>
       <meta charset="UTF-8">
-      <title>Untag & Unpaint Manager</title>
+      <title>Untag & Unpaint</title>
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
         :root {
-          --primary: #6366f1;
-          --primary-hover: #4f46e5;
-          --danger: #ef4444;
-          --danger-hover: #dc2626;
-          --warning: #f59e0b;
-          --warning-hover: #d97706;
-          --bg-main: #f8fafc;
-          --bg-card: #ffffff;
-          --border: #e2e8f0;
-          --text-main: #0f172a;
-          --text-muted: #64748b;
-          --radius-lg: 16px;
-          --radius-sm: 8px;
+          --bg: #f7f7f8;
+          --surface: #ffffff;
+          --line: #e6e6e9;
+          --line-strong: #d4d4d8;
+          --ink: #18181b;
+          --muted: #71717a;
+          --accent: #4f46e5;
+          --accent-soft: #eef0ff;
+          --ok: #22c55e;
+          --r: 10px;
         }
+
+        * { box-sizing: border-box; }
 
         html, body {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-          background-color: var(--bg-main);
-          padding: 12px 10px 10px 10px;
-          color: var(--text-main);
-          font-size: 13px;
           margin: 0;
           height: 100vh;
-          box-sizing: border-box;
-          display: flex;
-          flex-direction: column;
-          align-items: stretch;
+          background: var(--bg);
+          color: var(--ink);
+          font: 13px/1.45 "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+          -webkit-font-smoothing: antialiased;
+          user-select: none;
+          overflow: hidden;
         }
 
-        /* Header Title */
-        .main-title {
-          margin: 0 0 12px 0;
-          font-size: 24px;
-          font-weight: 800;
-          letter-spacing: -0.03em;
-          background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          text-align: center;
-          flex-shrink: 0;
-        }
+        body { display: flex; flex-direction: column; padding: 18px 16px 16px; gap: 14px; }
 
-        /* Container Card */
-        .card {
-          background: var(--bg-card);
-          padding: 16px;
-          border-radius: var(--radius-lg);
-          border: 1px solid var(--border);
-          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-          display: flex;
-          flex-direction: column;
-          box-sizing: border-box;
-          width: 100%;
-          flex: 1;
-          min-height: 0;
-          justify-content: space-between;
-        }
+        svg { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 
-        .info-box {
-          background-color: #f1f5f9;
-          border-left: 4px solid var(--primary);
+        /* Header */
+        .head { display: flex; align-items: center; gap: 12px; }
+        .mark {
+          width: 36px; height: 36px; border-radius: 10px;
+          background: var(--ink); color: #fff;
+          display: grid; place-items: center;
+        }
+        .head h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+        .head p { margin: 1px 0 0; font-size: 12px; color: var(--muted); }
+
+        /* Switch rekursif */
+        .row {
+          display: flex; align-items: center; gap: 12px;
+          padding: 11px 12px;
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: var(--r);
+          cursor: pointer;
+          transition: border-color .15s;
+        }
+        .row:hover { border-color: var(--line-strong); }
+        .row .ic { color: var(--muted); }
+        .row .txt { flex: 1; min-width: 0; }
+        .row .t { font-weight: 600; font-size: 12.5px; }
+        .row .s { font-size: 11.5px; color: var(--muted); }
+
+        .switch {
+          width: 32px; height: 18px; border-radius: 999px;
+          background: var(--line-strong);
+          position: relative; flex-shrink: 0;
+          transition: background .18s ease;
+        }
+        .switch::after {
+          content: ""; position: absolute; top: 2px; left: 2px;
+          width: 14px; height: 14px; border-radius: 50%;
+          background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2);
+          transition: transform .18s cubic-bezier(.3,.7,.4,1);
+        }
+        .row[aria-checked="true"] .switch { background: var(--accent); }
+        .row[aria-checked="true"] .switch::after { transform: translateX(14px); }
+
+        /* Aksi */
+        .label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; margin: 4px 2px -6px; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        .tile {
+          cursor: pointer;
+          display: flex; flex-direction: column; gap: 10px;
           padding: 12px;
-          border-radius: var(--radius-sm);
-          font-size: 11px;
-          line-height: 1.5;
-          color: #334155;
-          margin-bottom: 16px;
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: var(--r);
+          transition: border-color .15s, transform .08s, box-shadow .15s;
         }
-
-        .info-box b {
-          color: var(--text-main);
+        .tile:hover { border-color: var(--line-strong); box-shadow: 0 2px 8px -4px rgba(0,0,0,.12); }
+        .tile:active { transform: scale(.98); }
+        .tile .ic {
+          width: 30px; height: 30px; border-radius: 8px;
+          display: grid; place-items: center;
+          background: var(--accent-soft); color: var(--accent);
         }
+        .tile .t { font-weight: 600; font-size: 12.5px; }
+        .tile .s { font-size: 11.5px; color: var(--muted); margin-top: -8px; }
 
-        /* Option Switches */
-        .options-group {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          margin-bottom: 20px;
+        .primary {
+          cursor: pointer;
+          display: flex; align-items: center; justify-content: center; gap: 8px;
+          height: 40px; margin-top: auto;
+          background: var(--ink); color: #fff;
+          border-radius: var(--r);
+          font-weight: 600; font-size: 12.5px;
+          transition: background .15s, transform .08s;
         }
+        .primary:hover { background: #27272a; }
+        .primary:active { transform: scale(.99); }
 
-        .checkbox-card {
-          display: flex;
-          align-items: center;
+        [tabindex]:focus { outline: none; }
+        [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        [aria-disabled="true"] { opacity: .55; pointer-events: none; }
+
+        .spin { animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .hint { font-size: 11px; color: var(--muted); text-align: center; margin: -4px 0 0; }
+
+        /* Toast */
+        #toast {
+          position: fixed; left: 16px; right: 16px; bottom: 16px;
+          display: flex; align-items: center; gap: 10px;
           padding: 10px 12px;
-          border: 1px solid var(--border);
-          border-radius: var(--radius-sm);
-          background: #fff;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .checkbox-card:hover {
-          border-color: var(--primary);
-          background-color: #f8fafc;
-        }
-
-        .checkbox-card input[type="checkbox"] {
-          appearance: none;
-          -webkit-appearance: none;
-          width: 18px;
-          height: 18px;
-          border: 2px solid #cbd5e1;
-          border-radius: 4px;
-          margin-right: 12px;
-          position: relative;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          flex-shrink: 0;
-        }
-
-        .checkbox-card input[type="checkbox"]:checked {
-          background-color: var(--primary);
-          border-color: var(--primary);
-        }
-
-        .checkbox-card input[type="checkbox"]:checked::after {
-          content: '';
-          position: absolute;
-          left: 5px;
-          top: 2px;
-          width: 4px;
-          height: 8px;
-          border: solid white;
-          border-width: 0 2px 2px 0;
-          transform: rotate(45deg);
-        }
-
-        .checkbox-label {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .checkbox-title {
-          font-weight: 600;
+          background: var(--ink); color: #fff;
+          border-radius: var(--r);
           font-size: 12px;
-          color: var(--text-main);
-        }
-
-        .checkbox-sub {
-          font-size: 10px;
-          color: var(--text-muted);
-        }
-
-        /* Buttons & Footer */
-        .action-row {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          margin-top: auto;
-        }
-
-        .btn {
-          padding: 10px 16px;
-          font-size: 12px;
-          font-weight: 600;
-          border: none;
-          border-radius: var(--radius-sm);
-          cursor: pointer;
-          transition: all 0.2s ease;
-          font-family: inherit;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          width: 100%;
-          box-sizing: border-box;
-        }
-
-        .btn:active { transform: scale(0.98); }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-        .btn-primary { background-color: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2); }
-        .btn-primary:hover { background-color: var(--primary-hover); }
-
-        .btn-warning { background-color: var(--warning); color: white; box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2); }
-        .btn-warning:hover { background-color: var(--warning-hover); }
-
-        .btn-danger { background-color: var(--danger); color: white; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2); }
-        .btn-danger:hover { background-color: var(--danger-hover); }
-
-        /* Toast Container */
-        #toast-container {
-          position: fixed;
-          top: 16px;
-          left: 50%;
-          transform: translateX(-50%);
-          z-index: 9999;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
+          box-shadow: 0 8px 24px -8px rgba(0,0,0,.35);
+          opacity: 0; transform: translateY(8px);
+          transition: opacity .2s, transform .2s;
           pointer-events: none;
-          width: 85%;
-          align-items: center;
         }
-
-        .toast {
-          background: #1e293b;
-          color: #fff;
-          padding: 10px 16px;
-          border-radius: 30px;
-          font-size: 11px;
-          font-weight: 500;
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards, fadeOut 0.3s ease 2.7s forwards;
-          text-align: center;
-        }
-
-        .toast.error { background: var(--danger); }
-        .toast.success { background: #10b981; }
-
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeOut {
-          from { opacity: 1; }
-          to { opacity: 0; }
-        }
+        #toast.show { opacity: 1; transform: none; }
+        #toast .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex-shrink: 0; }
+        #toast.error .dot { background: #f87171; }
       </style>
     </head>
     <body>
 
-      <h1 class="main-title">Untag & Unpaint</h1>
+      <!-- Ikon custom: 24x24 stroke, satu gaya -->
+      <svg style="display:none">
+        <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.25"/></symbol>
+        <symbol id="i-untag" viewBox="0 0 24 24"><path d="M12 3H4a1 1 0 0 0-1 1v8l9 9 4-4M19 14l2-2-6-6"/><circle cx="7.5" cy="7.5" r="1.25"/><path d="M3 3l18 18"/></symbol>
+        <symbol id="i-unpaint" viewBox="0 0 24 24"><path d="M12 3s-6 6.5-6 11a6 6 0 0 0 10.2 4.3M17.7 13.6C16.9 9.6 12 3 12 3"/><path d="M3 3l18 18"/></symbol>
+        <symbol id="i-clean" viewBox="0 0 24 24"><path d="M14 4l6 6-9.5 9.5H6L3.5 17a2 2 0 0 1 0-2.8z"/><path d="M8.5 9.5l6 6M13 20h8"/></symbol>
+        <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+        <symbol id="i-spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9"/></symbol>
+      </svg>
 
-      <div class="card">
-        <div class="info-box">
-          <b>Panduan Penggunaan:</b><br>
-          Pilih satu atau lebih <b>Group / Component Instance</b> di SketchUp, lalu tekan tombol aksi untuk memproses objek hingga kedalaman terdalam.
+      <header class="head">
+        <div class="mark"><svg><use href="#i-tag"/></svg></div>
+        <div>
+          <h1>Untag & Unpaint</h1>
+          <p>Bersihkan tag & material dari seleksi</p>
         </div>
+      </header>
 
-        <div class="options-group">
-          <label class="checkbox-card">
-            <input type="checkbox" id="chkDeep" checked>
-            <div class="checkbox-label">
-              <span class="checkbox-title">Proses Rekursif (Terdalam)</span>
-              <span class="checkbox-sub">Proses seluruh sub-group & geometri di dalam.</span>
-            </div>
-          </label>
+      <div class="row" id="deep" role="switch" aria-checked="true" tabindex="0">
+        <svg class="ic"><use href="#i-layers"/></svg>
+        <div class="txt">
+          <div class="t">Rekursif</div>
+          <div class="s">Ikut proses isi group & component</div>
         </div>
+        <div class="switch"></div>
+      </div>
 
-        <div class="action-row">
-          <button id="btnUntag" class="btn btn-primary" onclick="eksekusi('untag')">
-            🏷️ Untag Pilihan
-          </button>
-          <button id="btnUnpaint" class="btn btn-warning" onclick="eksekusi('unpaint')">
-            🎨 Unpaint Pilihan
-          </button>
-          <button id="btnBoth" class="btn btn-danger" onclick="eksekusi('both')">
-            ⚡ Untag & Unpaint Sekaligus
-          </button>
+      <div class="label">Aksi</div>
+
+      <div class="grid">
+        <div class="tile" role="button" tabindex="0" data-action="untag">
+          <div class="ic"><svg><use href="#i-untag"/></svg></div>
+          <div class="t">Untag</div>
+          <div class="s">Set ke Untagged</div>
+        </div>
+        <div class="tile" role="button" tabindex="0" data-action="unpaint">
+          <div class="ic"><svg><use href="#i-unpaint"/></svg></div>
+          <div class="t">Unpaint</div>
+          <div class="s">Hapus material</div>
         </div>
       </div>
 
-      <div id="toast-container"></div>
+      <div class="primary" role="button" tabindex="0" data-action="both">
+        <svg><use href="#i-clean"/></svg><span>Untag & Unpaint</span>
+      </div>
+      <p class="hint">Pilih group / component dulu di model</p>
+
+      <div id="toast"><span class="dot"></span><span id="toast-msg"></span></div>
 
       <script>
-        function showToast(message, type = 'success') {
-          const container = document.getElementById('toast-container');
-          const toast = document.createElement('div');
-          toast.className = `toast ${type}`;
-          toast.innerHTML = message;
-          container.appendChild(toast);
-          setTimeout(() => { toast.remove(); }, 3000);
+        const deep = document.getElementById('deep');
+        const actions = document.querySelectorAll('[data-action]');
+        let toastTimer, busyEl, busyIcon;
+
+        function onKey(fn) {
+          return e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); fn(); } };
         }
 
-        function setButtonsState(disabled) {
-          document.getElementById('btnUntag').disabled = disabled;
-          document.getElementById('btnUnpaint').disabled = disabled;
-          document.getElementById('btnBoth').disabled = disabled;
+        function toggleDeep() {
+          deep.setAttribute('aria-checked', deep.getAttribute('aria-checked') !== 'true');
+        }
+        deep.addEventListener('click', toggleDeep);
+        deep.addEventListener('keydown', onKey(toggleDeep));
+
+        actions.forEach(el => {
+          el.addEventListener('click', () => eksekusi(el));
+          el.addEventListener('keydown', onKey(() => eksekusi(el)));
+        });
+
+        function setBusy(el) {
+          actions.forEach(a => a.setAttribute('aria-disabled', el ? 'true' : 'false'));
+          if (el) {
+            busyEl = el;
+            const use = el.querySelector('use');
+            busyIcon = use.getAttribute('href');
+            use.setAttribute('href', '#i-spin');
+            use.parentNode.classList.add('spin');
+          } else if (busyEl) {
+            const use = busyEl.querySelector('use');
+            use.setAttribute('href', busyIcon);
+            use.parentNode.classList.remove('spin');
+            busyEl = null;
+          }
         }
 
-        function eksekusi(actionType) {
-          const deep = document.getElementById('chkDeep').checked;
-          setButtonsState(true);
-          sketchup.prosesAction(actionType, deep);
+        function showToast(message, type) {
+          const t = document.getElementById('toast');
+          document.getElementById('toast-msg').textContent = message;
+          t.className = 'show ' + (type || '');
+          clearTimeout(toastTimer);
+          toastTimer = setTimeout(() => { t.className = type || ''; }, 2800);
         }
 
-        function onProcessComplete(msg) {
-          setButtonsState(false);
-          showToast(msg, 'success');
+        function eksekusi(el) {
+          if (busyEl) return; // Enter/Space masih bisa lolos dari pointer-events
+          setBusy(el);
+          sketchup.prosesAction(el.dataset.action, deep.getAttribute('aria-checked') === 'true');
         }
 
-        function onError(msg) {
-          setButtonsState(false);
-          showToast(msg, 'error');
-        }
+        function onProcessComplete(msg) { setBusy(null); showToast(msg); }
+        function onError(msg) { setBusy(null); showToast(msg, 'error'); }
       </script>
     </body>
     </html>
@@ -311,7 +255,7 @@ module UntagUnpaintManager
     # --- MEMBUAT UI DIALOG ---
     dialog = UI::HtmlDialog.new(
       {
-        :dialog_title => "Untag & Unpaint Manager",
+        :dialog_title => "Untag & Unpaint",
         :preferences_key => "com.sketchup.untagunpaint.manager",
         :scrollable => false,
         :resizable => false,
