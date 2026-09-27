@@ -80,9 +80,11 @@
       <div class="field">
         <label for="attrKey">Key</label>
         <div class="inline">
-          <div class="with-ic grow">
-            <select class="input" id="attrKey"></select>
+          <div class="combo with-ic grow" id="cAttr">
+            <svg class="lead"><use href="#i-key-round"/></svg>
+            <input class="input" id="attrKey" autocomplete="off" spellcheck="false" placeholder="Pilih key atribut…">
             <svg class="trail"><use href="#i-chevron-down"/></svg>
+            <div class="menu"></div>
           </div>
           <button class="btn ghost icon sm" id="manage" title="Kelola key">
             <svg><use href="#i-settings-2"/></svg>
@@ -136,27 +138,36 @@
     var tags = [], keys = [];
     var $ = function (id) { return document.getElementById(id); };
 
-    // ---- Combobox tag ----
-    function setupCombo(box) {
+    // ---- Combobox (tag & key atribut) ----
+    function setupCombo(box, getItems, getFallback, emptyMsg) {
       var input = box.querySelector('input'), menu = box.querySelector('.menu');
-      input.value = ALL;
+      input.value = getFallback();
 
       function fill(q) {
-        q = q.toLowerCase();
-        var items = [ALL].concat(tags).filter(function (t) { return t.toLowerCase().indexOf(q) > -1; });
+        q = (q || '').toLowerCase();
+        var all = getItems();
+        var items = all.filter(function (t) { return t.toLowerCase().indexOf(q) > -1; });
         menu.innerHTML = items.length
-          ? items.map(function (t) { return '<div>' + esc(t) + '</div>'; }).join('')
-          : '<div class="none">Tag tidak ditemukan</div>';
+          ? items.map(function (t) {
+              var isSel = (t === (input.dataset.old || input.value));
+              return '<div' + (isSel ? ' class="selected"' : '') + '>' + esc(t) + '</div>';
+            }).join('')
+          : '<div class="none">' + (emptyMsg || 'Tidak ditemukan') + '</div>';
       }
       function close() {
         box.classList.remove('open');
-        if (!input.value.trim()) input.value = input.dataset.old || ALL;
+        if (!input.value.trim()) input.value = input.dataset.old || getFallback();
       }
-      input.addEventListener('focus', function () {
+      function open() {
         input.dataset.old = input.value;
+        input.placeholder = input.value;
         input.value = '';
         fill('');
         box.classList.add('open');
+      }
+      input.addEventListener('focus', open);
+      input.addEventListener('click', function () {
+        if (!box.classList.contains('open')) open();
       });
       input.addEventListener('input', function () { fill(input.value); box.classList.add('open'); });
       input.addEventListener('keydown', function (e) {
@@ -164,7 +175,10 @@
           var first = menu.querySelector('div:not(.none)');
           if (first) input.value = first.textContent;
           input.blur();
-        } else if (e.key === 'Escape') { input.value = ''; input.blur(); }
+        } else if (e.key === 'Escape') {
+          input.value = input.dataset.old || getFallback();
+          input.blur();
+        }
       });
       input.addEventListener('blur', function () { setTimeout(close, 120); });
       menu.addEventListener('mousedown', function (e) {
@@ -175,8 +189,9 @@
         input.blur();
       });
     }
-    setupCombo($('c1'));
-    setupCombo($('c2'));
+    setupCombo($('c1'), function () { return [ALL].concat(tags); }, function () { return ALL; }, 'Tag tidak ditemukan');
+    setupCombo($('c2'), function () { return [ALL].concat(tags); }, function () { return ALL; }, 'Tag tidak ditemukan');
+    setupCombo($('cAttr'), function () { return keys; }, function () { return keys[0] || 'a_posisi'; }, 'Key tidak ditemukan');
 
     // ---- Segmented: tipe nama ----
     $('type').addEventListener('click', function (e) {
@@ -200,10 +215,13 @@
 
     // ---- Key atribut ----
     function renderKeys(selected) {
-      var sel = $('attrKey');
-      selected = selected || sel.value;
-      sel.innerHTML = keys.map(function (k) { return '<option>' + esc(k) + '</option>'; }).join('');
-      if (keys.indexOf(selected) > -1) sel.value = selected;
+      var input = $('attrKey');
+      selected = selected || input.value;
+      if (keys.indexOf(selected) > -1) {
+        input.value = selected;
+      } else {
+        input.value = keys[0] || 'a_posisi';
+      }
       $('keyList').innerHTML = keys.map(function (k) {
         return '<div class="k"><span>' + esc(k) + '</span>' +
           '<button class="btn icon" title="Hapus" data-key="' + esc(k) + '">' + icon('trash-2') + '</button></div>';
@@ -257,14 +275,15 @@
       }));
     });
     $('keyword').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnSubmit').click(); });
+    $('attrVal').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnSubmit').click(); });
 
     // Simpan posisi jendela
     setInterval(function () {
       var x = window.screenX, y = window.screenY;
-      if (x > 10 && y > 10) sketchup.save_position(JSON.stringify({ left: x, top: y }));
+      if (x > 10 && y > 10 && window.sketchup) sketchup.save_position(JSON.stringify({ left: x, top: y }));
     }, 1500);
 
-    sketchup.get_init_data();
+    if (window.sketchup) sketchup.get_init_data();
   </script>
 </body>
 </html>
