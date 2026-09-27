@@ -1,12 +1,146 @@
 module HideOnSceneManager
-  def self.run
-    require 'json'
-    require 'set'
+  require 'json'
+  require 'set'
 
-    # Satu dialog saja. Buka ulang supaya daftar scene/tag ikut ter-refresh.
-    @dialog.close if @dialog && @dialog.visible?
+  class PagesObserver < Sketchup::PagesObserver
+    def onElementAdded(*args)
+      HideOnSceneManager.schedule_sync rescue nil
+    end
+
+    def onElementRemoved(*args)
+      HideOnSceneManager.schedule_sync rescue nil
+    end
+
+    def onContentsModified(*args)
+      HideOnSceneManager.schedule_sync rescue nil
+    end
+  end
+
+  class ModelObserver < Sketchup::ModelObserver
+    def onTransactionCommit(*args)
+      HideOnSceneManager.schedule_sync rescue nil
+    end
+
+    def onTransactionUndo(*args)
+      HideOnSceneManager.schedule_sync rescue nil
+    end
+
+    def onTransactionRedo(*args)
+      HideOnSceneManager.schedule_sync rescue nil
+    end
+  end
+
+  class AppObserver < Sketchup::AppObserver
+    def onActivateModel(model)
+      HideOnSceneManager.attach_to_model(model) rescue nil
+    end
+
+    def onNewModel(model)
+      HideOnSceneManager.attach_to_model(model) rescue nil
+    end
+
+    def onOpenModel(model)
+      HideOnSceneManager.attach_to_model(model) rescue nil
+    end
+  end
+
+  def self.schedule_sync
+    return unless @dialog && @dialog.visible?
+
+    UI.stop_timer(@update_timer) if @update_timer
+    @update_timer = UI.start_timer(0.08, false) do
+      @update_timer = nil
+      sync_scenes_and_tags
+    end
+  end
+
+  def self.sync_scenes_and_tags
+    return unless @dialog && @dialog.visible?
+    model = Sketchup.active_model
+    return unless model && model.valid?
+
+    current_scenes = model.pages.map(&:name)
+    current_tags = model.layers.map(&:name)
+
+    if current_scenes != @cached_scenes
+      @cached_scenes = current_scenes
+      begin
+        @dialog.execute_script("updateScenes(#{@cached_scenes.to_json});")
+      rescue => e
+      end
+    end
+
+    if current_tags != @cached_tags
+      @cached_tags = current_tags
+      begin
+        @dialog.execute_script("updateTags(#{@cached_tags.to_json});")
+      rescue => e
+      end
+    end
+  end
+
+  def self.attach_to_model(model)
+    detach_model_observers
+    return unless model && model.valid?
+    @observed_model = model
+
+    @pages_observer ||= PagesObserver.new
+    @model_observer ||= ModelObserver.new
+
+    begin
+      model.pages.add_observer(@pages_observer)
+    rescue => e
+    end
+
+    begin
+      model.add_observer(@model_observer)
+    rescue => e
+    end
+
+    schedule_sync
+  end
+
+  def self.detach_model_observers
+    if @observed_model && @observed_model.valid?
+      begin
+        @observed_model.pages.remove_observer(@pages_observer) if @pages_observer
+      rescue => e
+      end
+      begin
+        @observed_model.remove_observer(@model_observer) if @model_observer
+      rescue => e
+      end
+    end
+    @observed_model = nil
+  end
+
+  def self.detach_all_observers
+    UI.stop_timer(@update_timer) if @update_timer
+    @update_timer = nil
+
+    detach_model_observers
+
+    if @app_observer
+      begin
+        Sketchup.remove_observer(@app_observer)
+      rescue => e
+      end
+      @app_observer = nil
+    end
+  end
+
+  def self.run
+    if @dialog && @dialog.visible?
+      @dialog.bring_to_front
+      sync_scenes_and_tags
+      return
+    end
+
+    detach_all_observers
 
     model = Sketchup.active_model
+    @cached_scenes = model.pages.map(&:name)
+    @cached_tags = model.layers.map(&:name)
 
     # --- BUAT DIALOG UI ---
     dialog = @dialog = UI::HtmlDialog.new(
@@ -26,7 +160,10 @@ module HideOnSceneManager
     dialog.set_file(File.join(__dir__, 'html', 'hidescene.html'))
 
     dialog.add_action_callback("ready") do |action_context|
-      data = { scenes: model.pages.map(&:name), tags: model.layers.map(&:name) }
+      current_model = Sketchup.active_model
+      @cached_scenes = current_model.pages.map(&:name)
+      @cached_tags = current_model.layers.map(&:name)
+      data = { scenes: @cached_scenes, tags: @cached_tags }
       dialog.execute_script("init(#{data.to_json})")
     end
 
@@ -34,6 +171,19 @@ module HideOnSceneManager
     dialog.add_action_callback("closeDialog") do |action_context|
       dialog.close
     end
+
+    dialog.set_on_closed do
+      HideOnSceneManager.detach_all_observers
+      HideOnSceneManager.instance_variable_set(:@dialog, nil)
+    end
+
+    @app_observer ||= AppObserver.new
+    begin
+      Sketchup.add_observer(@app_observer)
+    rescue => e
+    end
+
+    attach_to_model(model)
 
     # --- CALLBACK 1: PROSES ISOLATE SCENE AKTIF (LANGSUNG REFRESH VIEWPORT) ---
     dialog.add_action_callback("prosesIsolateActive") do |action_context|

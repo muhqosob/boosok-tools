@@ -60,6 +60,7 @@
           <svg class="lead"><use href="#i-search"/></svg>
           <input class="input" placeholder="Cari tag…" data-filter="listTags" autocomplete="off" spellcheck="false">
         </div>
+        <button class="btn ghost sm" data-all="listTags">Semua</button>
         <button class="btn ghost sm icon" data-clear="listTags" title="Kosongkan pilihan"><svg><use href="#i-x"/></svg></button>
       </div>
       <div class="list" id="listTags"></div>
@@ -111,12 +112,6 @@
   <script>
     var $ = function (id) { return document.getElementById(id); };
 
-    function renderChecks(id, items, empty) {
-      $(id).innerHTML = items.length ? items.map(function (n) {
-        return '<label class="check"><input type="checkbox" value="' + esc(n) + '">' +
-          '<span class="box">' + icon('check') + '</span><span>' + esc(n) + '</span></label>';
-      }).join('') : '<div class="empty">' + empty + '</div>';
-    }
     function checked(id) {
       return Array.prototype.map.call($(id).querySelectorAll('input:checked'), function (c) { return c.value; });
     }
@@ -126,23 +121,81 @@
     }
     $('listScenes').addEventListener('change', updateCount);
 
-    // Search / Semua / Kosongkan (dipakai list scene & tag)
+    function updateList(id, items, emptyText, onUpdate) {
+      var listEl = $(id);
+      if (!listEl) return;
+      var sel = new Set(checked(id));
+      var scrollTop = listEl.scrollTop;
+
+      if (!items || !items.length) {
+        listEl.innerHTML = '<div class="empty">' + emptyText + '</div>';
+      } else {
+        listEl.innerHTML = items.map(function (n) {
+          var isChecked = sel.has(n) ? ' checked' : '';
+          return '<label class="check"><input type="checkbox" value="' + esc(n) + '"' + isChecked + '>' +
+            '<span class="box">' + icon('check') + '</span><span>' + esc(n) + '</span></label>';
+        }).join('');
+      }
+      listEl.scrollTop = scrollTop;
+
+      var searchInput = document.querySelector('input[data-filter="' + id + '"]');
+      var q = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      if (q) {
+        listEl.querySelectorAll('.check').forEach(function (l) {
+          l.style.display = l.textContent.toLowerCase().indexOf(q) > -1 ? '' : 'none';
+        });
+      }
+      if (onUpdate) onUpdate();
+    }
+
+    function updateScenes(scenes) {
+      updateList('listScenes', scenes, 'Model ini belum punya scene.', updateCount);
+    }
+
+    function updateTags(tags) {
+      updateList('listTags', tags, 'Tidak ada tag.');
+    }
+
+    // Search / Filter
     document.addEventListener('input', function (e) {
       var list = e.target.dataset.filter;
       if (!list) return;
-      var q = e.target.value.toLowerCase();
+      var q = e.target.value.toLowerCase().trim();
       $(list).querySelectorAll('.check').forEach(function (l) {
-        l.style.display = l.textContent.toLowerCase().indexOf(q) > -1 ? '' : 'none';
+        l.style.display = (!q || l.textContent.toLowerCase().indexOf(q) > -1) ? '' : 'none';
       });
     });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && e.target.dataset && e.target.dataset.filter) {
+        e.target.value = '';
+        var list = e.target.dataset.filter;
+        $(list).querySelectorAll('.check').forEach(function (l) {
+          l.style.display = '';
+        });
+      }
+    });
+
+    // Tombol Pilih Semua (data-all) dan Kosongkan (data-clear)
+    // Beroperasi hanya pada item yang sedang ditampilkan berdasarkan filter pencarian
     document.addEventListener('click', function (e) {
       var b = e.target.closest('[data-all],[data-clear]');
       if (!b) return;
       var on = !!b.dataset.all;
-      $(b.dataset.all || b.dataset.clear).querySelectorAll('.check').forEach(function (l) {
-        if (!on || l.style.display !== 'none') l.querySelector('input').checked = on;
+      var listId = b.dataset.all || b.dataset.clear;
+      var listEl = $(listId);
+      if (!listEl) return;
+
+      listEl.querySelectorAll('.check').forEach(function (l) {
+        if (l.style.display !== 'none') {
+          var input = l.querySelector('input');
+          if (input) input.checked = on;
+        }
       });
-      updateCount();
+
+      if (listId === 'listScenes') {
+        updateCount();
+      }
     });
 
     // Tab tag / objek
@@ -177,8 +230,8 @@
 
     // ---- Dipanggil dari Ruby ----
     function init(data) {
-      renderChecks('listScenes', data.scenes, 'Model ini belum punya scene.');
-      renderChecks('listTags', data.tags, 'Tidak ada tag.');
+      updateScenes(data.scenes || []);
+      updateTags(data.tags || []);
     }
     function resetIsolateBtn() { busy('btnIsolate', false); }
     function resetTagButton() { unlock('btnHideTag', 'btnUnhideTag'); }
