@@ -1,5 +1,5 @@
 {
-  "version": "1.0.13",
-  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.0.13/boosok_tools_v1.0.13.rbz",
-  "changelog": "Perbaikan: update baru langsung terdeteksi setelah rilis"
+  "version": "1.0.14",
+  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.0.14/boosok_tools_v1.0.14.rbz",
+  "changelog": "Fitur Hot Reload: update plugin langsung aktif tanpa restart SketchUp"
 }
