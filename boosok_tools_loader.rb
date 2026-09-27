@@ -6,7 +6,7 @@ require 'uri'
 
 module MyCustomPlugins
   # Naikkan angka ini setiap rilis, harus sama dengan the_selector/version.json
-  PLUGIN_VERSION = "1.0.5"
+  PLUGIN_VERSION = "1.0.6"
 
   # Satu-satunya sumber versi. Instalasi lama juga membaca URL ini, jangan dipindah.
   VERSION_URL = URI.parse("https://raw.githubusercontent.com/muhqosob/boosok-tools/main/the_selector/version.json")
@@ -55,9 +55,18 @@ module MyCustomPlugins
       MyTools::ReplaceGroupHelper.run
     }
 
+    # 3. Memuat Plugin "Hide Group"
+    require_relative 'the_selector/hide_group_tools'
+    @my_submenu.add_item("Hide Group") {
+      MyTools::HideGroupHelper.hide_selected
+    }
+    @my_submenu.add_item("Unhide All Groups") {
+      MyTools::HideGroupHelper.unhide_all
+    }
+
     @my_submenu.add_separator
 
-    # 3. Tombol Manual Cek Update
+    # 4. Tombol Manual Cek Update
     @my_submenu.add_item("Check for Updates...") {
       self.check_for_updates(true)
     }

@@ -1,5 +1,5 @@
 {
-  "version": "1.0.5",
+  "version": "1.0.6",
   "download_url": "https://github.com/muhqosob/boosok-tools/releases/latest/download/boosok_tools.rbz",
-  "changelog": "- Perbaikan sistem cek update\n- Replace Group Tool tidak crash saat grup lama sudah terhapus\n- Perbaikan filter tag & daftar atribut di The Selector"
+  "changelog": "- Fitur baru: Hide Group (sembunyikan grup/komponen terpilih)\n- Fitur baru: Unhide All Groups (tampilkan kembali semua grup/komponen, termasuk yang bersarang)"
 }
