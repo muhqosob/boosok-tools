@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Boosok Tools Update</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --success: #10b981;
+      --danger: #ef4444;
+      --bg-main: #f3f4f6;
+      --bg-card: #ffffff;
+      --border: #e5e7eb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; height: 100vh; padding: 10px;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px; color: var(--text-main); background: var(--bg-main);
+      display: flex; flex-direction: column;
+    }
+    .card {
+      flex: 1; display: flex; flex-direction: column; gap: 12px;
+      background: var(--bg-card); padding: 20px; border-radius: 16px;
+      border: 1px solid rgba(0,0,0,.05);
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,.05), 0 4px 6px -2px rgba(0,0,0,.025);
+    }
+    .icon {
+      width: 48px; height: 48px; border-radius: 50%; margin: 4px auto 0;
+      display: grid; place-items: center; font-size: 22px; font-weight: 800; color: #fff;
+      background: var(--primary);
+    }
+    .icon.ok { background: var(--success); }
+    .icon.err { background: var(--danger); }
+    .spinner {
+      width: 40px; height: 40px; margin: 8px auto 0; border-radius: 50%;
+      border: 4px solid var(--border); border-top-color: var(--primary);
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    h1 { margin: 0; font-size: 18px; font-weight: 800; text-align: center; letter-spacing: -.02em; }
+    .muted { margin: 0; color: var(--text-muted); text-align: center; line-height: 1.5; }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 999px;
+      background: #eef2ff; color: var(--primary); font-weight: 600; font-size: 12px;
+    }
+    .changelog {
+      flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 10px 12px;
+      background: #f9fafb; border: 1px solid var(--border); border-radius: 8px;
+      white-space: pre-wrap; font: inherit; font-size: 12px; line-height: 1.6;
+    }
+    .bar { height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; }
+    .bar > div { height: 100%; width: 0; background: var(--primary); transition: width .2s; }
+    .bar.indeterminate > div { width: 35%; animation: slide 1.2s ease-in-out infinite; }
+    @keyframes slide { from { margin-left: -35%; } to { margin-left: 100%; } }
+    .error {
+      margin: 0; padding: 10px 12px; border-radius: 8px; font-size: 12px;
+      background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; word-break: break-word;
+    }
+    .spacer { flex: 1; }
+    .actions { display: flex; flex-direction: column; gap: 8px; }
+    button {
+      width: 100%; padding: 11px; border-radius: 8px; border: 1px solid transparent;
+      font: inherit; font-weight: 600; cursor: pointer; transition: background .15s;
+    }
+    button.primary { background: var(--primary); color: #fff; }
+    button.primary:hover { background: var(--primary-hover); }
+    button.ghost { background: transparent; color: var(--text-muted); border-color: var(--border); }
+    button.ghost:hover { background: #f9fafb; color: var(--text-main); }
+    button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <div class="card" id="app" aria-live="polite"></div>
+
+  <script>
+    // Semua state ada di Ruby (Updater). Halaman ini cuma render(state) + kirim aksi.
+    var app = document.getElementById('app');
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    function btn(action, label, kind) {
+      return '<button class="' + kind + '" data-action="' + action + '">' + label + '</button>';
+    }
+
+    var views = {
+      idle: function () { return views.checking(); },
+      checking: function () {
+        return '<div class="spinner"></div><h1>Memeriksa pembaruan…</h1>' +
+          '<p class="muted">Sebentar ya.</p><div class="spacer"></div>' +
+          '<div class="actions">' + btn('close', 'Tutup', 'ghost') + '</div>';
+      },
+      latest: function (s) {
+        return '<div class="icon ok">✓</div><h1>Sudah versi terbaru</h1>' +
+          '<p class="muted">Boosok Tools <span class="badge">v' + esc(s.current) + '</span></p>' +
+          '<div class="spacer"></div><div class="actions">' +
+          btn('check', 'Cek lagi', 'ghost') + btn('close', 'Tutup', 'primary') + '</div>';
+      },
+      available: function (s) {
+        return '<div class="icon">↑</div><h1>Update tersedia</h1>' +
+          '<p class="muted"><span class="badge">v' + esc(s.current) + '</span> → ' +
+          '<span class="badge">v' + esc(s.latest) + '</span></p>' +
+          '<pre class="changelog">' + esc(s.changelog || 'Tidak ada catatan perubahan.') + '</pre>' +
+          '<div class="actions">' + btn('download', 'Update sekarang', 'primary') +
+          btn('close', 'Nanti saja', 'ghost') + '</div>';
+      },
+      downloading: function (s) {
+        var known = s.progress > 0;
+        return '<div class="icon">↓</div><h1>Mengunduh v' + esc(s.latest) + '</h1>' +
+          '<p class="muted">' + (known ? s.progress + '%' : 'Mengunduh…') + '</p>' +
+          '<div class="bar' + (known ? '' : ' indeterminate') + '"><div style="width:' +
+          (known ? s.progress : 35) + '%"></div></div><div class="spacer"></div>';
+      },
+      installing: function (s) {
+        return '<div class="spinner"></div><h1>Memasang v' + esc(s.latest) + '</h1>' +
+          '<p class="muted">Jangan tutup SketchUp dulu.</p><div class="spacer"></div>';
+      },
+      done: function (s) {
+        return '<div class="icon ok">✓</div><h1>Update terpasang!</h1>' +
+          '<p class="muted">Boosok Tools <span class="badge">v' + esc(s.latest) + '</span> sudah terpasang.<br>' +
+          'Buka ulang SketchUp supaya versi baru aktif.</p><div class="spacer"></div>' +
+          '<div class="actions">' + btn('quit', 'Tutup SketchUp sekarang', 'primary') +
+          btn('close', 'Nanti saja', 'ghost') + '</div>';
+      },
+      error: function (s) {
+        return '<div class="icon err">!</div><h1>Ada masalah</h1>' +
+          '<p class="error">' + esc(s.error) + '</p><div class="spacer"></div>' +
+          '<div class="actions">' + btn('check', 'Coba lagi', 'primary') +
+          btn('browser', 'Download manual di browser', 'ghost') + btn('close', 'Tutup', 'ghost') + '</div>';
+      }
+    };
+
+    function render(state) {
+      app.innerHTML = (views[state.status] || views.error)(state);
+    }
+
+    app.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-action]');
+      if (!b) return;
+      app.querySelectorAll('button').forEach(function (x) { x.disabled = true; }); // cegah double klik
+      sketchup[b.dataset.action]();
+    });
+
+    render({ status: 'checking' });
+    sketchup.ready();
+  </script>
+</body>
+</html>
