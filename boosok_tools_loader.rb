@@ -5,32 +5,36 @@ require 'json'
 require 'uri'
 
 module MyCustomPlugins
-  PLUGIN_VERSION = "1.0.0"
-  
-  # PERHATIKAN PATH DENGAN TAMBAHAN FOLDER 'the_selector/' DI BAWAH INI:
+  # Naikkan angka ini setiap rilis, harus sama dengan the_selector/version.json
+  PLUGIN_VERSION = "1.0.5"
+
+  # Satu-satunya sumber versi. Instalasi lama juga membaca URL ini, jangan dipindah.
   VERSION_URL = URI.parse("https://raw.githubusercontent.com/muhqosob/boosok-tools/main/the_selector/version.json")
 
-  def self.check_for_updates
+  def self.check_for_updates(manual = false)
     Thread.new do
       begin
         response = Net::HTTP.get_response(VERSION_URL)
-        if response.is_a?(Net::HTTPSuccess)
-          data = JSON.parse(response.body)
-          latest_version = data["version"]
-          download_url = data["download_url"]
-          changelog = data["changelog"]
+        raise "HTTP #{response.code}" unless response.is_a?(Net::HTTPSuccess)
 
-          if latest_version > PLUGIN_VERSION
-            UI.start_timer(0.1, false) {
-              result = UI.messagebox("Pembaruan baru tersedia (#{latest_version})!\n\nCatatan Perubahan:\n#{changelog}\n\nApakah Anda ingin mengunduhnya sekarang?", MB_YESNO)
-              if result == IDYES
-                UI.openURL(download_url)
-              end
-            }
-          end
+        data = JSON.parse(response.body)
+        latest_version = data["version"]
+        download_url = data["download_url"]
+        changelog = data["changelog"]
+
+        if Gem::Version.new(latest_version) > Gem::Version.new(PLUGIN_VERSION)
+          UI.start_timer(0.1, false) {
+            result = UI.messagebox("Pembaruan baru tersedia (#{latest_version})!\n\nCatatan Perubahan:\n#{changelog}\n\nApakah Anda ingin mengunduhnya sekarang?", MB_YESNO)
+            if result == IDYES
+              UI.openURL(download_url)
+            end
+          }
+        elsif manual
+          UI.start_timer(0.1, false) { UI.messagebox("Boosok Tools sudah versi terbaru (#{PLUGIN_VERSION}).") }
         end
       rescue => e
-        # Abaikan jika koneksi internet terputus/gagal
+        # Cek otomatis diam saja kalau gagal; cek manual kasih tahu user
+        UI.start_timer(0.1, false) { UI.messagebox("Gagal memeriksa pembaruan: #{e.message}") } if manual
       end
     end
   end
@@ -55,8 +59,7 @@ module MyCustomPlugins
 
     # 3. Tombol Manual Cek Update
     @my_submenu.add_item("Check for Updates...") {
-      self.check_for_updates
-      UI.messagebox("Memeriksa pembaruan dari server...")
+      self.check_for_updates(true)
     }
 
     # Cek otomatis saat SketchUp dibuka

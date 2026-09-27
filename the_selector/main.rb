@@ -77,8 +77,8 @@ module TheSelectorPlugin
           Sketchup.write_default("TheSelectorPlugin", "dialog_top", data["top"].to_i)
         end
 
-        tag_utama = data["tag_utama"]   # Contoh: Level 1 (Parent Group)
-        tag_kedua = data["tag_kedua"]   # Contoh: Beam (Objek di dalamnya)
+        tag_utama = data["tag_utama"].to_s.strip   # Contoh: Level 1 (Parent Group)
+        tag_kedua = data["tag_kedua"].to_s.strip   # Contoh: Beam (Objek di dalamnya)
         search_type = data["search_type"]
         target_keyword = data["keyword"].strip.downcase
         use_attribute = data["use_attr"]
@@ -89,26 +89,6 @@ module TheSelectorPlugin
         selection.clear
         matching_entities = []
         search_entities = model.active_entities
-
-        # Lambda helper untuk mengecek parent tag (diubah namanya tanpa tanda ?)
-        has_parent_tag = lambda do |entity, target_tag|
-          parent = entity.parent
-          while parent.is_a?(Sketchup::ComponentDefinition)
-            instances = parent.instances
-            found_in_parent = instances.any? { |inst|
-              inst.layer.name.strip.downcase == target_tag.downcase || 
-              (inst.parent.respond_to?(:instances) && inst.parent != model && has_parent_tag.call(inst, target_tag))
-            }
-            return true if found_in_parent
-            
-            if parent.respond_to?(:model) && parent.entity && parent.entity.respond_to?(:parent)
-              parent = parent.entity.parent
-            else
-              break
-            end
-          end
-          false
-        end
 
 find_entities = lambda do |entities, current_parent_tag = nil|
           entities.each do |ent|

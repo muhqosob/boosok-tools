@@ -282,12 +282,12 @@
         data.tags.forEach(tag => {
             let opt1 = document.createElement('option');
             opt1.value = tag;
-            opt1.innerHTML = tag;
+            opt1.textContent = tag;
             tagUtamaSelect.appendChild(opt1);
 
             let opt2 = document.createElement('option');
             opt2.value = tag;
-            opt2.innerHTML = tag;
+            opt2.textContent = tag;
             tagKeduaSelect.appendChild(opt2);
         });
 
@@ -300,7 +300,7 @@
         keys.forEach(key => {
             let opt = document.createElement('option');
             opt.value = key;
-            opt.innerHTML = key;
+            opt.textContent = key;
             attrSelect.appendChild(opt);
         });
         
@@ -309,7 +309,12 @@
         keys.forEach(key => {
             let item = document.createElement('div');
             item.className = 'attr-item';
-            item.innerHTML = `<span>${key}</span> <button onclick="deleteKey('${key}')">Hapus</button>`;
+            let span = document.createElement('span');
+            span.textContent = key;
+            let btn = document.createElement('button');
+            btn.textContent = 'Hapus';
+            btn.onclick = () => deleteKey(key);
+            item.append(span, ' ', btn);
             container.appendChild(item);
         });
     }

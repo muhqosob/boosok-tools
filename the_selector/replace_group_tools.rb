@@ -188,42 +188,54 @@ module MyTools
           next
         end
 
-        model.start_operation("Replace Group Clean", true)
-
-        definition_baru = grup_baru.definition
-        dicts_baru = grup_baru.attribute_dictionaries
-
-        old_groups.each do |grup_lama|
-          nama_lama = grup_lama.name
-          transformasi_lama = grup_lama.transformation
-          context_lama = grup_lama.parent.entities
-          tag_lama = grup_lama.layer 
-          
-          new_instance = context_lama.add_instance(definition_baru, transformasi_lama)
-          new_instance.layer = tag_lama
-          new_instance.name = nama_lama unless nama_lama.empty?
-          
-          if dicts_baru
-            dicts_baru.each do |dict|
-              dict.each_pair do |key, val|
-                new_instance.set_attribute(dict.name, key, val)
-              end
-            end
-          end
-          
-          if defined?($dc_observers) && $dc_observers
-            begin
-              ldc = $dc_observers.get_latest_class
-              ldc.determine_movetool_behaviors(new_instance) if ldc.respond_to?(:determine_movetool_behaviors)
-              ldc.redraw(new_instance) if ldc.respond_to?(:redraw)
-            rescue
-            end
-          end
-          
-          grup_lama.erase!
+        old_groups.reject!(&:deleted?)
+        if old_groups.empty?
+          @@dialog.execute_script("showAlertState('Grup lama sudah tidak ada (terhapus/di-undo). Jalankan ulang tool ini.');")
+          next
         end
 
-        model.commit_operation
+        model.start_operation("Replace Group Clean", true)
+        begin
+
+          definition_baru = grup_baru.definition
+          dicts_baru = grup_baru.attribute_dictionaries
+
+          old_groups.each do |grup_lama|
+            nama_lama = grup_lama.name
+            transformasi_lama = grup_lama.transformation
+            context_lama = grup_lama.parent.entities
+            tag_lama = grup_lama.layer 
+          
+            new_instance = context_lama.add_instance(definition_baru, transformasi_lama)
+            new_instance.layer = tag_lama
+            new_instance.name = nama_lama unless nama_lama.empty?
+          
+            if dicts_baru
+              dicts_baru.each do |dict|
+                dict.each_pair do |key, val|
+                  new_instance.set_attribute(dict.name, key, val)
+                end
+              end
+            end
+          
+            if defined?($dc_observers) && $dc_observers
+              begin
+                ldc = $dc_observers.get_latest_class
+                ldc.determine_movetool_behaviors(new_instance) if ldc.respond_to?(:determine_movetool_behaviors)
+                ldc.redraw(new_instance) if ldc.respond_to?(:redraw)
+              rescue
+              end
+            end
+          
+            grup_lama.erase!
+          end
+
+          model.commit_operation
+        rescue => e
+          model.abort_operation
+          @@dialog.execute_script("showAlertState(#{("Gagal: " + e.message).to_json});")
+          next
+        end
 
         # Tampilkan animasi sukses, lalu tutup otomatis
         @@dialog.execute_script("showSuccessState();")
