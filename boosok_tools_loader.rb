@@ -1,21 +1,34 @@
 require 'sketchup'
 require 'extensions'
-require 'net/http'
 require 'json'
-require 'uri'
 
 module MyCustomPlugins
   # Naikkan angka ini setiap rilis, harus sama dengan the_selector/version.json
-  PLUGIN_VERSION = "1.0.6"
+  PLUGIN_VERSION = "1.0.7"
 
   # Satu-satunya sumber versi. Instalasi lama juga membaca URL ini, jangan dipindah.
-  VERSION_URL = URI.parse("https://raw.githubusercontent.com/muhqosob/boosok-tools/main/the_selector/version.json")
+  VERSION_URL = "https://raw.githubusercontent.com/muhqosob/boosok-tools/main/the_selector/version.json"
+  RELEASES_URL = "https://github.com/muhqosob/boosok-tools/releases/latest"
+  UPDATE_TIMEOUT = 15 # detik
 
+  # Pakai Sketchup::Http (bukan Net::HTTP di Thread): thread Ruby di SketchUp
+  # berhenti jalan saat idle, jadi cek update dulu diam saja tanpa pesan.
   def self.check_for_updates(manual = false)
-    Thread.new do
+    done = false
+
+    on_error = lambda do |msg|
+      next unless manual
+      result = UI.messagebox("Gagal memeriksa pembaruan: #{msg}\n\nBuka halaman download di browser?", MB_YESNO)
+      UI.openURL(RELEASES_URL) if result == IDYES
+    end
+
+    # Simpan referensi, kalau tidak request bisa kena GC dan callback tidak pernah jalan
+    @update_request = Sketchup::Http::Request.new(VERSION_URL, Sketchup::Http::GET)
+    @update_request.start do |_request, response|
+      next if done
+      done = true
       begin
-        response = Net::HTTP.get_response(VERSION_URL)
-        raise "HTTP #{response.code}" unless response.is_a?(Net::HTTPSuccess)
+        raise "HTTP #{response.status_code}" unless response.status_code == 200
 
         data = JSON.parse(response.body)
         latest_version = data["version"]
@@ -23,19 +36,22 @@ module MyCustomPlugins
         changelog = data["changelog"]
 
         if Gem::Version.new(latest_version) > Gem::Version.new(PLUGIN_VERSION)
-          UI.start_timer(0.1, false) {
-            result = UI.messagebox("Pembaruan baru tersedia (#{latest_version})!\n\nCatatan Perubahan:\n#{changelog}\n\nApakah Anda ingin mengunduhnya sekarang?", MB_YESNO)
-            if result == IDYES
-              UI.openURL(download_url)
-            end
-          }
+          result = UI.messagebox("Pembaruan baru tersedia (#{latest_version})!\n\nCatatan Perubahan:\n#{changelog}\n\nApakah Anda ingin mengunduhnya sekarang?", MB_YESNO)
+          UI.openURL(download_url) if result == IDYES
         elsif manual
-          UI.start_timer(0.1, false) { UI.messagebox("Boosok Tools sudah versi terbaru (#{PLUGIN_VERSION}).") }
+          UI.messagebox("Boosok Tools sudah versi terbaru (#{PLUGIN_VERSION}).")
         end
       rescue => e
-        # Cek otomatis diam saja kalau gagal; cek manual kasih tahu user
-        UI.start_timer(0.1, false) { UI.messagebox("Gagal memeriksa pembaruan: #{e.message}") } if manual
+        on_error.call(e.message)
       end
+    end
+
+    # Fallback kalau server/jaringan tidak pernah membalas
+    UI.start_timer(UPDATE_TIMEOUT, false) do
+      next if done
+      done = true
+      @update_request.cancel rescue nil
+      on_error.call("Tidak ada respon dari server (timeout #{UPDATE_TIMEOUT} detik).")
     end
   end
 

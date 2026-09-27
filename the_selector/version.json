@@ -1,5 +1,5 @@
 {
-  "version": "1.0.6",
+  "version": "1.0.7",
   "download_url": "https://github.com/muhqosob/boosok-tools/releases/latest/download/boosok_tools.rbz",
-  "changelog": "- Fitur baru: Hide Group (sembunyikan grup/komponen terpilih)\n- Fitur baru: Unhide All Groups (tampilkan kembali semua grup/komponen, termasuk yang bersarang)"
+  "changelog": "- Fitur baru: Hide Group & Unhide All Groups\n- Perbaikan Check for Updates yang diam saja (tidak muncul pesan)\n- Muncul pesan error + opsi buka halaman download kalau cek update gagal/timeout"
 }
