@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>The Replacer</title>
+  <link rel="stylesheet" href="ui.css">
+</head>
+<body>
+  <script src="ui.js"></script>
+
+  <header class="head">
+    <div class="mark"><svg><use href="#i-replace"/></svg></div>
+    <div class="txt">
+      <h1>The Replacer</h1>
+      <p>Ganti objek, ukuran ikut yang lama</p>
+    </div>
+    <span class="pill" id="cur">1 / 2</span>
+  </header>
+
+  <!-- Langkah 1: item lama -->
+  <section class="step active" id="step1" data-label="1 / 2">
+    <div class="card">
+      <div class="cap">Item lama</div>
+      <ul class="steps">
+        <li>
+          <div class="ic"><svg><use href="#i-square-dashed-mouse-pointer"/></svg></div>
+          <div><div class="t">Seleksi item lama</div><div class="s">Satu atau beberapa group / component yang mau diganti</div></div>
+        </li>
+        <li>
+          <div class="ic"><svg><use href="#i-arrow-right"/></svg></div>
+          <div><div class="t">Klik Lanjut</div><div class="s">Seleksi akan dikosongkan untuk langkah berikutnya</div></div>
+        </li>
+      </ul>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn primary" onclick="sketchup.check_old_items()">
+      <span>Lanjut</span><svg><use href="#i-arrow-right"/></svg>
+    </button>
+  </section>
+
+  <!-- Langkah 2: item baru -->
+  <section class="step" id="step2" data-label="2 / 2">
+    <div class="card">
+      <div class="cap">Item baru</div>
+      <ul class="steps">
+        <li>
+          <div class="ic"><svg><use href="#i-component"/></svg></div>
+          <div><div class="t">Seleksi tepat 1 item baru</div><div class="s">Group / component pengganti</div></div>
+        </li>
+        <li>
+          <div class="ic"><svg><use href="#i-replace"/></svg></div>
+          <div><div class="t">Klik Ganti</div><div class="s">Tag, nama & ukuran X/Y mengikuti item lama</div></div>
+        </li>
+      </ul>
+    </div>
+    <div class="spacer"></div>
+    <div class="actions row">
+      <button class="btn ghost" onclick="showStep(1)"><svg><use href="#i-arrow-left"/></svg><span>Kembali</span></button>
+      <button class="btn primary" id="btnExec" onclick="busy(this, true); sketchup.proses_replace()">
+        <svg><use href="#i-replace"/></svg><span>Ganti</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Selesai -->
+  <section class="step" id="step3">
+    <div class="hero">
+      <div class="badge ok draw"><svg><use href="#i-check"/></svg></div>
+      <h2>Berhasil diganti</h2>
+      <p id="success-message"></p>
+    </div>
+    <div class="spacer"></div>
+    <div class="actions row">
+      <button class="btn ghost" onclick="sketchup.close_dialog()">Tutup</button>
+      <button class="btn primary" onclick="sketchup.restart_process()">
+        <svg><use href="#i-rotate-ccw"/></svg><span>Mulai lagi</span>
+      </button>
+    </div>
+  </section>
+
+  <script>
+    // Dipanggil dari Ruby: showStep(n), showToast(msg), resetExecButton(), showSuccessStep(msg)
+    function resetExecButton() { busy('btnExec', false); }
+    function showSuccessStep(msg) {
+      document.getElementById('success-message').textContent = msg;
+      showStep(3);
+    }
+  </script>
+</body>
+</html>

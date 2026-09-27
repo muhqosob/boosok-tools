@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>The Selector</title>
+  <link rel="stylesheet" href="ui.css">
+  <style>
+    #attr { display: none; flex-direction: column; gap: 12px; }
+    #attr.open { display: flex; animation: rise .25s var(--ease); }
+    .keys { max-height: 150px; flex: none; }
+    .keys .k { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 10px; border-radius: 7px; font-size: 12.5px; }
+    .keys .k:hover { background: var(--bg); }
+    .keys .k span { flex: 1; min-width: 0; word-break: break-all; }
+    .keys .k .btn { height: 28px; width: 28px; color: var(--muted); }
+    .keys .k .btn:hover { color: var(--err); background: var(--err-soft); }
+    .seg.h34 { height: 34px; }
+    .seg.h34 button { padding: 0 10px; }
+  </style>
+</head>
+<body>
+  <script src="ui.js"></script>
+
+  <header class="head">
+    <div class="mark"><svg><use href="#i-mouse-pointer-click"/></svg></div>
+    <div class="txt">
+      <h1>The Selector</h1>
+      <p>Seleksi objek berdasarkan tag, nama & atribut</p>
+    </div>
+  </header>
+
+  <!-- Form -->
+  <section class="step active" id="step1">
+    <div class="field">
+      <label for="tag1">Tag utama (parent)</label>
+      <div class="combo with-ic" id="c1">
+        <svg class="lead"><use href="#i-tags"/></svg>
+        <input class="input" id="tag1" autocomplete="off" spellcheck="false">
+        <svg class="trail"><use href="#i-chevron-down"/></svg>
+        <div class="menu"></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="tag2">Sub-tag (objek)</label>
+      <div class="combo with-ic" id="c2">
+        <svg class="lead"><use href="#i-tag"/></svg>
+        <input class="input" id="tag2" autocomplete="off" spellcheck="false">
+        <svg class="trail"><use href="#i-chevron-down"/></svg>
+        <div class="menu"></div>
+      </div>
+    </div>
+
+    <div class="inline">
+      <div class="field" style="flex: none">
+        <label>Nama</label>
+        <div class="seg h34" id="type" role="tablist">
+          <button role="tab" aria-selected="true" data-v="Instance Name" title="Nama instance">Instance</button>
+          <button role="tab" aria-selected="false" data-v="Definition Name" title="Nama definition">Definition</button>
+        </div>
+      </div>
+      <div class="field grow">
+        <label for="keyword">Kata kunci</label>
+        <div class="with-ic">
+          <svg class="lead"><use href="#i-search"/></svg>
+          <input class="input" id="keyword" placeholder="Nama persis…" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+    </div>
+
+    <div class="toggle" id="useAttr" role="switch" aria-checked="false" tabindex="0">
+      <svg class="ic"><use href="#i-key-round"/></svg>
+      <div class="txt">
+        <div class="t">Filter atribut</div>
+        <div class="s">Cocokkan key / value attribute dictionary</div>
+      </div>
+      <div class="switch"></div>
+    </div>
+
+    <div id="attr">
+      <div class="field">
+        <label for="attrKey">Key</label>
+        <div class="inline">
+          <div class="with-ic grow">
+            <select class="input" id="attrKey"></select>
+            <svg class="trail"><use href="#i-chevron-down"/></svg>
+          </div>
+          <button class="btn ghost icon sm" id="manage" title="Kelola key">
+            <svg><use href="#i-settings-2"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="attrVal">Value <span style="font-weight:400">(kosong = semua)</span></label>
+        <input class="input" id="attrVal" placeholder="Masukkan value…" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+    <button class="btn primary" id="btnSubmit">
+      <svg><use href="#i-mouse-pointer-click"/></svg><span>Jalankan seleksi</span>
+    </button>
+  </section>
+
+  <!-- Hasil -->
+  <section class="step" id="step2">
+    <div class="hero">
+      <div class="badge ok draw"><svg><use href="#i-check"/></svg></div>
+      <h2>Seleksi selesai</h2>
+      <p id="success-msg"></p>
+    </div>
+    <div class="spacer"></div>
+    <div class="actions row">
+      <button class="btn ghost" onclick="sketchup.closeDialog()">Tutup</button>
+      <button class="btn primary" onclick="showStep(1)">
+        <svg><use href="#i-rotate-ccw"/></svg><span>Seleksi lagi</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Kelola key atribut -->
+  <div class="overlay" id="modal">
+    <div class="sheet">
+      <h3>Key atribut</h3>
+      <div class="list keys" id="keyList"></div>
+      <div class="inline">
+        <input class="input grow" id="newKey" placeholder="Key baru…" autocomplete="off" spellcheck="false">
+        <button class="btn primary sm" id="addKey"><svg><use href="#i-plus"/></svg><span>Tambah</span></button>
+      </div>
+      <button class="btn ghost" id="closeModal">Selesai</button>
+    </div>
+  </div>
+
+  <script>
+    var ALL = '(Semua Tag / Abaikan)'; // Ruby membandingkan string ini persis
+    var H_BASE = 470, H_ATTR = 610;
+    var tags = [], keys = [];
+    var $ = function (id) { return document.getElementById(id); };
+
+    // ---- Combobox tag ----
+    function setupCombo(box) {
+      var input = box.querySelector('input'), menu = box.querySelector('.menu');
+      input.value = ALL;
+
+      function fill(q) {
+        q = q.toLowerCase();
+        var items = [ALL].concat(tags).filter(function (t) { return t.toLowerCase().indexOf(q) > -1; });
+        menu.innerHTML = items.length
+          ? items.map(function (t) { return '<div>' + esc(t) + '</div>'; }).join('')
+          : '<div class="none">Tag tidak ditemukan</div>';
+      }
+      function close() {
+        box.classList.remove('open');
+        if (!input.value.trim()) input.value = input.dataset.old || ALL;
+      }
+      input.addEventListener('focus', function () {
+        input.dataset.old = input.value;
+        input.value = '';
+        fill('');
+        box.classList.add('open');
+      });
+      input.addEventListener('input', function () { fill(input.value); box.classList.add('open'); });
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          var first = menu.querySelector('div:not(.none)');
+          if (first) input.value = first.textContent;
+          input.blur();
+        } else if (e.key === 'Escape') { input.value = ''; input.blur(); }
+      });
+      input.addEventListener('blur', function () { setTimeout(close, 120); });
+      menu.addEventListener('mousedown', function (e) {
+        var it = e.target.closest('div');
+        if (!it || it.classList.contains('none')) return;
+        e.preventDefault();
+        input.value = it.textContent;
+        input.blur();
+      });
+    }
+    setupCombo($('c1'));
+    setupCombo($('c2'));
+
+    // ---- Segmented: tipe nama ----
+    $('type').addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b) return;
+      this.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-selected', x === b); });
+    });
+    function searchType() { return $('type').querySelector('[aria-selected="true"]').dataset.v; }
+
+    // ---- Switch atribut ----
+    function toggleAttr() {
+      var on = $('useAttr').getAttribute('aria-checked') !== 'true';
+      $('useAttr').setAttribute('aria-checked', on);
+      $('attr').classList.toggle('open', on);
+      sketchup.resize_dialog(on ? H_ATTR : H_BASE);
+    }
+    $('useAttr').addEventListener('click', toggleAttr);
+    $('useAttr').addEventListener('keydown', function (e) {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleAttr(); }
+    });
+
+    // ---- Key atribut ----
+    function renderKeys(selected) {
+      var sel = $('attrKey');
+      selected = selected || sel.value;
+      sel.innerHTML = keys.map(function (k) { return '<option>' + esc(k) + '</option>'; }).join('');
+      if (keys.indexOf(selected) > -1) sel.value = selected;
+      $('keyList').innerHTML = keys.map(function (k) {
+        return '<div class="k"><span>' + esc(k) + '</span>' +
+          '<button class="btn icon" title="Hapus" data-key="' + esc(k) + '">' + icon('trash-2') + '</button></div>';
+      }).join('');
+    }
+    $('keyList').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-key]');
+      if (!b) return;
+      keys = keys.filter(function (k) { return k !== b.dataset.key; });
+      if (!keys.length) keys = ['a_posisi'];
+      renderKeys();
+      sketchup.delete_key(b.dataset.key);
+    });
+    function addKey() {
+      var v = $('newKey').value.trim().toLowerCase();
+      if (!v) return $('newKey').focus();
+      if (keys.indexOf(v) < 0) { keys.push(v); sketchup.save_new_key(v); }
+      renderKeys(v);
+      $('newKey').value = '';
+    }
+    $('addKey').addEventListener('click', addKey);
+    $('newKey').addEventListener('keydown', function (e) { if (e.key === 'Enter') addKey(); });
+    $('manage').addEventListener('click', function () { $('modal').classList.add('open'); $('newKey').focus(); });
+    $('closeModal').addEventListener('click', function () { $('modal').classList.remove('open'); });
+    $('modal').addEventListener('mousedown', function (e) { if (e.target === this) this.classList.remove('open'); });
+
+    // ---- Dipanggil dari Ruby ----
+    function initUIData(data) {
+      tags = data.tags || [];
+      keys = data.keys || ['a_posisi'];
+      renderKeys();
+    }
+    function showSuccessStep(msg) {
+      $('success-msg').innerHTML = msg;
+      resetSubmitButton();
+      showStep(2);
+    }
+    function resetSubmitButton() { busy('btnSubmit', false); }
+
+    $('btnSubmit').addEventListener('click', function () {
+      busy(this, true);
+      sketchup.perform_selection(JSON.stringify({
+        tag_utama: $('tag1').value,
+        tag_kedua: $('tag2').value,
+        search_type: searchType(),
+        keyword: $('keyword').value,
+        use_attr: $('useAttr').getAttribute('aria-checked') === 'true',
+        attr_key: $('attrKey').value,
+        attr_val: $('attrVal').value,
+        left: window.screenX, top: window.screenY
+      }));
+    });
+    $('keyword').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnSubmit').click(); });
+
+    // Simpan posisi jendela
+    setInterval(function () {
+      var x = window.screenX, y = window.screenY;
+      if (x > 10 && y > 10) sketchup.save_position(JSON.stringify({ left: x, top: y }));
+    }, 1500);
+
+    sketchup.get_init_data();
+  </script>
+</body>
+</html>

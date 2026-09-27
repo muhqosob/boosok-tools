@@ -25,14 +25,14 @@ module TheSelectorPlugin
           :scrollable => false,
           :resizable => false,
           :width => 390,
-          :height => 460, # <--- Ubah menjadi 460 agar lega tanpa scroll
+          :height => 470, # tinggi form tanpa filter atribut (lihat H_BASE di selector.html)
           :style => UI::HtmlDialog::STYLE_DIALOG
         }
       )
 
       dialog.set_position(last_x, last_y)
 
-      html_path = File.join(File.dirname(__FILE__), 'dialog.html')
+      html_path = File.join(File.dirname(__FILE__), 'selector.html')
       dialog.set_file(html_path)
 
       dialog.add_action_callback("closeDialog") do |action_context|

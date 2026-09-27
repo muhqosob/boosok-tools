@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Clean Group</title>
+  <link rel="stylesheet" href="ui.css">
+</head>
+<body>
+  <script src="ui.js"></script>
+
+  <header class="head">
+    <div class="mark"><svg><use href="#i-sparkles"/></svg></div>
+    <div class="txt">
+      <h1>Clean Group</h1>
+      <p>Component jadi group murni</p>
+    </div>
+  </header>
+
+  <section class="step active" id="step1">
+    <div class="card">
+      <div class="cap">Yang dilakukan</div>
+      <ul class="steps">
+        <li>
+          <div class="ic"><svg><use href="#i-eraser"/></svg></div>
+          <div><div class="t">Hapus 2d__Line</div><div class="s">Semua group / component bernama 2d__Line</div></div>
+        </li>
+        <li>
+          <div class="ic"><svg><use href="#i-key-round"/></svg></div>
+          <div><div class="t">Bersihkan atribut</div><div class="s">Termasuk dynamic attributes</div></div>
+        </li>
+        <li>
+          <div class="ic"><svg><use href="#i-box"/></svg></div>
+          <div><div class="t">Semua isi jadi group</div><div class="s">Tag & posisi tetap, instance lain aman</div></div>
+        </li>
+      </ul>
+    </div>
+    <div class="note"><svg><use href="#i-info"/></svg><span>Seleksi tepat <b>1 component</b> di model dulu.</span></div>
+    <div class="spacer"></div>
+    <button class="btn primary" id="btnExec" onclick="busy(this, true); sketchup.proses_clean_group()">
+      <svg><use href="#i-sparkles"/></svg><span>Bersihkan</span>
+    </button>
+  </section>
+
+  <section class="step" id="step2">
+    <div class="hero">
+      <div class="badge ok draw"><svg><use href="#i-check"/></svg></div>
+      <h2>Sudah bersih</h2>
+      <p id="success-message"></p>
+    </div>
+    <div class="spacer"></div>
+    <div class="actions row">
+      <button class="btn ghost" onclick="sketchup.close_dialog()">Tutup</button>
+      <button class="btn primary" onclick="sketchup.restart_process()">
+        <svg><use href="#i-rotate-ccw"/></svg><span>Lagi</span>
+      </button>
+    </div>
+  </section>
+
+  <script>
+    // Dipanggil dari Ruby: showStep(n), showToast(msg), resetExecButton(), showSuccessStep(msg)
+    function resetExecButton() { busy('btnExec', false); }
+    function showSuccessStep(msg) {
+      document.getElementById('success-message').textContent = msg;
+      showStep(2);
+    }
+  </script>
+</body>
+</html>

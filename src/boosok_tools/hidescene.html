@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Hide on Scene</title>
+  <link rel="stylesheet" href="ui.css">
+  <style>
+    .bar { display: flex; gap: 6px; flex-shrink: 0; }
+    .bar .with-ic { flex: 1; }
+    .sub { display: flex; align-items: center; margin: 0 2px -4px; }
+    .sub .label { margin: 0; }
+    .tab { display: none; flex: 1; min-height: 0; flex-direction: column; gap: 10px; }
+    .tab.active { display: flex; animation: rise .25s var(--ease); }
+    .actions .btn.icon { flex: none; width: 38px; height: 38px; }
+  </style>
+</head>
+<body>
+  <script src="ui.js"></script>
+
+  <header class="head">
+    <div class="mark"><svg><use href="#i-eye-off"/></svg></div>
+    <div class="txt">
+      <h1>Hide on Scene</h1>
+      <p>Atur visibilitas tag & objek per scene</p>
+    </div>
+    <span class="pill" id="cur">1 / 2</span>
+  </header>
+
+  <!-- Langkah 1: scene -->
+  <section class="step active" id="step1" data-label="1 / 2">
+    <div class="sub"><span class="label">Scene</span><span class="count" id="nScene"></span></div>
+    <div class="bar">
+      <div class="with-ic">
+        <svg class="lead"><use href="#i-search"/></svg>
+        <input class="input" placeholder="Cari scene…" data-filter="listScenes" autocomplete="off" spellcheck="false">
+      </div>
+      <button class="btn ghost sm" data-all="listScenes">Semua</button>
+      <button class="btn ghost sm icon" data-clear="listScenes" title="Kosongkan pilihan"><svg><use href="#i-x"/></svg></button>
+    </div>
+    <div class="list" id="listScenes"></div>
+    <div class="actions row">
+      <button class="btn ghost" id="btnIsolate" title="Isolasi objek terseleksi di scene yang sedang dibuka"
+              onclick="busy(this, true); sketchup.prosesIsolateActive()">
+        <svg><use href="#i-focus"/></svg><span>Isolate aktif</span>
+      </button>
+      <button class="btn primary" onclick="goToStep2()"><span>Lanjut</span><svg><use href="#i-arrow-right"/></svg></button>
+    </div>
+  </section>
+
+  <!-- Langkah 2: tag / objek -->
+  <section class="step" id="step2" data-label="2 / 2">
+    <div class="seg" id="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="TabTag"><svg><use href="#i-tags"/></svg>Tag</button>
+      <button role="tab" aria-selected="false" data-tab="TabObject"><svg><use href="#i-box"/></svg>Objek</button>
+    </div>
+
+    <div class="tab active" id="TabTag">
+      <div class="bar">
+        <div class="with-ic">
+          <svg class="lead"><use href="#i-search"/></svg>
+          <input class="input" placeholder="Cari tag…" data-filter="listTags" autocomplete="off" spellcheck="false">
+        </div>
+        <button class="btn ghost sm icon" data-clear="listTags" title="Kosongkan pilihan"><svg><use href="#i-x"/></svg></button>
+      </div>
+      <div class="list" id="listTags"></div>
+      <div class="actions row">
+        <button class="btn ghost icon" onclick="showStep(1)" title="Kembali ke scene"><svg><use href="#i-arrow-left"/></svg></button>
+        <button class="btn danger" id="btnHideTag" onclick="terapkanTag('hide', this)"><svg><use href="#i-eye-off"/></svg><span>Hide</span></button>
+        <button class="btn primary" id="btnUnhideTag" onclick="terapkanTag('unhide', this)"><svg><use href="#i-eye"/></svg><span>Unhide</span></button>
+      </div>
+    </div>
+
+    <div class="tab" id="TabObject">
+      <div class="card">
+        <div class="cap">Alur kerja</div>
+        <ul class="steps">
+          <li>
+            <div class="ic"><svg><use href="#i-square-dashed-mouse-pointer"/></svg></div>
+            <div><div class="t">Seleksi objek / group</div><div class="s">Langsung di viewport SketchUp</div></div>
+          </li>
+          <li>
+            <div class="ic"><svg><use href="#i-eye"/></svg></div>
+            <div><div class="t">Pilih Hide atau Unhide</div><div class="s">Berlaku di semua scene yang dicentang</div></div>
+          </li>
+        </ul>
+      </div>
+      <div class="note"><svg><use href="#i-info"/></svg><span>Pakai 5D+ Select Tools supaya bisa seleksi group di dalam group tanpa membukanya.</span></div>
+      <div class="spacer"></div>
+      <div class="actions row">
+        <button class="btn ghost icon" onclick="showStep(1)" title="Kembali ke scene"><svg><use href="#i-arrow-left"/></svg></button>
+        <button class="btn danger" id="btnHideObj" onclick="terapkanObjek('hide', this)"><svg><use href="#i-eye-off"/></svg><span>Hide</span></button>
+        <button class="btn primary" id="btnUnhideObj" onclick="terapkanObjek('unhide', this)"><svg><use href="#i-eye"/></svg><span>Unhide</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Selesai -->
+  <section class="step" id="step3">
+    <div class="hero">
+      <div class="badge ok draw"><svg><use href="#i-check"/></svg></div>
+      <h2>Berhasil</h2>
+      <p id="success-message"></p>
+    </div>
+    <div class="spacer"></div>
+    <div class="actions row">
+      <button class="btn ghost" onclick="sketchup.closeDialog()">Tutup</button>
+      <button class="btn primary" onclick="showStep(1)"><svg><use href="#i-rotate-ccw"/></svg><span>Lanjut lagi</span></button>
+    </div>
+  </section>
+
+  <script>
+    var $ = function (id) { return document.getElementById(id); };
+
+    function renderChecks(id, items, empty) {
+      $(id).innerHTML = items.length ? items.map(function (n) {
+        return '<label class="check"><input type="checkbox" value="' + esc(n) + '">' +
+          '<span class="box">' + icon('check') + '</span><span>' + esc(n) + '</span></label>';
+      }).join('') : '<div class="empty">' + empty + '</div>';
+    }
+    function checked(id) {
+      return Array.prototype.map.call($(id).querySelectorAll('input:checked'), function (c) { return c.value; });
+    }
+    function updateCount() {
+      var n = checked('listScenes').length;
+      $('nScene').textContent = n ? n + ' dipilih' : '';
+    }
+    $('listScenes').addEventListener('change', updateCount);
+
+    // Search / Semua / Kosongkan (dipakai list scene & tag)
+    document.addEventListener('input', function (e) {
+      var list = e.target.dataset.filter;
+      if (!list) return;
+      var q = e.target.value.toLowerCase();
+      $(list).querySelectorAll('.check').forEach(function (l) {
+        l.style.display = l.textContent.toLowerCase().indexOf(q) > -1 ? '' : 'none';
+      });
+    });
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-all],[data-clear]');
+      if (!b) return;
+      var on = !!b.dataset.all;
+      $(b.dataset.all || b.dataset.clear).querySelectorAll('.check').forEach(function (l) {
+        if (!on || l.style.display !== 'none') l.querySelector('input').checked = on;
+      });
+      updateCount();
+    });
+
+    // Tab tag / objek
+    $('tabs').addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b) return;
+      this.querySelectorAll('button').forEach(function (x) {
+        x.setAttribute('aria-selected', x === b);
+        $(x.dataset.tab).classList.toggle('active', x === b);
+      });
+    });
+
+    function goToStep2() {
+      if (!checked('listScenes').length) return showToast('Centang minimal 1 scene dulu.');
+      showStep(2);
+    }
+
+    // Hide/Unhide: tombol yang diklik jadi spinner, pasangannya ikut dikunci
+    function lock(clicked, other) { busy(clicked, true); $(other).disabled = true; }
+    function unlock(a, b) { busy(a, false); busy(b, false); }
+
+    function terapkanTag(action, btn) {
+      var tags = checked('listTags');
+      if (!tags.length) return showToast('Centang minimal 1 tag.');
+      lock(btn, action === 'hide' ? 'btnUnhideTag' : 'btnHideTag');
+      sketchup.prosesHideTags(checked('listScenes'), tags, action);
+    }
+    function terapkanObjek(action, btn) {
+      lock(btn, action === 'hide' ? 'btnUnhideObj' : 'btnHideObj');
+      sketchup.prosesHideObjects(checked('listScenes'), action);
+    }
+
+    // ---- Dipanggil dari Ruby ----
+    function init(data) {
+      renderChecks('listScenes', data.scenes, 'Model ini belum punya scene.');
+      renderChecks('listTags', data.tags, 'Tidak ada tag.');
+    }
+    function resetIsolateBtn() { busy('btnIsolate', false); }
+    function resetTagButton() { unlock('btnHideTag', 'btnUnhideTag'); }
+    function resetObjButton() { unlock('btnHideObj', 'btnUnhideObj'); }
+    function showSuccessStep(msg) {
+      resetTagButton(); resetObjButton();
+      $('success-message').textContent = msg;
+      showStep(3);
+    }
+
+    sketchup.ready();
+  </script>
+</body>
+</html>

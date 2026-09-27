@@ -1,42 +1,52 @@
 module TheResetScale
   def self.run
-    model = Sketchup.active_model
-    selection = model.selection
-
-    if selection.empty?
-      UI.messagebox("Pilih semua Group/Component yang ingin di-reset skalanya terlebih dahulu!")
+    if @dialog && @dialog.visible?
+      @dialog.bring_to_front
       return
     end
+
+    dialog = @dialog = UI::HtmlDialog.new(
+      dialog_title: "Reset Scale",
+      preferences_key: "BoosokToolsResetScale",
+      scrollable: false, resizable: false,
+      width: 360, height: 380,
+      style: UI::HtmlDialog::STYLE_DIALOG
+    )
+    dialog.set_file(File.join(__dir__, 'reset.html'))
+
+    dialog.add_action_callback("close") { dialog.close }
+
+    dialog.add_action_callback("reset") do
+      result = reset_selection
+      if result.is_a?(Integer)
+        dialog.execute_script("showSuccessStep(#{"Skala #{result} objek kembali ke 1.".to_json})")
+      else
+        dialog.execute_script("resetExecButton(); showToast(#{result.to_json})")
+      end
+    end
+
+    dialog.show
+  end
+
+  # Balikin jumlah objek yang di-reset, atau pesan error (String)
+  def self.reset_selection
+    model = Sketchup.active_model
+    targets = model.selection.select { |e| e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) }
+    return "Pilih minimal 1 group / component dulu." if targets.empty?
 
     model.start_operation('The Reset Scale', true)
     begin
-      reset_count = 0
-    
-      selection.each do |entity|
-        if entity.is_a?(Sketchup::Group) || entity.is_a?(Sketchup::ComponentInstance)
-          t = entity.transformation
-        
-          x_axis = t.xaxis.normalize!
-          y_axis = t.yaxis.normalize!
-          z_axis = t.zaxis.normalize!
-        
-          new_transform = Geom::Transformation.axes(t.origin, x_axis, y_axis, z_axis)
-          entity.transformation = new_transform
-        
-          reset_count += 1
-        end
+      targets.each do |entity|
+        t = entity.transformation
+        entity.transformation = Geom::Transformation.axes(
+          t.origin, t.xaxis.normalize!, t.yaxis.normalize!, t.zaxis.normalize!
+        )
       end
-    
       model.commit_operation
     rescue => e
       model.abort_operation
-      UI.messagebox("Reset skala gagal: #{e.message}")
-      return
+      return "Reset skala gagal: #{e.message}"
     end
-    if reset_count.zero?
-      UI.messagebox("Tidak ada Group/Component di seleksi.")
-    else
-      UI.messagebox("Berhasil me-reset skala pada #{reset_count} objek secara bersamaan.")
-    end
+    targets.size
   end
 end

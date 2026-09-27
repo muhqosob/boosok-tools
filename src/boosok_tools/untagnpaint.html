@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Untag & Unpaint</title>
+  <link rel="stylesheet" href="ui.css">
+  <style>
+    body { gap: 14px; }
+    .label { margin-top: 4px; }
+    .btn.primary { margin-top: auto; height: 40px; }
+    .hint { font-size: 11px; color: var(--muted); text-align: center; margin: -4px 0 0; }
+  </style>
+</head>
+<body>
+  <script src="ui.js"></script>
+
+  <header class="head">
+    <div class="mark"><svg><use href="#i-eraser"/></svg></div>
+    <div class="txt">
+      <h1>Untag & Unpaint</h1>
+      <p>Bersihkan tag & material dari seleksi</p>
+    </div>
+  </header>
+
+  <div class="toggle" id="deep" role="switch" aria-checked="true" tabindex="0">
+    <svg class="ic"><use href="#i-layers"/></svg>
+    <div class="txt">
+      <div class="t">Rekursif</div>
+      <div class="s">Ikut proses isi group & component</div>
+    </div>
+    <div class="switch"></div>
+  </div>
+
+  <div class="label">Aksi</div>
+
+  <div class="grid">
+    <button class="tile" data-action="untag">
+      <div class="ic"><svg><use href="#i-tag"/></svg></div>
+      <div class="t">Untag</div>
+      <div class="s">Set ke Untagged</div>
+    </button>
+    <button class="tile" data-action="unpaint">
+      <div class="ic"><svg><use href="#i-paint-bucket"/></svg></div>
+      <div class="t">Unpaint</div>
+      <div class="s">Hapus material</div>
+    </button>
+  </div>
+
+  <button class="btn primary" data-action="both">
+    <svg><use href="#i-sparkles"/></svg><span>Untag & Unpaint</span>
+  </button>
+  <p class="hint">Pilih group / component dulu di model</p>
+
+  <script>
+    var deep = document.getElementById('deep');
+    var actions = document.querySelectorAll('[data-action]');
+    var busyEl, busyIcon;
+
+    function toggleDeep() { deep.setAttribute('aria-checked', deep.getAttribute('aria-checked') !== 'true'); }
+    deep.addEventListener('click', toggleDeep);
+    deep.addEventListener('keydown', function (e) {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleDeep(); }
+    });
+
+    // Ikon tombol yang diklik jadi spinner, semua aksi dikunci
+    function setBusy(el) {
+      if (!el && !busyEl) return;
+      actions.forEach(function (a) { a.disabled = !!el; });
+      var use = (el || busyEl).querySelector('use');
+      if (el) {
+        busyEl = el;
+        busyIcon = use.getAttribute('href');
+        use.setAttribute('href', '#i-loader-circle');
+        use.parentNode.classList.add('spin');
+      } else {
+        use.setAttribute('href', busyIcon);
+        use.parentNode.classList.remove('spin');
+        busyEl = null;
+      }
+    }
+
+    actions.forEach(function (el) {
+      el.addEventListener('click', function () {
+        if (busyEl) return;
+        setBusy(el);
+        sketchup.prosesAction(el.dataset.action, deep.getAttribute('aria-checked') === 'true');
+      });
+    });
+
+    // Dipanggil dari Ruby
+    function onProcessComplete(msg) { setBusy(null); showToast(msg, 'success'); }
+    function onError(msg) { setBusy(null); showToast(msg, 'error'); }
+  </script>
+</body>
+</html>
