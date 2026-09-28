@@ -35,7 +35,7 @@
       </ul>
     </div>
     <div class="spacer"></div>
-    <button class="btn primary" onclick="sketchup.check_old_items()">
+    <button class="btn primary" onclick="checkOld()">
       <span>Lanjut</span><svg><use href="#i-arrow-right"/></svg>
     </button>
   </section>
@@ -58,7 +58,7 @@
     <div class="spacer"></div>
     <div class="actions row">
       <button class="btn ghost" onclick="showStep(1)"><svg><use href="#i-arrow-left"/></svg><span>Kembali</span></button>
-      <button class="btn primary" id="btnExec" onclick="busy(this, true); sketchup.proses_replace()">
+      <button class="btn primary" id="btnExec" onclick="executeReplace(this)">
         <svg><use href="#i-replace"/></svg><span>Ganti</span>
       </button>
     </div>
@@ -73,14 +73,67 @@
     </div>
     <div class="spacer"></div>
     <div class="actions row">
-      <button class="btn ghost" onclick="sketchup.close_dialog()">Tutup</button>
-      <button class="btn primary" onclick="sketchup.restart_process()">
+      <button class="btn ghost" onclick="closeDialog()">Tutup</button>
+      <button class="btn primary" onclick="restartReplacer()">
         <svg><use href="#i-rotate-ccw"/></svg><span>Mulai lagi</span>
       </button>
     </div>
   </section>
 
   <script>
+    function checkOld() {
+      try {
+        if (window.sketchup && typeof sketchup.check_old_items === 'function') {
+          sketchup.check_old_items();
+        } else {
+          showToast('Fungsi Replacer belum siap.', 'error');
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function executeReplace(btn) {
+      busy(btn, true);
+      try {
+        if (window.sketchup && typeof sketchup.proses_replace === 'function') {
+          sketchup.proses_replace();
+        } else {
+          resetExecButton();
+          showToast('Fungsi Replacer belum siap.', 'error');
+        }
+      } catch (err) {
+        resetExecButton();
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function restartReplacer() {
+      try {
+        if (window.sketchup && typeof sketchup.replacer_restart_process === 'function') {
+          sketchup.replacer_restart_process();
+        } else if (window.sketchup && typeof sketchup.restart_process === 'function') {
+          sketchup.restart_process();
+        } else {
+          showStep(1);
+        }
+      } catch (err) {
+        showStep(1);
+      }
+    }
+
+    function closeDialog() {
+      if (window.sketchup && typeof sketchup.closeDialog === 'function') {
+        sketchup.closeDialog();
+      } else if (window.sketchup && typeof sketchup.close_dialog === 'function') {
+        sketchup.close_dialog();
+      } else if (window.sketchup && typeof sketchup.close === 'function') {
+        sketchup.close();
+      } else {
+        window.close();
+      }
+    }
+
     // Dipanggil dari Ruby: showStep(n), showToast(msg), resetExecButton(), showSuccessStep(msg)
     function resetExecButton() { busy('btnExec', false); }
     function showSuccessStep(msg) {

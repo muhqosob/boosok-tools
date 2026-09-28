@@ -1,27 +1,32 @@
 require 'sketchup'
 require 'json'
 load File.join(__dir__, 'titlebar.rb')
-load File.join(__dir__, 'hub.rb')
 
 module TheSelectorPlugin
   class << self
     def run_selector
+      require_relative 'hub' unless defined?(BoosokTools::Hub)
       BoosokTools::Hub.open_or_show('selector')
+    end
+
+    def send_init_data(dialog)
+      return unless dialog
+      model = Sketchup.active_model
+      all_tags = model ? model.layers.map(&:name).sort : []
+      saved_keys_str = Sketchup.read_default("TheSelectorPlugin", "attr_keys_v2", "a_posisi").to_s
+      saved_keys = saved_keys_str.empty? ? ["a_posisi"] : saved_keys_str.split("|")
+      init_data = {
+        tags: all_tags,
+        keys: saved_keys
+      }
+      dialog.execute_script("if (typeof initUIData === 'function') initUIData(#{init_data.to_json});")
     end
 
     def attach_callbacks(dialog)
       return unless dialog
 
       dialog.add_action_callback("get_init_data") do |_ctx|
-        model = Sketchup.active_model
-        all_tags = model ? model.layers.map(&:name).sort : []
-        saved_keys_str = Sketchup.read_default("TheSelectorPlugin", "attr_keys_v2", "a_posisi").to_s
-        saved_keys = saved_keys_str.empty? ? ["a_posisi"] : saved_keys_str.split("|")
-        init_data = {
-          tags: all_tags,
-          keys: saved_keys
-        }
-        dialog.execute_script("if (typeof initUIData === 'function') initUIData(#{init_data.to_json});")
+        send_init_data(dialog)
       end
 
       dialog.add_action_callback("save_new_key") do |_ctx, new_key|

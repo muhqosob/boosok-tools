@@ -220,7 +220,7 @@ select.input { appearance: none; -webkit-appearance: none; padding-right: 30px; 
 
 /* Daftar centang (scene/tag) */
 .list {
-  flex: 1; min-height: 0; overflow-y: auto; padding: 4px;
+  flex: 1; min-height: 52px; max-height: 250px; overflow-y: auto; padding: 4px;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
 }
 .list::-webkit-scrollbar, .menu::-webkit-scrollbar { width: 8px; }

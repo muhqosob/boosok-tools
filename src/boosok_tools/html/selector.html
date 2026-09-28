@@ -256,32 +256,66 @@
       renderKeys();
     autoFitHeight(0);
     }
+    var origShowStep = showStep;
+    showStep = function (n) {
+      origShowStep(n);
+      autoFitHeight(0);
+      setTimeout(function () { autoFitHeight(0); }, 80);
+    };
+
     function showSuccessStep(msg) {
       $('success-msg').innerHTML = msg;
       resetSubmitButton();
       showStep(2);
-    autoFitHeight(0);
     }
     function resetSubmitButton() { busy('btnSubmit', false); }
 
     $('btnSubmit').addEventListener('click', function () {
       busy(this, true);
-      sketchup.perform_selection(JSON.stringify({
-        tag_utama: $('tag1').value,
-        tag_kedua: $('tag2').value,
-        search_type: searchType(),
-        keyword: $('keyword').value,
-        use_attr: $('useAttr').getAttribute('aria-checked') === 'true',
-        attr_key: $('attrKey').value,
-        attr_val: $('attrVal').value,
-        left: window.screenX, top: window.screenY
-      }));
+      try {
+        if (window.sketchup && typeof sketchup.perform_selection === 'function') {
+          sketchup.perform_selection(JSON.stringify({
+            tag_utama: $('tag1').value,
+            tag_kedua: $('tag2').value,
+            search_type: searchType(),
+            keyword: $('keyword').value,
+            use_attr: $('useAttr').getAttribute('aria-checked') === 'true',
+            attr_key: $('attrKey').value,
+            attr_val: $('attrVal').value,
+            left: window.screenX, top: window.screenY
+          }));
+        } else {
+          resetSubmitButton();
+          showToast('Fungsi Selector belum siap.', 'error');
+        }
+      } catch (err) {
+        resetSubmitButton();
+        showToast('Error: ' + err.message, 'error');
+      }
     });
     $('keyword').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnSubmit').click(); });
     $('attrVal').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnSubmit').click(); });
 
 
-    if (window.sketchup) sketchup.get_init_data();
+    function requestInit() {
+      function tryInit() {
+        if (window.sketchup && typeof sketchup.get_init_data === 'function') {
+          sketchup.get_init_data();
+          return true;
+        }
+        return false;
+      }
+      if (!tryInit()) {
+        var retries = 0;
+        var intv = setInterval(function () {
+          retries++;
+          if (tryInit() || retries > 30) {
+            clearInterval(intv);
+          }
+        }, 50);
+      }
+    }
+    requestInit();
     autoFitHeight(0);
   </script>
 </body>

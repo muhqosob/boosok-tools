@@ -12,8 +12,8 @@
     .btn.ghost:hover svg { transform: rotate(-60deg); }
 
     /* Changelog */
-    .card { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-    .card ul { margin: 0; padding: 4px 12px 12px; list-style: none; overflow-y: auto; }
+    .card { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .card ul { margin: 0; padding: 4px 12px 12px; list-style: none; overflow-y: auto; max-height: 280px; }
     .card li { position: relative; padding-left: 14px; font-size: 12.5px; line-height: 1.55; margin-top: 4px; user-select: text; }
     .card li::before { content: ""; position: absolute; left: 2px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
     .card ul::-webkit-scrollbar { width: 8px; }
@@ -85,7 +85,7 @@
         return hero(badge('check', 'ok draw'), 'Sudah versi terbaru',
           'Boosok Tools ' + v(s.current) + ' sudah paling baru.') +
           '<div class="spacer"></div><div class="actions row">' +
-          btn('check', 'Cek lagi', 'ghost', 'refresh-cw') + btn('close', 'Selesai', 'primary') + '</div>';
+          btn('check', 'Cek lagi', 'ghost', 'refresh-cw') + btn('close', 'Tutup', 'primary') + '</div>';
       },
       available: function (s) {
         return hero(badge('arrow-up', 'pulse'), 'Update tersedia') +
@@ -114,7 +114,7 @@
           '<span>Jika ada jendela fitur yang sedang terbuka, silakan tutup dan buka kembali.</span></div>' +
           '<div class="actions row">' +
           btn('quit', 'Restart SketchUp', 'ghost', 'power') +
-          btn('close', 'Selesai', 'primary', 'check') + '</div>';
+          btn('close', 'Tutup', 'primary', 'check') + '</div>';
       },
       error: function (s) {
         return hero(badge('triangle-alert', 'err'), 'Gagal memperbarui') +
@@ -144,6 +144,8 @@
       app.innerHTML = (views[state.status] || views.error)(state);
       void app.offsetWidth; // restart animasi masuk
       app.classList.add('enter');
+      autoFitHeight(0);
+      setTimeout(function () { autoFitHeight(0); }, 120);
     }
 
     function act(el) {
@@ -152,7 +154,9 @@
       // Kunci cuma untuk aksi yang pasti dibalas render() dari Ruby.
       // browser/quit/close tidak (quit bisa dibatalkan user) -> tombol jangan macet.
       if (a === 'check' || a === 'download') app.classList.add('locked');
-      sketchup[a]();
+      if (window.sketchup && typeof sketchup[a] === 'function') {
+        sketchup[a]();
+      }
     }
     app.addEventListener('click', function (e) {
       var b = e.target.closest('[data-action]');
@@ -164,7 +168,10 @@
     });
 
     render({ status: 'checking' });
-    sketchup.ready();
+    if (window.sketchup && typeof sketchup.ready === 'function') {
+      sketchup.ready();
+    }
+    autoFitHeight(0);
   </script>
 </body>
 </html>

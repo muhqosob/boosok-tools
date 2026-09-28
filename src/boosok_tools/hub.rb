@@ -20,11 +20,18 @@ module BoosokTools
       'untag'    => { file: 'untagnpaint.rb',            page: 'untagnpaint.html',title: 'Untag & Unpaint' }
     }.freeze
 
-    @dialog = nil
-    @current_tool = 'hub'
+    @current_tool ||= 'hub'
 
     def self.dialog
-      @dialog
+      BoosokTools.dialog
+    end
+
+    def self.dialog=(d)
+      BoosokTools.dialog = d
+    end
+
+    def self.current_tool
+      @current_tool || 'hub'
     end
 
     def self.has_booted?
@@ -36,7 +43,9 @@ module BoosokTools
     end
 
     def self.show(custom_page = nil, tool_id = nil)
-      if @dialog && @dialog.visible?
+      dlg = BoosokTools.dialog
+      if dlg && dlg.visible?
+        attach_all_callbacks(dlg)
         if tool_id
           open_tool(tool_id)
         elsif custom_page
@@ -44,13 +53,14 @@ module BoosokTools
         else
           back_to_hub
         end
-        @dialog.bring_to_front
+        dlg.bring_to_front
         return
       end
 
-      pos = BoosokTools.get_position
+      TitleBar.get_sketchup_hwnd rescue nil
+      pos = BoosokTools.get_position(WIDTH, DEFAULT_HEIGHT)
 
-      @dialog = UI::HtmlDialog.new(
+      dlg = UI::HtmlDialog.new(
         dialog_title: TITLE,
         scrollable: false,
         resizable: false,
@@ -58,49 +68,46 @@ module BoosokTools
         height: DEFAULT_HEIGHT,
         style: UI::HtmlDialog::STYLE_DIALOG
       )
-      BoosokTools.dialog = @dialog
+      BoosokTools.dialog = dlg
 
       if pos && pos[0] > 5 && pos[1] > 5
-        @dialog.set_position(pos[0], pos[1])
+        dlg.set_position(pos[0], pos[1])
       end
 
       page_file = custom_page || 'hub.html'
-      @dialog.set_file(File.join(__dir__, 'html', page_file))
-      TitleBar.attach(@dialog, TITLE, width: WIDTH)
+      dlg.set_file(File.join(__dir__, 'html', page_file))
+      TitleBar.attach(dlg, TITLE, width: WIDTH)
 
-      attach_hub_callbacks(@dialog)
+      @current_tool = tool_id ? tool_id.to_s : 'hub'
+      attach_all_callbacks(dlg)
 
-      if tool_id
-        load File.join(__dir__, TOOL_PAGES[tool_id][:file]) if TOOL_PAGES[tool_id]
-        attach_tool_callbacks(tool_id)
-      end
-
-      @dialog.set_on_closed do
+      dlg.set_on_closed do
         BoosokTools.capture_current_position(TITLE)
         HideOnSceneManager.detach_all_observers rescue nil if defined?(HideOnSceneManager)
-        @dialog = nil
         BoosokTools.dialog = nil
         @current_tool = 'hub'
       end
 
-      @dialog.show
+      dlg.show
     end
 
     def self.open_or_show(id)
       cfg = TOOL_PAGES[id.to_s]
       return unless cfg
 
-      load File.join(__dir__, cfg[:file]) if cfg[:file]
-
-      if @dialog && @dialog.visible?
+      dlg = BoosokTools.dialog
+      if dlg && dlg.visible?
         open_tool(id.to_s)
-        @dialog.bring_to_front
+        dlg.bring_to_front
       else
         show(cfg[:page], id.to_s)
       end
     end
 
     def self.open_tool(id)
+      dlg = BoosokTools.dialog
+      return unless dlg && dlg.visible?
+
       cfg = TOOL_PAGES[id.to_s]
       return toast("Tool \"#{id}\" tidak dikenal.") unless cfg
 
@@ -109,33 +116,54 @@ module BoosokTools
       end
       @current_tool = id.to_s
 
-      load File.join(__dir__, cfg[:file]) if cfg[:file]
+      load_tool_file(id.to_s)
       attach_tool_callbacks(id.to_s)
       navigate_to(cfg[:page])
     rescue Exception => e
-      puts "[Boosok Tools] Gagal membuka #{id}: #{e.class}: #{e.message}"
+      puts "[Boosok Tools] Gagal membuka #{id}: #{e.class}: #{e.message}\n#{e.backtrace.first(5).join("\n") rescue ''}"
       toast("Gagal membuka tool: #{e.message}")
     end
 
+    def self.load_tool_file(id)
+      cfg = TOOL_PAGES[id.to_s]
+      return unless cfg && cfg[:file]
+      file_path = File.join(__dir__, cfg[:file])
+      load file_path if File.exist?(file_path)
+    end
+
     def self.back_to_hub
+      dlg = BoosokTools.dialog
+      return unless dlg && dlg.visible?
+
       if @current_tool == 'scene'
         HideOnSceneManager.detach_all_observers rescue nil if defined?(HideOnSceneManager)
       end
       @current_tool = 'hub'
-      attach_hub_callbacks(@dialog) if @dialog
+      attach_hub_callbacks(dlg)
       navigate_to('hub.html')
     end
 
     def self.navigate_to(page)
-      return unless @dialog && @dialog.visible?
-      @dialog.execute_script("window.location.replace(#{page.to_json});")
+      dlg = BoosokTools.dialog
+      return unless dlg && dlg.visible?
+      dlg.execute_script("window.location.replace(#{page.to_json});")
     end
 
     def self.attach_hub_callbacks(dlg)
       return unless dlg
 
-      dlg.add_action_callback("ready") do |_ctx|
+      dlg.add_action_callback("hub_ready") do |_ctx|
         push(state)
+      end
+
+      dlg.add_action_callback("ready") do |_ctx|
+        if @current_tool == 'hub'
+          push(state)
+        elsif @current_tool == 'scene' && defined?(HideOnSceneManager)
+          HideOnSceneManager.send_init_data(dlg)
+        elsif @current_tool == 'selector' && defined?(TheSelectorPlugin)
+          TheSelectorPlugin.send_init_data(dlg)
+        end
       end
 
       dlg.add_action_callback("boot_done") do |_ctx|
@@ -157,21 +185,33 @@ module BoosokTools
       end
     end
 
-    def self.attach_tool_callbacks(id)
-      return unless @dialog
+    def self.attach_all_callbacks(dlg)
+      return unless dlg
+
+      attach_hub_callbacks(dlg)
+
+      TOOL_PAGES.each do |tid, _cfg|
+        load_tool_file(tid)
+        attach_tool_callbacks(tid, dlg)
+      end
+    end
+
+    def self.attach_tool_callbacks(id, target_dlg = nil)
+      dlg = target_dlg || BoosokTools.dialog
+      return unless dlg
       case id.to_s
       when 'selector'
-        TheSelectorPlugin.attach_callbacks(@dialog) if defined?(TheSelectorPlugin)
+        TheSelectorPlugin.attach_callbacks(dlg) if defined?(TheSelectorPlugin)
       when 'replacer'
-        TheReplacer.attach_callbacks(@dialog) if defined?(TheReplacer)
+        TheReplacer.attach_callbacks(dlg) if defined?(TheReplacer)
       when 'clean'
-        ConvertToCleanGroup.attach_callbacks(@dialog) if defined?(ConvertToCleanGroup)
+        ConvertToCleanGroup.attach_callbacks(dlg) if defined?(ConvertToCleanGroup)
       when 'reset'
-        TheResetScale.attach_callbacks(@dialog) if defined?(TheResetScale)
+        TheResetScale.attach_callbacks(dlg) if defined?(TheResetScale)
       when 'scene'
-        HideOnSceneManager.attach_callbacks(@dialog) if defined?(HideOnSceneManager)
+        HideOnSceneManager.attach_callbacks(dlg) if defined?(HideOnSceneManager)
       when 'untag'
-        UntagUnpaintManager.attach_callbacks(@dialog) if defined?(UntagUnpaintManager)
+        UntagUnpaintManager.attach_callbacks(dlg) if defined?(UntagUnpaintManager)
       end
     end
 
@@ -197,11 +237,13 @@ module BoosokTools
     end
 
     def self.toast(msg)
-      @dialog.execute_script("if (typeof onOpenFailed === 'function') onOpenFailed(#{msg.to_json}); else if (typeof showToast === 'function') showToast(#{msg.to_json});") if @dialog && @dialog.visible?
+      dlg = BoosokTools.dialog
+      dlg.execute_script("if (typeof onOpenFailed === 'function') onOpenFailed(#{msg.to_json}); else if (typeof showToast === 'function') showToast(#{msg.to_json});") if dlg && dlg.visible?
     end
 
     def self.push(st)
-      @dialog.execute_script("if (typeof render === 'function') render(#{st.to_json});") if @dialog && @dialog.visible?
+      dlg = BoosokTools.dialog
+      dlg.execute_script("if (typeof render === 'function') render(#{st.to_json});") if dlg && dlg.visible?
     end
   end
 end

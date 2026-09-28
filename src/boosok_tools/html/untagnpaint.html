@@ -85,7 +85,17 @@
       el.addEventListener('click', function () {
         if (busyEl) return;
         setBusy(el);
-        sketchup.prosesAction(el.dataset.action, deep.getAttribute('aria-checked') === 'true');
+        try {
+          if (window.sketchup && typeof sketchup.prosesAction === 'function') {
+            sketchup.prosesAction(el.dataset.action, deep.getAttribute('aria-checked') === 'true');
+          } else {
+            setBusy(null);
+            showToast('Fungsi Untag & Unpaint belum siap.', 'error');
+          }
+        } catch (err) {
+          setBusy(null);
+          showToast('Error: ' + err.message, 'error');
+        }
       });
     });
 

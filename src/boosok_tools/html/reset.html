@@ -97,7 +97,7 @@
     </div>
     <div class="spacer"></div>
     <div class="actions row">
-      <button class="btn ghost" onclick="sketchup.close()">Tutup</button>
+      <button class="btn ghost" onclick="closeDialog()">Tutup</button>
       <button class="btn primary" onclick="showStep(1); updateButtonText();">
         <svg><use href="#i-rotate-ccw"/></svg><span>Lagi</span>
       </button>
@@ -154,7 +154,27 @@
     function executeReset() {
       var isDeep = (deepToggle.getAttribute('aria-checked') === 'true');
       busy('btnExec', true);
-      sketchup.reset(currentMode, isDeep);
+      try {
+        if (window.sketchup && typeof sketchup.reset === 'function') {
+          sketchup.reset(currentMode, isDeep);
+        } else {
+          resetExecButton();
+          showToast('Fungsi Reset Scale belum siap.', 'error');
+        }
+      } catch (err) {
+        resetExecButton();
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function closeDialog() {
+      if (window.sketchup && typeof sketchup.closeDialog === 'function') {
+        sketchup.closeDialog();
+      } else if (window.sketchup && typeof sketchup.close === 'function') {
+        sketchup.close();
+      } else {
+        window.close();
+      }
     }
 
     // Dipanggil dari Ruby: showToast(msg), resetExecButton(), showSuccessStep(msg)

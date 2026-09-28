@@ -1,8 +1,8 @@
 load File.join(__dir__, 'titlebar.rb')
-load File.join(__dir__, 'hub.rb')
 
 module UntagUnpaintManager
   def self.run
+    require_relative 'hub' unless defined?(BoosokTools::Hub)
     BoosokTools::Hub.open_or_show('untag')
   end
 
@@ -60,7 +60,7 @@ module UntagUnpaintManager
         # 3. REKURSIONAL (Masuk ke dalam Group / Component)
         if deep_process
           if entity.is_a?(Sketchup::Group)
-            entity.definition.entities.each { |child| clean_entity.call(child) }
+            entity.entities.each { |child| clean_entity.call(child) }
           elsif entity.is_a?(Sketchup::ComponentInstance)
             entity.definition.entities.each { |child| clean_entity.call(child) }
           end

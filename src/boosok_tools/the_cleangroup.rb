@@ -1,5 +1,4 @@
 load File.join(__dir__, 'titlebar.rb')
-load File.join(__dir__, 'hub.rb')
 
 module ConvertToCleanGroup
   # --- FUNGSI INTI ---
@@ -77,6 +76,7 @@ module ConvertToCleanGroup
   # --- UI & DIALOG ---
 
   def self.run
+    require_relative 'hub' unless defined?(BoosokTools::Hub)
     BoosokTools::Hub.open_or_show('clean')
   end
 
@@ -84,10 +84,12 @@ module ConvertToCleanGroup
     return unless dialog
 
     # --- CALLBACK: MULAI KEMBALI ---
-    dialog.add_action_callback("restart_process") do |_action_context|
+    restart_cb = lambda do |_action_context|
       Sketchup.active_model.selection.clear if Sketchup.active_model
       dialog.execute_script("showStep(1); resetExecButton();")
     end
+    dialog.add_action_callback("restart_process", &restart_cb)
+    dialog.add_action_callback("clean_restart_process", &restart_cb)
 
     # --- CALLBACK: PROSES EKSEKUSI ---
     dialog.add_action_callback("proses_clean_group") do |_action_context|

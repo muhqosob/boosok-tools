@@ -41,11 +41,15 @@
     </div>
     <div class="list" id="listScenes"></div>
     <div class="actions row">
-      <button class="btn ghost" id="btnIsolate" title="Isolasi objek terseleksi di scene yang sedang dibuka"
-              onclick="busy(this, true); sketchup.prosesIsolateActive()">
-        <svg><use href="#i-focus"/></svg><span>Isolate aktif</span>
+      <button class="btn ghost sm" id="btnIsolate" title="Isolasi objek terseleksi di scene aktif"
+              onclick="executeIsolate(this)">
+        <svg><use href="#i-focus"/></svg><span>Isolate</span>
       </button>
-      <button class="btn primary" onclick="goToStep2()"><span>Lanjut</span><svg><use href="#i-arrow-right"/></svg></button>
+      <button class="btn ghost sm" id="btnEndIsolate" title="Tampilkan semua objek tersembunyi termasuk dalam group"
+              onclick="executeEndIsolate(this)">
+        <svg><use href="#i-eye"/></svg><span>End Isolate</span>
+      </button>
+      <button class="btn primary sm" onclick="goToStep2()"><span>Lanjut</span><svg><use href="#i-arrow-right"/></svg></button>
     </div>
   </section>
 
@@ -152,10 +156,12 @@
 
     function updateScenes(scenes) {
       updateList('listScenes', scenes, 'Model ini belum punya scene.', updateCount);
+      autoFitHeight(0);
     }
 
     function updateTags(tags) {
       updateList('listTags', tags, 'Tidak ada tag.');
+      autoFitHeight(0);
     }
 
     // Search / Filter
@@ -166,6 +172,7 @@
       $(list).querySelectorAll('.check').forEach(function (l) {
         l.style.display = (!q || l.textContent.toLowerCase().indexOf(q) > -1) ? '' : 'none';
       });
+      autoFitHeight(0);
     });
 
     document.addEventListener('keydown', function (e) {
@@ -175,6 +182,7 @@
         $(list).querySelectorAll('.check').forEach(function (l) {
           l.style.display = '';
         });
+        autoFitHeight(0);
       }
     });
 
@@ -208,7 +216,14 @@
         x.setAttribute('aria-selected', x === b);
         $(x.dataset.tab).classList.toggle('active', x === b);
       });
+      autoFitHeight(0);
     });
+
+    var origShowStep = showStep;
+    showStep = function (n) {
+      origShowStep(n);
+      autoFitHeight(0);
+    };
 
     function goToStep2() {
       if (!checked('listScenes').length) return showToast('Centang minimal 1 scene dulu.');
@@ -219,23 +234,78 @@
     function lock(clicked, other) { busy(clicked, true); $(other).disabled = true; }
     function unlock(a, b) { busy(a, false); busy(b, false); }
 
+    function executeIsolate(btn) {
+      busy(btn, true);
+      try {
+        if (window.sketchup && typeof sketchup.prosesIsolateActive === 'function') {
+          sketchup.prosesIsolateActive();
+        } else {
+          resetIsolateBtn();
+          showToast('Fungsi Isolate belum siap.', 'error');
+        }
+      } catch (err) {
+        resetIsolateBtn();
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function executeEndIsolate(btn) {
+      busy(btn, true);
+      try {
+        if (window.sketchup && typeof sketchup.prosesEndIsolate === 'function') {
+          sketchup.prosesEndIsolate();
+        } else {
+          resetIsolateBtn();
+          showToast('Fungsi End Isolate belum siap.', 'error');
+        }
+      } catch (err) {
+        resetIsolateBtn();
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
     function terapkanTag(action, btn) {
       var tags = checked('listTags');
       if (!tags.length) return showToast('Centang minimal 1 tag.');
       lock(btn, action === 'hide' ? 'btnUnhideTag' : 'btnHideTag');
-      sketchup.prosesHideTags(checked('listScenes'), tags, action);
+      try {
+        if (window.sketchup && typeof sketchup.prosesHideTags === 'function') {
+          sketchup.prosesHideTags(checked('listScenes'), tags, action);
+        } else {
+          resetTagButton();
+          showToast('Fungsi Hide Tag belum siap.', 'error');
+        }
+      } catch (err) {
+        resetTagButton();
+        showToast('Error: ' + err.message, 'error');
+      }
     }
+
     function terapkanObjek(action, btn) {
       lock(btn, action === 'hide' ? 'btnUnhideObj' : 'btnHideObj');
-      sketchup.prosesHideObjects(checked('listScenes'), action);
+      try {
+        if (window.sketchup && typeof sketchup.prosesHideObjects === 'function') {
+          sketchup.prosesHideObjects(checked('listScenes'), action);
+        } else {
+          resetObjButton();
+          showToast('Fungsi Hide Objek belum siap.', 'error');
+        }
+      } catch (err) {
+        resetObjButton();
+        showToast('Error: ' + err.message, 'error');
+      }
     }
 
     // ---- Dipanggil dari Ruby ----
     function init(data) {
       updateScenes(data.scenes || []);
       updateTags(data.tags || []);
+      autoFitHeight(0);
     }
-    function resetIsolateBtn() { busy('btnIsolate', false); }
+    function resetIsolateBtn() {
+      busy('btnIsolate', false);
+      busy('btnEndIsolate', false);
+    }
     function resetTagButton() { unlock('btnHideTag', 'btnUnhideTag'); }
     function resetObjButton() { unlock('btnHideObj', 'btnUnhideObj'); }
     function showSuccessStep(msg) {
@@ -244,7 +314,33 @@
       showStep(3);
     }
 
-    sketchup.ready();
+    function requestInit() {
+      function tryReady() {
+        if (window.sketchup) {
+          if (typeof sketchup.scene_ready === 'function') {
+            sketchup.scene_ready();
+            return true;
+          } else if (typeof sketchup.ready === 'function') {
+            sketchup.ready();
+            return true;
+          }
+        }
+        return false;
+      }
+
+      if (!tryReady()) {
+        var retries = 0;
+        var initInterval = setInterval(function () {
+          retries++;
+          if (tryReady() || retries > 30) {
+            clearInterval(initInterval);
+          }
+        }, 50);
+      }
+    }
+
+    requestInit();
+    autoFitHeight(0);
   </script>
 </body>
 </html>

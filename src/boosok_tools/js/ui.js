@@ -287,12 +287,25 @@ function autoFitHeight(extraPadding) {
 }
 
 // Auto save position jika window digeser
-setInterval(function () {
-  var x = window.screenX || window.screenLeft || 0;
-  var y = window.screenY || window.screenTop || 0;
-  if (x > 10 && y > 10 && window.sketchup && typeof window.sketchup.save_position === 'function') {
-    window.sketchup.save_position(JSON.stringify({ left: x, top: y }));
+var _lastSavedX = null, _lastSavedY = null;
+function checkWindowPos() {
+  var x = window.screenX !== undefined ? window.screenX : window.screenLeft;
+  var y = window.screenY !== undefined ? window.screenY : window.screenTop;
+  if (x > 5 && y > 5) {
+    if (_lastSavedX === null) {
+      _lastSavedX = Math.round(x);
+      _lastSavedY = Math.round(y);
+    } else if (Math.abs(x - _lastSavedX) >= 3 || Math.abs(y - _lastSavedY) >= 3) {
+      _lastSavedX = Math.round(x);
+      _lastSavedY = Math.round(y);
+      if (window.sketchup && typeof window.sketchup.save_position === 'function') {
+        window.sketchup.save_position(JSON.stringify({ left: _lastSavedX, top: _lastSavedY }));
+      }
+    }
   }
-}, 2000);
+}
+setInterval(checkWindowPos, 500);
+window.addEventListener('blur', checkWindowPos);
+window.addEventListener('beforeunload', checkWindowPos);
 
 

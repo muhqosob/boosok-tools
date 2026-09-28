@@ -134,6 +134,74 @@ module HideOnSceneManager
     BoosokTools::Hub.open_or_show('scene')
   end
 
+  def self.send_init_data(dialog = nil)
+    dlg = dialog || @dialog || (defined?(BoosokTools) && BoosokTools.dialog)
+    return unless dlg
+    current_model = Sketchup.active_model
+    @cached_scenes = current_model ? current_model.pages.map(&:name) : []
+    @cached_tags = current_model ? current_model.layers.map(&:name) : []
+    data = { scenes: @cached_scenes, tags: @cached_tags }
+    dlg.execute_script("if (typeof init === 'function') init(#{data.to_json});")
+  end
+
+  def self.execute_end_isolate(dialog = nil)
+    dlg = dialog || @dialog || (defined?(BoosokTools) && BoosokTools.dialog)
+    model = Sketchup.active_model
+    unless model
+      dlg.execute_script("resetIsolateBtn(); showToast('Tidak ada model aktif.', 'error');") if dlg
+      return
+    end
+
+    page = model.pages.selected_page
+    model.start_operation("End Isolate (Unhide All)", true)
+    begin
+      if page
+        page.use_hidden_objects = true if page.respond_to?(:use_hidden_objects=)
+        page.use_hidden_geometry = true if page.respond_to?(:use_hidden_geometry=)
+        page.use_hidden = true if page.respond_to?(:use_hidden=)
+      end
+
+      # 1. Tampilkan semua objek pada tingkat root dan rekursif masuk ke dalam grup & komponen
+      unhide_recursive = lambda do |entities|
+        entities.each do |ent|
+          next unless ent.is_a?(Sketchup::Drawingelement)
+          page.set_drawingelement_visibility(ent, true) if page
+          ent.hidden = false if ent.hidden?
+          if ent.is_a?(Sketchup::Group)
+            unhide_recursive.call(ent.entities)
+          elsif ent.is_a?(Sketchup::ComponentInstance)
+            unhide_recursive.call(ent.definition.entities)
+          end
+        end
+      end
+
+      unhide_recursive.call(model.entities)
+
+      # 2. Tampilkan semua entitas yang tersembunyi di seluruh definition
+      model.definitions.each do |defn|
+        next if defn.image?
+        defn.entities.each do |ent|
+          next unless ent.is_a?(Sketchup::Drawingelement)
+          page.set_drawingelement_visibility(ent, true) if page
+          ent.hidden = false if ent.hidden?
+        end
+      end
+
+      model.commit_operation
+      if dlg
+        dlg.execute_script("resetIsolateBtn();")
+        nama_scene = page ? page.name : "Model Global"
+        dlg.execute_script("showToast(#{("Sukses menampilkan semua objek di: " + nama_scene).to_json}, 'success');")
+      end
+    rescue => e
+      model.abort_operation
+      if dlg
+        dlg.execute_script("resetIsolateBtn();")
+        dlg.execute_script("showToast(#{("Gagal End Isolate: " + e.message).to_json}, 'error');")
+      end
+    end
+  end
+
   def self.attach_callbacks(dialog)
     @dialog = dialog
     detach_all_observers
@@ -141,12 +209,16 @@ module HideOnSceneManager
     model = Sketchup.active_model
     @cached_scenes = model ? model.pages.map(&:name) : []
 
+    dialog.add_action_callback("scene_ready") do |_action_context|
+      send_init_data(dialog)
+    end
+
     dialog.add_action_callback("ready") do |_action_context|
-      current_model = Sketchup.active_model
-      @cached_scenes = current_model ? current_model.pages.map(&:name) : []
-      @cached_tags = current_model ? current_model.layers.map(&:name) : []
-      data = { scenes: @cached_scenes, tags: @cached_tags }
-      dialog.execute_script("if (typeof init === 'function') init(#{data.to_json});")
+      if defined?(BoosokTools::Hub) && BoosokTools::Hub.current_tool == 'scene'
+        send_init_data(dialog)
+      elsif defined?(BoosokTools::Hub)
+        BoosokTools::Hub.push(BoosokTools::Hub.state)
+      end
     end
 
     @app_observer ||= AppObserver.new
@@ -224,7 +296,9 @@ module HideOnSceneManager
               end
               
               # Lanjut scan kedalam isi grup tersebut
-              if ent.is_a?(Sketchup::Group) || ent.is_a?(Sketchup::ComponentInstance)
+              if ent.is_a?(Sketchup::Group)
+                isolate_recursive.call(ent.entities)
+              elsif ent.is_a?(Sketchup::ComponentInstance)
                 isolate_recursive.call(ent.definition.entities)
               end
             else
@@ -253,6 +327,11 @@ module HideOnSceneManager
         dialog.execute_script("resetIsolateBtn();")
         dialog.execute_script("showToast(#{("Kesalahan Sistem: " + e.message).to_json}, 'error');")
       end
+    end
+
+    # --- CALLBACK 1B: PROSES END ISOLATE (TAMPILKAN SEMUA OBJEK TERMASUK DALAM GRUP) ---
+    dialog.add_action_callback("prosesEndIsolate") do |_action_context|
+      execute_end_isolate(dialog)
     end
 
     # --- CALLBACK 2: PROSES HIDE/UNHIDE TAG ---

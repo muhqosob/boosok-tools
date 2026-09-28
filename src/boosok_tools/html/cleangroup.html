@@ -38,7 +38,7 @@
     </div>
     <div class="note"><svg><use href="#i-info"/></svg><span>Seleksi tepat <b>1 component</b> di model dulu.</span></div>
     <div class="spacer"></div>
-    <button class="btn primary" id="btnExec" onclick="busy(this, true); sketchup.proses_clean_group()">
+    <button class="btn primary" id="btnExec" onclick="executeCleanGroup(this)">
       <svg><use href="#i-sparkles"/></svg><span>Bersihkan</span>
     </button>
   </section>
@@ -51,14 +51,57 @@
     </div>
     <div class="spacer"></div>
     <div class="actions row">
-      <button class="btn ghost" onclick="sketchup.close_dialog()">Tutup</button>
-      <button class="btn primary" onclick="sketchup.restart_process()">
+      <button class="btn ghost" onclick="closeDialog()">Tutup</button>
+      <button class="btn primary" onclick="restartClean()">
         <svg><use href="#i-rotate-ccw"/></svg><span>Lagi</span>
       </button>
     </div>
   </section>
 
   <script>
+    function executeCleanGroup(btn) {
+      busy(btn, true);
+      try {
+        if (window.sketchup && typeof sketchup.proses_clean_group === 'function') {
+          sketchup.proses_clean_group();
+        } else {
+          resetExecButton();
+          showToast('Fungsi Clean Group belum siap. Silakan coba lagi.', 'error');
+        }
+      } catch (err) {
+        resetExecButton();
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function restartClean() {
+      try {
+        if (window.sketchup && typeof sketchup.clean_restart_process === 'function') {
+          sketchup.clean_restart_process();
+        } else if (window.sketchup && typeof sketchup.restart_process === 'function') {
+          sketchup.restart_process();
+        } else {
+          showStep(1);
+          resetExecButton();
+        }
+      } catch (err) {
+        showStep(1);
+        resetExecButton();
+      }
+    }
+
+    function closeDialog() {
+      if (window.sketchup && typeof sketchup.closeDialog === 'function') {
+        sketchup.closeDialog();
+      } else if (window.sketchup && typeof sketchup.close_dialog === 'function') {
+        sketchup.close_dialog();
+      } else if (window.sketchup && typeof sketchup.close === 'function') {
+        sketchup.close();
+      } else {
+        window.close();
+      }
+    }
+
     // Dipanggil dari Ruby: showStep(n), showToast(msg), resetExecButton(), showSuccessStep(msg)
     function resetExecButton() { busy('btnExec', false); }
     function showSuccessStep(msg) {

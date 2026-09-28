@@ -135,7 +135,29 @@
       bootTimer = setTimeout(function () {
         render({ status: 'error', error: 'SketchUp tidak merespon. Tutup jendela ini lalu buka lagi dari menu Extensions.' });
       }, BOOT_TIMEOUT_MS);
-      if (window.sketchup && sketchup.ready) sketchup.ready();
+
+      function tryReady() {
+        if (window.sketchup) {
+          if (typeof sketchup.hub_ready === 'function') {
+            sketchup.hub_ready();
+            return true;
+          } else if (typeof sketchup.ready === 'function') {
+            sketchup.ready();
+            return true;
+          }
+        }
+        return false;
+      }
+
+      if (!tryReady()) {
+        var retries = 0;
+        var readyInterval = setInterval(function () {
+          retries++;
+          if (tryReady() || retries > 30) {
+            clearInterval(readyInterval);
+          }
+        }, 50);
+      }
     }
 
     // Dipanggil dari Ruby. Selama loader belum kelar, tahan dulu.
@@ -229,7 +251,15 @@
       });
       var x = window.screenX || window.screenLeft || 0;
       var y = window.screenY || window.screenTop || 0;
-      sketchup.open(id, JSON.stringify({ left: x, top: y })); // kirim posisi dan buka tool
+      if (window.sketchup && typeof sketchup.open === 'function') {
+        sketchup.open(id, JSON.stringify({ left: x, top: y }));
+      }
+      setTimeout(function () {
+        if (S.status === 'opening') {
+          S.status = 'ready';
+          draw();
+        }
+      }, 4000);
     }
 
     // Dipanggil dari Ruby kalau tool gagal dibuka

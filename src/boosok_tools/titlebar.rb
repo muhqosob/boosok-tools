@@ -17,6 +17,12 @@ module BoosokTools
         Fiddle::TYPE_INTPTR_T
       )
 
+      GetForegroundWindow = Fiddle::Function.new(
+        User32['GetForegroundWindow'],
+        [],
+        Fiddle::TYPE_INTPTR_T
+      )
+
       SetWindowPos = Fiddle::Function.new(
         User32['SetWindowPos'],
         [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_INTPTR_T,
@@ -98,6 +104,55 @@ module BoosokTools
       SetWindowPos.call(hwnd, 0, x.to_i, y.to_i, 0, 0, 0x0015) rescue nil
     end
 
+    @sketchup_hwnd = nil
+
+    def self.get_sketchup_hwnd
+      if @sketchup_hwnd && @sketchup_hwnd != 0
+        return @sketchup_hwnd
+      end
+      if ready? && defined?(GetForegroundWindow)
+        fg = GetForegroundWindow.call rescue 0
+        if fg && fg != 0
+          @sketchup_hwnd = fg
+          return @sketchup_hwnd
+        end
+      end
+      0
+    end
+
+    def self.get_sketchup_rect
+      hwnd = get_sketchup_hwnd
+      if (hwnd.nil? || hwnd == 0) && ready? && defined?(GetForegroundWindow)
+        hwnd = GetForegroundWindow.call rescue 0
+      end
+      if hwnd && hwnd != 0 && ready?
+        buf = [0, 0, 0, 0].pack('l4')
+        if GetWindowRect.call(hwnd, buf) != 0
+          left, top, right, bottom = buf.unpack('l4')
+          if (right - left) > 300 && (bottom - top) > 200
+            return [left, top, right, bottom]
+          end
+        end
+      end
+      nil
+    rescue => e
+      log("get_sketchup_rect error: #{e.message}")
+      nil
+    end
+
+    def self.get_sketchup_center_pos(dialog_width = 380, dialog_height = 480)
+      rect = get_sketchup_rect
+      if rect
+        s_left, s_top, s_right, s_bottom = rect
+        s_w = s_right - s_left
+        s_h = s_bottom - s_top
+        cx = s_left + [(s_w - dialog_width) / 2, 20].max
+        cy = s_top + [(s_h - dialog_height) / 2, 40].max
+        return [cx.to_i, cy.to_i]
+      end
+      [360, 180]
+    end
+
     def self.apply_dark_titlebar(hwnd, is_dark)
       return unless ready? && hwnd && hwnd != 0
 
@@ -160,7 +215,7 @@ module BoosokTools
           BoosokTools.capture_current_position(title)
         end
         HideOnSceneManager.detach_all_observers rescue nil if defined?(HideOnSceneManager)
-        load File.join(__dir__, 'hub.rb')
+        require_relative 'hub' unless defined?(BoosokTools::Hub)
         BoosokTools::Hub.back_to_hub
       end
 
@@ -185,7 +240,7 @@ module BoosokTools
     end
   end
 
-  @dialog = nil
+  @dialog ||= nil
 
   def self.dialog
     @dialog
@@ -195,29 +250,31 @@ module BoosokTools
     @dialog = d
   end
 
-  @dialog_pos = nil
+  @dialog_pos ||= nil
+  @session_position_saved ||= false
 
   def self.save_position(x, y)
     left = x.to_i
     top = y.to_i
     if left > 5 && top > 5
       @dialog_pos = [left, top]
+      @session_position_saved = true
       Sketchup.write_default("BoosokTools", "dialog_left", left)
       Sketchup.write_default("BoosokTools", "dialog_top", top)
     end
   end
 
-  def self.get_position
-    if @dialog_pos
+  def self.get_position(width = 380, height = 480)
+    # Jika user sudah pernah menggeser posisi dialog dalam sesi kerja ini, pakai posisi tersebut
+    if @dialog_pos && @session_position_saved
       return @dialog_pos
     end
-    x = Sketchup.read_default("BoosokTools", "dialog_left", nil)
-    y = Sketchup.read_default("BoosokTools", "dialog_top", nil)
-    if x && y && x.to_i > 5 && y.to_i > 5
-      @dialog_pos = [x.to_i, y.to_i]
-      return @dialog_pos
-    end
-    [320, 200]
+
+    # Saat awal mulai ketika SketchUp pertama kali dibuka:
+    # Posisikan tepat di center model kerja / workspace SketchUp
+    center_pos = TitleBar.get_sketchup_center_pos(width, height)
+    @dialog_pos = center_pos
+    center_pos
   end
 
   def self.capture_current_position(title)

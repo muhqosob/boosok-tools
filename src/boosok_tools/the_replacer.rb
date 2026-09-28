@@ -1,22 +1,21 @@
 load File.join(__dir__, 'titlebar.rb')
-load File.join(__dir__, 'hub.rb')
 
 module TheReplacer
   @@old_items = []
 
   def self.run
+    require_relative 'hub' unless defined?(BoosokTools::Hub)
     BoosokTools::Hub.open_or_show('replacer')
   end
 
   def self.attach_callbacks(dialog)
     return unless dialog
-    @@old_items = []
 
     # --- CALLBACK 1: CEK ITEM LAMA SAAT KLIK NEXT ---
     dialog.add_action_callback("check_old_items") do |_action_context|
       model = Sketchup.active_model
       sel = model ? model.selection : []
-      @@old_items = sel.to_a.select { |e| e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) }
+      @@old_items = sel.to_a.select { |e| e.respond_to?(:valid?) && e.valid? && (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) }
 
       if @@old_items.empty?
         dialog.execute_script("showToast('Pilih minimal 1 Grup/Komponen Lama terlebih dahulu di layar!');")
@@ -27,11 +26,13 @@ module TheReplacer
     end
 
     # --- CALLBACK 2: MULAI KEMBALI (RESET & UNSELECT) ---
-    dialog.add_action_callback("restart_process") do |_action_context|
+    restart_cb = lambda do |_action_context|
       @@old_items = []
       Sketchup.active_model.selection.clear if Sketchup.active_model
       dialog.execute_script("showStep(1);")
     end
+    dialog.add_action_callback("restart_process", &restart_cb)
+    dialog.add_action_callback("replacer_restart_process", &restart_cb)
 
     # --- CALLBACK 3: PROSES PENGGANTIAN & PENSKALAAN ---
     dialog.add_action_callback("proses_replace") do |_action_context|
@@ -43,32 +44,32 @@ module TheReplacer
     model = Sketchup.active_model
     return dialog.execute_script("resetExecButton(); showToast('Tidak ada model aktif.');") unless model
 
-    new_sel = model.selection.to_a.select { |e| e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) }
-
-    if new_sel.length != 1
-      dialog.execute_script("showToast('Pastikan Anda memilih tepat 1 Item Baru sebagai pengganti!');")
-      dialog.execute_script("resetExecButton();")
-      return
-    end
-
-    item_baru = new_sel[0]
-
-    if @@old_items.include?(item_baru)
-      dialog.execute_script("showToast('Item baru tidak boleh sama dengan item lama yang tadi dipilih!');")
-      dialog.execute_script("resetExecButton();")
-      return
-    end
-
-    # Item lama bisa sudah terhapus / di-undo sejak klik Next
-    @@old_items.reject!(&:deleted?)
-    if @@old_items.empty?
-      dialog.execute_script("showToast('Item lama sudah tidak ada (terhapus/di-undo). Ulangi dari Langkah 1.'); resetExecButton(); showStep(1);")
-      return
-    end
-
-    model.start_operation("The Replacer Wizard", true)
     begin
-      definition_baru = item_baru.definition
+      new_sel = model.selection.to_a.select { |e| e.respond_to?(:valid?) && e.valid? && (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) }
+
+      if new_sel.length != 1
+        dialog.execute_script("showToast('Pastikan Anda memilih tepat 1 Item Baru sebagai pengganti!');")
+        dialog.execute_script("resetExecButton();")
+        return
+      end
+
+      item_baru = new_sel[0]
+
+      if @@old_items.include?(item_baru)
+        dialog.execute_script("showToast('Item baru tidak boleh sama dengan item lama yang tadi dipilih!');")
+        dialog.execute_script("resetExecButton();")
+        return
+      end
+
+      # Item lama bisa sudah terhapus / di-undo sejak klik Next
+      @@old_items.select! { |e| e.respond_to?(:valid?) && e.valid? }
+      if @@old_items.empty?
+        dialog.execute_script("showToast('Item lama sudah tidak ada (terhapus/di-undo). Ulangi dari Langkah 1.'); resetExecButton(); showStep(1);")
+        return
+      end
+
+      model.start_operation("The Replacer Wizard", true)
+      definition_baru = item_baru.respond_to?(:definition) ? item_baru.definition : item_baru.entities.parent
       dicts_baru = item_baru.attribute_dictionaries
 
       get_dimension_inch = lambda do |ent, attr_name, axis_idx|
@@ -147,7 +148,7 @@ module TheReplacer
 
       model.commit_operation
     rescue => e
-      model.abort_operation
+      model.abort_operation rescue nil
       dialog.execute_script("resetExecButton();")
       dialog.execute_script("showToast(#{("Gagal: " + e.message).to_json});")
       return
