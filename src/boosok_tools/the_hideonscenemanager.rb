@@ -1,6 +1,7 @@
 module HideOnSceneManager
   require 'json'
   require 'set'
+  require_relative 'titlebar'
 
   class PagesObserver < Sketchup::PagesObserver
     def onElementAdded(*args)
@@ -158,6 +159,7 @@ module HideOnSceneManager
       }
     )
     dialog.set_file(File.join(__dir__, 'html', 'hidescene.html'))
+    BoosokTools::TitleBar.attach(dialog, "Hide on Scene")
 
     dialog.add_action_callback("ready") do |action_context|
       current_model = Sketchup.active_model

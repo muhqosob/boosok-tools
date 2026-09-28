@@ -1,6 +1,7 @@
 require 'sketchup'
 require 'json'
 require 'tmpdir'
+require_relative 'titlebar'
 
 module MyCustomPlugins
   # Update di dalam SketchUp: cek -> download .rbz -> install -> hot reload langsung aktif.
@@ -79,6 +80,7 @@ module MyCustomPlugins
 
         # Muat ulang semua file modul plugin
         ruby_files = [
+          'titlebar.rb',
           'bootstrap.rb',
           'main.rb',
           'the_replacer.rb',
@@ -186,6 +188,7 @@ module MyCustomPlugins
         style: UI::HtmlDialog::STYLE_DIALOG
       )
       @dialog.set_file(File.join(__dir__, 'html', 'update.html'))
+      BoosokTools::TitleBar.attach(@dialog, "Boosok Tools Update")
 
       @dialog.add_action_callback("ready")    { push }
       @dialog.add_action_callback("check")    { check(true) }

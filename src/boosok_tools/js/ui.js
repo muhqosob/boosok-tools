@@ -143,6 +143,20 @@ function setStoredTheme(theme) {
   } catch (e) {}
 }
 
+function syncThemeWithRuby(theme) {
+  try {
+    if (window.sketchup && typeof window.sketchup.syncTheme === 'function') {
+      window.sketchup.syncTheme(theme);
+    } else {
+      setTimeout(function () {
+        if (window.sketchup && typeof window.sketchup.syncTheme === 'function') {
+          window.sketchup.syncTheme(theme);
+        }
+      }, 100);
+    }
+  } catch (e) {}
+}
+
 function applyTheme(theme) {
   theme = theme === 'dark' ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', theme);
@@ -150,6 +164,7 @@ function applyTheme(theme) {
     document.body.classList.toggle('dark-mode', theme === 'dark');
   }
   updateThemeButton(theme);
+  syncThemeWithRuby(theme);
 }
 
 function updateThemeButton(theme) {
@@ -196,9 +211,13 @@ function initThemeButton() {
 })();
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initThemeButton);
+  document.addEventListener('DOMContentLoaded', function () {
+    initThemeButton();
+    syncThemeWithRuby(document.documentElement.getAttribute('data-theme') || 'dark');
+  });
 } else {
   initThemeButton();
+  syncThemeWithRuby(document.documentElement.getAttribute('data-theme') || 'dark');
 }
 
 // Sinkronisasi otomatis antar semua jendela dialog yang sedang terbuka

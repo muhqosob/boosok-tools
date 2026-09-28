@@ -161,7 +161,7 @@ span.spin { display: inline-flex; }
 .input:hover { border-color: var(--line-strong); }
 .input:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.08); outline: none; }
 select.input { appearance: none; -webkit-appearance: none; padding-right: 30px; cursor: pointer; }
-.with-ic { position: relative; }
+.with-ic { position: relative; background: transparent; }
 .with-ic > svg { position: absolute; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--muted); pointer-events: none; }
 .with-ic > .lead { left: 10px; }
 .with-ic > .trail { right: 10px; }
@@ -330,11 +330,72 @@ input[type="checkbox"] { accent-color: var(--dark-gray); }
 /* ======================================================== */
 /* PENYESUAIAN KHUSUS DARK MODE (MONOCHROME PUTIH BERCAHAYA) */
 /* ======================================================== */
+
+/* 1. Ikon-ikon Putih Light Bercahaya (Luminous Glowing White) */
+[data-theme="dark"] .mark svg,
+[data-theme="dark"] .theme-btn svg,
+[data-theme="dark"] .with-ic > svg,
+[data-theme="dark"] .btn.ghost svg,
+[data-theme="dark"] .btn.icon svg,
+[data-theme="dark"] .btn.link svg,
+[data-theme="dark"] .steps .ic svg,
+[data-theme="dark"] .tile .ic svg,
+[data-theme="dark"] .toggle .ic,
+[data-theme="dark"] .toggle > svg,
+[data-theme="dark"] .badge:not(.ok):not(.err) svg,
+[data-theme="dark"] .note:not(.err) svg,
+[data-theme="dark"] .seg button svg,
+[data-theme="dark"] .field label svg,
+[data-theme="dark"] .card-icon svg,
+[data-theme="dark"] .keys .k .btn svg,
+[data-theme="dark"] .versions svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7)) drop-shadow(0 0 1px rgba(255, 255, 255, 0.9));
+  transition: filter .18s var(--ease), transform .18s var(--ease);
+}
+
+/* Efek hover ikon lebih berpendar */
+[data-theme="dark"] .btn.ghost:hover svg,
+[data-theme="dark"] .btn.icon:hover svg,
+[data-theme="dark"] .btn.link:hover svg,
+[data-theme="dark"] .theme-btn:hover svg,
+[data-theme="dark"] .tile:hover .ic svg,
+[data-theme="dark"] .toggle:hover .ic,
+[data-theme="dark"] .toggle:hover > svg,
+[data-theme="dark"] .seg button:hover svg {
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 2px rgba(255, 255, 255, 1));
+}
+
+/* Danger icon dengan pendaran merah elegan */
+[data-theme="dark"] .btn.danger svg {
+  color: #f87171 !important;
+  stroke: #f87171 !important;
+  filter: drop-shadow(0 0 3.5px rgba(239, 68, 68, 0.65));
+}
+[data-theme="dark"] .btn.danger:hover svg {
+  filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.9));
+}
+
+/* Pastikan ikon di tombol primary putih tetap gelap agar kontras */
+[data-theme="dark"] .btn.primary svg {
+  color: #141416 !important;
+  stroke: #141416 !important;
+  filter: none !important;
+}
+
+/* Ikon centang checkbox di kotak putih tetap hitam tanpa glow */
+[data-theme="dark"] .check input:checked + .box svg {
+  color: #141416 !important;
+  stroke: #141416 !important;
+  filter: none !important;
+}
+
 [data-theme="dark"] .mark {
   background: #27272e;
-  color: #f4f4f6;
+  color: #ffffff;
   border: 1px solid var(--line-strong);
-  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.12), 0 2px 8px rgba(0,0,0,.3);
 }
 
 [data-theme="dark"] .btn.primary {
@@ -519,7 +580,7 @@ input[type="checkbox"] { accent-color: var(--dark-gray); }
   background: #ffffff;
   box-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
 }
-[data-theme="dark"] .bar > div {
+[data-theme="dark"] .progress .bar > div {
   background: #ffffff linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent) no-repeat;
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
 }

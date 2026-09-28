@@ -1,5 +1,6 @@
 require 'sketchup'
 require 'json'
+require_relative 'titlebar'
 
 module TheResetScale
   def self.run
@@ -14,6 +15,7 @@ module TheResetScale
       style: UI::HtmlDialog::STYLE_DIALOG
     )
     dialog.set_file(File.join(__dir__, 'html', 'reset.html'))
+    BoosokTools::TitleBar.attach(dialog, "Reset Scale")
 
     dialog.add_action_callback("close") { dialog.close }
 

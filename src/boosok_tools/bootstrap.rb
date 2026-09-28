@@ -6,6 +6,8 @@ module MyCustomPlugins
     main_menu = UI.menu("Extensions")
     @my_submenu = main_menu.add_submenu("Boosok Tools")
 
+    require_relative 'titlebar'
+
     require_relative 'main'
     @my_submenu.add_item("The Selector") {
       TheSelectorPlugin.run_selector

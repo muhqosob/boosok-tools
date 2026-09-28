@@ -1,5 +1,6 @@
 require 'sketchup'
 require 'json'
+require_relative 'titlebar'
 
 module TheSelectorPlugin
   class << self
@@ -34,6 +35,7 @@ module TheSelectorPlugin
 
       html_path = File.join(File.dirname(__FILE__), 'html', 'selector.html')
       dialog.set_file(html_path)
+      BoosokTools::TitleBar.attach(dialog, "The Selector")
 
       dialog.add_action_callback("closeDialog") do |action_context|
         dialog.close

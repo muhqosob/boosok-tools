@@ -1,3 +1,5 @@
+require_relative 'titlebar'
+
 module UntagUnpaintManager
   def self.run
     require 'json'
@@ -15,6 +17,7 @@ module UntagUnpaintManager
       }
     )
     dialog.set_file(File.join(__dir__, 'html', 'untagnpaint.html'))
+    BoosokTools::TitleBar.attach(dialog, "Untag & Unpaint")
 
     # --- CALLBACK PROCESS ---
     dialog.add_action_callback("prosesAction") do |context, action_type, deep_process|
