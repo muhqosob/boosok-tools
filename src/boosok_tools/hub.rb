@@ -6,19 +6,16 @@ module BoosokTools
   # Satu pintu masuk semua tool. Dialog cuma render state dari Ruby:
   # render({status: 'ready', stats: {...}}) atau render({status: 'error', error: '...'})
   module Hub
-    TITLE = "The Bosok Tools"
+    TITLE = "The Boosok Tools"
     WIDTH = 380
     DEFAULT_HEIGHT = 550
 
-    # Loading screen hanya berjalan sekali per sesi SketchUp
-    @has_booted = false
-
     def self.has_booted?
-      @has_booted
+      BoosokTools.hub_booted?
     end
 
     def self.set_booted(val = true)
-      @has_booted = val
+      BoosokTools.set_hub_booted(val)
     end
 
     # id => [file, cara jalanin]. File di-load ulang tiap buka biar edit langsung kepakai.
@@ -58,7 +55,7 @@ module BoosokTools
       TitleBar.attach(@dialog, TITLE, width: WIDTH)
 
       @dialog.add_action_callback("ready") { push(state) }
-      @dialog.add_action_callback("boot_done") { @has_booted = true }
+      @dialog.add_action_callback("boot_done") { BoosokTools.set_hub_booted(true) }
 
       @dialog.add_action_callback("open") do |_ctx, id, pos_json|
         pos_data = JSON.parse(pos_json) rescue nil
@@ -75,13 +72,14 @@ module BoosokTools
     end
 
     def self.state
+      booted = BoosokTools.hub_booted?
       model = Sketchup.active_model
-      return { status: 'error', error: "Tidak ada model yang aktif. Buka atau buat model dulu.", has_booted: @has_booted } unless model
+      return { status: 'error', error: "Tidak ada model yang aktif. Buka atau buat model dulu.", has_booted: booted } unless model
 
       top = model.entities
       {
         status: 'ready',
-        has_booted: @has_booted,
+        has_booted: booted,
         version: MyCustomPlugins::PLUGIN_VERSION,
         theme: Sketchup.read_default("BoosokTools", "theme", "").to_s,
         stats: {
@@ -91,7 +89,7 @@ module BoosokTools
         }
       }
     rescue => e
-      { status: 'error', error: "Gagal membaca model: #{e.message}", has_booted: @has_booted }
+      { status: 'error', error: "Gagal membaca model: #{e.message}", has_booted: BoosokTools.hub_booted? }
     end
 
     def self.open_tool(id)

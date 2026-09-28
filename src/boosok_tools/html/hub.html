@@ -2,8 +2,13 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>The Bosok Tools</title>
+  <title>The Boosok Tools</title>
   <link rel="stylesheet" href="../css/ui.css">
+  <script>
+    if (sessionStorage.getItem('boosok_hub_booted') === '1') {
+      document.write('<style id="noBoot">#boot{display:none!important;}</style>');
+    }
+  </script>
   <style>
     #app { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
     .tile.off .s { color: var(--err); }
@@ -68,7 +73,7 @@
 <body oncontextmenu="return false;">
   <script src="../js/ui.js"></script>
 
-  <div id="boot" role="status" aria-label="Memuat The Bosok Tools">
+  <div id="boot" role="status" aria-label="Memuat The Boosok Tools">
     <div class="lux">
       <div class="loader-wrapper" id="loaderText"><div class="loader"></div></div>
       <div class="hairline"><div></div></div>
@@ -79,7 +84,7 @@
   <header class="head">
     <div class="mark"><svg><use href="#i-package"/></svg></div>
     <div class="txt">
-      <h1>The Bosok Tools</h1>
+      <h1>The Boosok Tools</h1>
       <p>Pilih tool yang mau dipakai</p>
     </div>
     <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema"></button>
@@ -88,10 +93,11 @@
   <main id="app" aria-live="polite"></main>
 
   <script>
+    var isAlreadyBooted = sessionStorage.getItem('boosok_hub_booted') === '1';
     var LETTER_STEP = 0.12;    // detik antar huruf
     var CYCLE = 5;             // detik, harus sama dengan --cycle di CSS
     var BOOT_TIMEOUT_MS = 10000;
-    var WORD = 'The Bosok Tools';
+    var WORD = 'The Boosok Tools';
     // Loader baru hilang setelah huruf terakhir selesai muncul dan tenang (30% siklus)
     var MIN_BOOT_MS = Math.round((0.1 + (WORD.length - 1) * LETTER_STEP + CYCLE * 0.3) * 1000);
     document.documentElement.style.setProperty('--boot', MIN_BOOT_MS + 'ms');
@@ -108,11 +114,13 @@
     var EMPTY_REASON = { objects: 'Belum ada group / component', scenes: 'Belum ada scene' };
 
     // status: booting | ready | error | opening
-    var S = { status: 'booting', data: null, lastKey: null };
+    var S = { status: isAlreadyBooted ? 'ready' : 'booting', data: null, lastKey: null };
     var bootStart = Date.now(), pending = null, bootTimer;
 
     (function buildLoader() {
+      if (isAlreadyBooted) return;
       var box = document.getElementById('loaderText');
+      if (!box) return;
       WORD.split('').forEach(function (ch, i) {
         var span = document.createElement('span');
         span.className = 'loader-letter';
@@ -133,7 +141,8 @@
     // Dipanggil dari Ruby. Selama loader belum kelar, tahan dulu.
     function render(st) {
       clearTimeout(bootTimer);
-      if (st.has_booted) {
+      if (st.has_booted || sessionStorage.getItem('boosok_hub_booted') === '1') {
+        sessionStorage.setItem('boosok_hub_booted', '1');
         var bootEl = document.getElementById('boot');
         if (bootEl) {
           bootEl.style.display = 'none';
@@ -156,6 +165,7 @@
 
     function finishBoot() {
       if (S.status !== 'booting' || !pending) return;
+      sessionStorage.setItem('boosok_hub_booted', '1');
       S.status = 'ready';
       var st = pending; pending = null;
       render(st);

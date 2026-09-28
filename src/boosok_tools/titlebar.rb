@@ -214,4 +214,14 @@ module BoosokTools
     end
     get_position
   end
+
+  @hub_booted ||= false
+
+  def self.hub_booted?
+    @hub_booted == true
+  end
+
+  def self.set_hub_booted(val = true)
+    @hub_booted = val
+  end
 end
