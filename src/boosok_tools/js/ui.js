@@ -42,6 +42,8 @@
     '<symbol id="i-square-dashed-mouse-pointer" viewBox="0 0 24 24"><path d="M12.034 12.681a.498.498 0 0 1 .647-.647l9 3.5a.5.5 0 0 1-.033.943l-3.444 1.068a1 1 0 0 0-.66.66l-1.067 3.443a.5.5 0 0 1-.943.033z"/><path d="M5 3a2 2 0 0 0-2 2"/><path d="M19 3a2 2 0 0 1 2 2"/><path d="M5 21a2 2 0 0 1-2-2"/><path d="M9 3h1"/><path d="M9 21h2"/><path d="M14 3h1"/><path d="M3 9v1"/><path d="M21 9v2"/><path d="M3 14v1"/></symbol>' +
     '<symbol id="i-component" viewBox="0 0 24 24"><path d="M15.536 11.293a1 1 0 0 0 0 1.414l2.376 2.377a1 1 0 0 0 1.414 0l2.377-2.377a1 1 0 0 0 0-1.414l-2.377-2.377a1 1 0 0 0-1.414 0z"/><path d="M2.297 11.293a1 1 0 0 0 0 1.414l2.377 2.377a1 1 0 0 0 1.414 0l2.377-2.377a1 1 0 0 0 0-1.414L6.088 8.916a1 1 0 0 0-1.414 0z"/><path d="M8.916 17.912a1 1 0 0 0 0 1.415l2.377 2.376a1 1 0 0 0 1.414 0l2.377-2.376a1 1 0 0 0 0-1.415l-2.377-2.376a1 1 0 0 0-1.414 0z"/><path d="M8.916 4.674a1 1 0 0 0 0 1.414l2.377 2.376a1 1 0 0 0 1.414 0l2.377-2.376a1 1 0 0 0 0-1.414l-2.377-2.377a1 1 0 0 0-1.414 0z"/></symbol>' +
     '<symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></symbol>' +
+    '<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>' +
+    '<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>' +
     '</svg>';
   document.body.insertAdjacentHTML('afterbegin', sprite);
 })();
@@ -121,4 +123,89 @@ window.addEventListener('keydown', function (e) {
     return false;
   }
 }, true);
+
+// ==========================================
+// PENGATURAN TEMA (LIGHT / DARK MODE)
+// ==========================================
+var THEME_KEY = 'boosok_tools_theme';
+
+function getStoredTheme() {
+  try {
+    return localStorage.getItem(THEME_KEY);
+  } catch (e) {
+    return null;
+  }
+}
+
+function setStoredTheme(theme) {
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch (e) {}
+}
+
+function applyTheme(theme) {
+  theme = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', theme);
+  if (document.body) {
+    document.body.classList.toggle('dark-mode', theme === 'dark');
+  }
+  updateThemeButton(theme);
+}
+
+function updateThemeButton(theme) {
+  var btn = document.getElementById('themeToggle');
+  if (!btn) return;
+  var isDark = theme === 'dark';
+  btn.setAttribute('aria-label', isDark ? 'Ganti ke Light Mode' : 'Ganti ke Dark Mode');
+  btn.setAttribute('title', isDark ? 'Ganti ke Light Mode' : 'Ganti ke Dark Mode');
+  btn.innerHTML = icon(isDark ? 'sun' : 'moon');
+}
+
+function toggleTheme() {
+  var current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  var next = current === 'dark' ? 'light' : 'dark';
+  var btn = document.getElementById('themeToggle');
+  if (btn) {
+    btn.classList.add('toggling');
+    setTimeout(function () { btn.classList.remove('toggling'); }, 350);
+  }
+  setStoredTheme(next);
+  applyTheme(next);
+}
+
+function initThemeButton() {
+  var head = document.querySelector('.head');
+  if (!head) return;
+  var btn = document.getElementById('themeToggle');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'themeToggle';
+    btn.className = 'theme-btn';
+    btn.type = 'button';
+    head.appendChild(btn);
+  }
+  btn.onclick = toggleTheme;
+  updateThemeButton(document.documentElement.getAttribute('data-theme'));
+}
+
+// Inisialisasi tema instan agar tidak terjadi flicker/kedip saat membuka dialog
+(function () {
+  var saved = getStoredTheme();
+  var initial = saved ? saved : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', initial);
+})();
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initThemeButton);
+} else {
+  initThemeButton();
+}
+
+// Sinkronisasi otomatis antar semua jendela dialog yang sedang terbuka
+window.addEventListener('storage', function (e) {
+  if (e.key === THEME_KEY && e.newValue) {
+    applyTheme(e.newValue);
+  }
+});
+
 
