@@ -85,7 +85,8 @@
         return hero(badge('check', 'ok draw'), 'Sudah versi terbaru',
           'Boosok Tools ' + v(s.current) + ' sudah paling baru.') +
           '<div class="spacer"></div><div class="actions row">' +
-          btn('check', 'Cek lagi', 'ghost', 'refresh-cw') + btn('close', 'Tutup', 'primary') + '</div>';
+          btn('check', 'Cek lagi', 'ghost', 'refresh-cw') + btn('close', 'Tutup', 'primary') + '</div>' +
+          '<div class="actions" style="align-items:center">' + btn('changelog', 'Lihat Change Log di GitHub', 'link', 'external-link') + '</div>';
       },
       available: function (s) {
         return hero(badge('arrow-up', 'pulse'), 'Update tersedia') +
@@ -109,12 +110,13 @@
       },
       done: function (s) {
         return hero(badge('check', 'ok draw'), 'Update berhasil!',
-          v(s.latest, 'new') + ' sudah langsung aktif tanpa perlu restart SketchUp.') +
+          v(s.latest, 'new') + '<br><br>sudah langsung update tanpa perlu restart SketchUp.') +
           '<div class="spacer"></div><div class="note">' + icon('info') +
           '<span>Jika ada jendela fitur yang sedang terbuka, silakan tutup dan buka kembali.</span></div>' +
           '<div class="actions row">' +
           btn('quit', 'Restart SketchUp', 'ghost', 'power') +
-          btn('close', 'Tutup', 'primary', 'check') + '</div>';
+          btn('close', 'Tutup', 'primary', 'check') + '</div>' +
+          '<div class="actions" style="align-items:center">' + btn('changelog', 'Lihat Change Log di GitHub', 'link', 'external-link') + '</div>';
       },
       error: function (s) {
         return hero(badge('triangle-alert', 'err'), 'Gagal memperbarui') +
@@ -154,6 +156,15 @@
       // Kunci cuma untuk aksi yang pasti dibalas render() dari Ruby.
       // browser/quit/close tidak (quit bisa dibatalkan user) -> tombol jangan macet.
       if (a === 'check' || a === 'download') app.classList.add('locked');
+      if (a === 'changelog') {
+        // Buka link langsung dari JS sebagai fallback jika Ruby tidak tersedia
+        if (window.sketchup && typeof sketchup.changelog === 'function') {
+          sketchup.changelog();
+        } else {
+          window.open('https://github.com/muhqosob/boosok-tools/blob/main/the_bosok/CHANGELOG.md', '_blank');
+        }
+        return;
+      }
       if (window.sketchup && typeof sketchup[a] === 'function') {
         sketchup[a]();
       }

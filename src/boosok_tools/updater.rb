@@ -196,7 +196,8 @@ module MyCustomPlugins
       @dialog.add_action_callback("download") { download }
       @dialog.add_action_callback("close")    { @dialog.close }
       @dialog.add_action_callback("quit")     { Sketchup.quit } # SketchUp tetap tanya simpan model
-      @dialog.add_action_callback("browser")  { UI.openURL(RELEASES_URL) }
+      @dialog.add_action_callback("browser")   { UI.openURL(RELEASES_URL) }
+      @dialog.add_action_callback("changelog") { UI.openURL(defined?(CHANGELOG_URL) ? CHANGELOG_URL : RELEASES_URL) }
       @dialog.show
     end
   end

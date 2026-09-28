@@ -11,6 +11,7 @@ module MyCustomPlugins
   # File yang sama lewat API: tidak kena cache CDN raw (~5 menit), tapi limit 60 request/jam per IP.
   VERSION_API_URL = "https://api.github.com/repos/muhqosob/boosok-tools/contents/the_bosok/version.json"
   RELEASES_URL = "https://github.com/muhqosob/boosok-tools/releases/latest"
+  CHANGELOG_URL = "https://github.com/muhqosob/boosok-tools/blob/main/the_bosok/CHANGELOG.md"
 
   unless file_loaded?(__FILE__)
     plugin_dir = File.dirname(__FILE__)
