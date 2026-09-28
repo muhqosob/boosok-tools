@@ -1,11 +1,35 @@
-﻿# Changelog — Boosok Tools
+# Changelog — Boosok Tools
 
 Semua perubahan versi dicatat di sini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.2.4] — 2026-09-28
+
+### ✨ Baru / Perbaikan
+- **Notifikasi (toast) in-flow di bawah tombol** — toast muncul setelah konten/tombol (bukan overlay), dialog otomatis membesar saat notif muncul dan mengecil saat notif menghilang.
+
+---
+
+## [1.2.3] — 2026-09-28
+
+### 🔧 Perbaikan
+- Percobaan posisi toast di atas konten (in-flow sebelum header) — digantikan oleh v1.2.4 yang lebih baik.
+
+---
+
+## [1.2.2] — 2026-09-28
+
+### ✨ Baru / Perbaikan
+- **Tombol Change Log di dialog update** — tersedia di tampilan "Sudah versi terbaru" dan "Update berhasil!".
+- **Toast in-flow** — notifikasi tidak lagi overlay/fixed, mulai diubah jadi bagian alur dokumen.
+- **CHANGELOG.md** — file riwayat perubahan pertama kali dibuat di `the_bosok/CHANGELOG.md`.
+
+---
+
 ## [1.2.1] — 2026-09-28
+
 
 ### ✨ Baru
 - **Update langsung tanpa restart SketchUp** — setelah update berhasil, plugin aktif seketika tanpa perlu menutup dan membuka ulang SketchUp.

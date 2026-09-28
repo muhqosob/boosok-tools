@@ -89,8 +89,8 @@ function showToast(msg, type) {
     t = document.createElement('div');
     t.id = 'toast';
     t.setAttribute('role', 'status');
-    // Sisipkan sebagai elemen PERTAMA di body agar konten terdorong ke bawah
-    document.body.insertBefore(t, document.body.firstChild);
+    // Sisipkan sebagai elemen TERAKHIR di body agar muncul di bawah tombol
+    document.body.appendChild(t);
   }
   type = type || 'error';
   t.innerHTML = icon(type === 'success' ? 'circle-check' : 'circle-alert') + '<span></span>';
