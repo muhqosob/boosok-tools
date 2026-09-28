@@ -79,6 +79,7 @@ module MyCustomPlugins
 
         # Muat ulang semua file modul plugin
         ruby_files = [
+          'bootstrap.rb',
           'main.rb',
           'the_replacer.rb',
           'the_cleangroup.rb',
@@ -91,6 +92,10 @@ module MyCustomPlugins
         ruby_files.each do |f|
           file_path = File.join(base_dir, f)
           load file_path if File.exist?(file_path)
+        end
+
+        if defined?(Sketchup.extensions) && Sketchup.extensions['Boosok Tools']
+          Sketchup.extensions['Boosok Tools'].version = PLUGIN_VERSION
         end
       rescue => e
         puts "[Boosok Tools] Gagal reload plugin: #{e.message}"

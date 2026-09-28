@@ -92,8 +92,33 @@ function showToast(msg, type) {
   t.innerHTML = icon(type === 'success' ? 'circle-check' : 'circle-alert') + '<span></span>';
   t.lastChild.innerHTML = msg; // pesan dari Ruby boleh berisi <b>
   t.className = type;
-  void t.offsetWidth;
   t.className = type + ' show';
+  t.onclick = function () {
+    clearTimeout(toastTimer);
+    t.classList.remove('show');
+  };
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function () { t.className = type; }, 3000);
 }
+
+// Nonaktifkan klik kanan agar tidak membuka context menu / inspect element / devtools
+window.addEventListener('contextmenu', function (e) {
+  e.preventDefault();
+  return false;
+}, true);
+
+document.addEventListener('contextmenu', function (e) {
+  e.preventDefault();
+  return false;
+}, true);
+
+// Cegah shortcut keyboard devtools (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U)
+window.addEventListener('keydown', function (e) {
+  if (e.key === 'F12' ||
+      (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].indexOf(e.key) !== -1) ||
+      (e.ctrlKey && (e.key === 'u' || e.key === 'U'))) {
+    e.preventDefault();
+    return false;
+  }
+}, true);
+
