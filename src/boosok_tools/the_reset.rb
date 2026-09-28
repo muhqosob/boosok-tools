@@ -24,7 +24,7 @@ module TheResetScale
       result = reset_selection(mode_str, is_recursive)
       if result.is_a?(Integer)
         msg = if mode_str == "preserve"
-          "Skala #{result} objek di-reset (ukuran tetap #{result > 1 ? 'sama' : 'sama'})."
+          "Skala #{result} objek di-reset (ukuran tetap dipertahankan)."
         else
           "Skala #{result} objek kembali ke ukuran asli."
         end
@@ -90,88 +90,96 @@ module TheResetScale
     end
   end
 
-  # Salin atribut dictionary dari sumber ke target
-  def self.copy_attributes(source, target)
-    return unless source.respond_to?(:attribute_dictionaries) && source.attribute_dictionaries
-    source.attribute_dictionaries.each do |dict|
-      next unless dict
-      new_dict = target.attribute_dictionary(dict.name, true)
-      dict.each_pair do |k, v|
-        new_dict[k] = v
-      end
-    end
-  end
-
-  # Reset skala ke 1:1:1 tanpa mengubah ukuran visual saat ini (bake scale ke geometri)
+  # Reset skala ke 1:1:1 dengan metode Explode & Regroup (ukuran hasil skala tetap sama persis)
   def self.reset_scale_preserve(entity, parent_entities)
     return entity unless entity.respond_to?(:valid?) && entity.valid?
     return entity unless entity.is_a?(Sketchup::Group) || entity.is_a?(Sketchup::ComponentInstance)
 
     t = entity.transformation
-    xaxis = t.xaxis
-    yaxis = t.yaxis
-    zaxis = t.zaxis
-
-    sx = xaxis.length
-    sy = yaxis.length
-    sz = zaxis.length
-
-    # Hindari degenerate vectors
-    return entity if sx < 1e-6 || sy < 1e-6 || sz < 1e-6
-
-    nx = xaxis.normalize
-    ny = yaxis.normalize
-    nz = zaxis.normalize
-    t_unscaled = Geom::Transformation.axes(t.origin, nx, ny, nz)
+    sx = t.xaxis.length
+    sy = t.yaxis.length
+    sz = t.zaxis.length
 
     is_scaled = (sx - 1.0).abs > 1e-5 || (sy - 1.0).abs > 1e-5 || (sz - 1.0).abs > 1e-5
 
-    # Jika skalanya memang sudah 1:1:1, cukup rapikan transformasi
+    # Jika objek memang tidak diskala (1:1:1), cukup normalisasi sumbu
     unless is_scaled
-      entity.transformation = t_unscaled
+      nx = t.xaxis.normalize
+      ny = t.yaxis.normalize
+      nz = t.zaxis.normalize
+      entity.transformation = Geom::Transformation.axes(t.origin, nx, ny, nz)
       return entity
     end
 
-    # Objek diskala: buat group pembungkus dengan t_unscaled, tambahkan instance ter-skala di dalamnya lalu explode
     is_component = entity.is_a?(Sketchup::ComponentInstance)
-    orig_defn = entity.respond_to?(:definition) ? entity.definition : entity.entities.parent
-    orig_name = entity.name
-    orig_layer = entity.layer
-    orig_material = entity.material
-    orig_casts_shadows = entity.casts_shadows?
-    orig_receives_shadows = entity.receives_shadows?
-    orig_hidden = entity.hidden?
-    orig_locked = entity.locked?
+    orig_defn_name = is_component ? entity.definition.name : nil
 
-    t_scale = Geom::Transformation.scaling(sx, sy, sz)
+    # Simpan metadata group / component
+    layer = entity.layer
+    material = entity.material
+    name = entity.name
+    hidden = entity.hidden?
+    locked = entity.locked?
+    casts_shadows = entity.casts_shadows?
+    receives_shadows = entity.receives_shadows?
 
-    new_group = parent_entities.add_group
-    new_group.transformation = t_unscaled
-    new_group.layer = orig_layer if orig_layer
-    new_group.material = orig_material if orig_material
-    new_group.name = orig_name unless orig_name.to_s.empty?
-    new_group.casts_shadows = orig_casts_shadows
-    new_group.receives_shadows = orig_receives_shadows
-    new_group.hidden = orig_hidden
+    # Simpan atribut dictionary (termasuk dynamic attributes jika ada)
+    attrs = {}
+    if entity.respond_to?(:attribute_dictionaries) && entity.attribute_dictionaries
+      entity.attribute_dictionaries.each do |dict|
+        next unless dict
+        attrs[dict.name] = {}
+        dict.each_pair { |k, v| attrs[dict.name][k] = v }
+      end
+    end
 
-    copy_attributes(entity, new_group)
+    entity.locked = false if locked
 
-    temp_inst = new_group.entities.add_instance(orig_defn, t_scale)
-    temp_inst.explode if temp_inst
+    # 1. Explode group/component yang sudah diskala
+    # Ukuran fisik geometri sekarang berada pada koordinat hasil skala (misal 500x200x200)
+    exploded = entity.explode
+    return entity unless exploded && exploded.is_a?(Array)
 
-    entity.locked = false if entity.locked?
-    entity.erase!
+    valid_ents = exploded.select { |e| e.respond_to?(:valid?) && e.valid? }
+    return entity if valid_ents.empty?
+
+    # 2. Jadikan group kembali dari geometri yang sudah mekar/ter-skala
+    new_group = parent_entities.add_group(valid_ents)
+
+    # 3. Kembalikan semua properti & metadata
+    new_group.name = name unless name.to_s.empty?
+    new_group.layer = layer if layer
+    new_group.material = material if material
+    new_group.hidden = hidden
+    new_group.casts_shadows = casts_shadows
+    new_group.receives_shadows = receives_shadows
+
+    # Kembalikan atribut
+    attrs.each do |dict_name, pairs|
+      dict = new_group.attribute_dictionary(dict_name, true)
+      pairs.each { |k, v| dict[k] = v }
+
+      # Jika ada Dynamic Component attributes, sesuaikan lenx/leny/lenz ke ukuran baru
+      if dict_name.downcase == 'dynamic_attributes'
+        bb = new_group.bounds
+        dict['lenx'] = bb.width.to_f if dict.keys.include?('lenx')
+        dict['leny'] = bb.height.to_f if dict.keys.include?('leny')
+        dict['lenz'] = bb.depth.to_f if dict.keys.include?('lenz')
+        dict['_lenx_nominal'] = bb.width.to_f if dict.keys.include?('_lenx_nominal')
+        dict['_leny_nominal'] = bb.height.to_f if dict.keys.include?('_leny_nominal')
+        dict['_lenz_nominal'] = bb.depth.to_f if dict.keys.include?('_lenz_nominal')
+      end
+    end
 
     result_entity = if is_component
       new_inst = new_group.to_component
-      new_inst.definition.name = orig_defn.name
-      copy_attributes(new_group, new_inst)
+      new_inst.definition.name = orig_defn_name if orig_defn_name
       new_inst
     else
       new_group
     end
 
-    result_entity.locked = orig_locked if orig_locked
+    result_entity.locked = locked if locked
     result_entity
   end
 
