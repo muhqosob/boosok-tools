@@ -3,10 +3,8 @@ require 'json'
 
 module TheResetScale
   def self.run
-    if @dialog && @dialog.visible?
-      @dialog.bring_to_front
-      return
-    end
+    # Tutup dialog lama jika masih ada agar selalu memuat versi terbaru
+    @dialog.close if @dialog && @dialog.visible?
 
     dialog = @dialog = UI::HtmlDialog.new(
       dialog_title: "Reset Scale",
@@ -26,7 +24,7 @@ module TheResetScale
       result = reset_selection(mode_str, is_recursive)
       if result.is_a?(Integer)
         msg = if mode_str == "preserve"
-          "Skala #{result} objek di-reset (ukuran saat ini tetap)."
+          "Skala #{result} objek di-reset (ukuran tetap #{result > 1 ? 'sama' : 'sama'})."
         else
           "Skala #{result} objek kembali ke ukuran asli."
         end
@@ -48,26 +46,41 @@ module TheResetScale
     model.start_operation('The Reset Scale', true)
     begin
       processed_count = 0
+      final_entities = []
 
-      process_entity = lambda do |entity|
-        return unless entity.respond_to?(:valid?) && entity.valid?
-        return unless entity.is_a?(Sketchup::Group) || entity.is_a?(Sketchup::ComponentInstance)
+      parent_entities = model.active_entities
 
-        if mode == "preserve"
-          reset_scale_preserve(entity)
+      process_entity = lambda do |entity, container|
+        return nil unless entity.respond_to?(:valid?) && entity.valid?
+        return nil unless entity.is_a?(Sketchup::Group) || entity.is_a?(Sketchup::ComponentInstance)
+
+        res_ent = if mode == "preserve"
+          reset_scale_preserve(entity, container)
         else
           reset_scale_original(entity)
+          entity
         end
+
         processed_count += 1
 
-        if recursive
-          defn = entity.respond_to?(:definition) ? entity.definition : entity.entities.parent
+        if recursive && res_ent && res_ent.valid?
+          defn = res_ent.respond_to?(:definition) ? res_ent.definition : res_ent.entities.parent
           children = defn.entities.select { |child| child.is_a?(Sketchup::Group) || child.is_a?(Sketchup::ComponentInstance) }
-          children.each { |child| process_entity.call(child) }
+          children.each { |child| process_entity.call(child, defn.entities) }
         end
+
+        res_ent
       end
 
-      targets.each { |entity| process_entity.call(entity) }
+      targets.each do |entity|
+        res = process_entity.call(entity, parent_entities)
+        final_entities << res if res && res.valid?
+      end
+
+      # Perbarui seleksi ke entitas yang baru
+      model.selection.clear
+      valid_to_select = final_entities.select { |e| e.respond_to?(:valid?) && e.valid? }
+      model.selection.add(valid_to_select) unless valid_to_select.empty?
 
       model.commit_operation
       processed_count
@@ -77,8 +90,23 @@ module TheResetScale
     end
   end
 
-  # Reset skala ke 1:1:1 tanpa mengubah ukuran visual saat ini (bake scale ke geometri definition)
-  def self.reset_scale_preserve(entity)
+  # Salin atribut dictionary dari sumber ke target
+  def self.copy_attributes(source, target)
+    return unless source.respond_to?(:attribute_dictionaries) && source.attribute_dictionaries
+    source.attribute_dictionaries.each do |dict|
+      next unless dict
+      new_dict = target.attribute_dictionary(dict.name, true)
+      dict.each_pair do |k, v|
+        new_dict[k] = v
+      end
+    end
+  end
+
+  # Reset skala ke 1:1:1 tanpa mengubah ukuran visual saat ini (bake scale ke geometri)
+  def self.reset_scale_preserve(entity, parent_entities)
+    return entity unless entity.respond_to?(:valid?) && entity.valid?
+    return entity unless entity.is_a?(Sketchup::Group) || entity.is_a?(Sketchup::ComponentInstance)
+
     t = entity.transformation
     xaxis = t.xaxis
     yaxis = t.yaxis
@@ -88,8 +116,8 @@ module TheResetScale
     sy = yaxis.length
     sz = zaxis.length
 
-    # Hindari degenerate vectors (objek gepeng total)
-    return if sx < 1e-6 || sy < 1e-6 || sz < 1e-6
+    # Hindari degenerate vectors
+    return entity if sx < 1e-6 || sy < 1e-6 || sz < 1e-6
 
     nx = xaxis.normalize
     ny = yaxis.normalize
@@ -98,30 +126,53 @@ module TheResetScale
 
     is_scaled = (sx - 1.0).abs > 1e-5 || (sy - 1.0).abs > 1e-5 || (sz - 1.0).abs > 1e-5
 
-    if is_scaled
-      entity.make_unique if entity.respond_to?(:make_unique)
-      defn = entity.respond_to?(:definition) ? entity.definition : entity.entities.parent
-      inner_ents = defn.entities.to_a
-
-      # t_unscaled * t_inner = t  =>  t_inner = t_unscaled.inverse * t
-      t_inner = t_unscaled.inverse * t
-
-      unless inner_ents.empty?
-        begin
-          defn.entities.transform_entities(t_inner, inner_ents)
-        rescue
-          inner_ents.each do |e|
-            if e.respond_to?(:transform!)
-              e.transform!(t_inner)
-            elsif e.is_a?(Sketchup::Drawingelement)
-              defn.entities.transform_entities(t_inner, [e]) rescue nil
-            end
-          end
-        end
-      end
+    # Jika skalanya memang sudah 1:1:1, cukup rapikan transformasi
+    unless is_scaled
+      entity.transformation = t_unscaled
+      return entity
     end
 
-    entity.transformation = t_unscaled
+    # Objek diskala: buat group pembungkus dengan t_unscaled, tambahkan instance ter-skala di dalamnya lalu explode
+    is_component = entity.is_a?(Sketchup::ComponentInstance)
+    orig_defn = entity.respond_to?(:definition) ? entity.definition : entity.entities.parent
+    orig_name = entity.name
+    orig_layer = entity.layer
+    orig_material = entity.material
+    orig_casts_shadows = entity.casts_shadows?
+    orig_receives_shadows = entity.receives_shadows?
+    orig_hidden = entity.hidden?
+    orig_locked = entity.locked?
+
+    t_scale = Geom::Transformation.scaling(sx, sy, sz)
+
+    new_group = parent_entities.add_group
+    new_group.transformation = t_unscaled
+    new_group.layer = orig_layer if orig_layer
+    new_group.material = orig_material if orig_material
+    new_group.name = orig_name unless orig_name.to_s.empty?
+    new_group.casts_shadows = orig_casts_shadows
+    new_group.receives_shadows = orig_receives_shadows
+    new_group.hidden = orig_hidden
+
+    copy_attributes(entity, new_group)
+
+    temp_inst = new_group.entities.add_instance(orig_defn, t_scale)
+    temp_inst.explode if temp_inst
+
+    entity.locked = false if entity.locked?
+    entity.erase!
+
+    result_entity = if is_component
+      new_inst = new_group.to_component
+      new_inst.definition.name = orig_defn.name
+      copy_attributes(new_group, new_inst)
+      new_inst
+    else
+      new_group
+    end
+
+    result_entity.locked = orig_locked if orig_locked
+    result_entity
   end
 
   # Reset skala kembali ke ukuran asli sebelum diskala

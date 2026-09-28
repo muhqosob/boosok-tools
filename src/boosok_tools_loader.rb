@@ -33,6 +33,7 @@ module MyCustomPlugins
 
     require_relative 'boosok_tools/the_reset'
     @my_submenu.add_item("Reset The Group Scale") {
+      load File.join(__dir__, 'boosok_tools', 'the_reset.rb')
       TheResetScale.run
     }
 
