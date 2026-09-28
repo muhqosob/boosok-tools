@@ -31,6 +31,13 @@ module BoosokTools
         Fiddle::TYPE_INT
       )
 
+      # RedrawWindow(hwnd, lprcUpdate, hrgnUpdate, flags)
+      RedrawWindow = Fiddle::Function.new(
+        User32['RedrawWindow'],
+        [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_VOIDP, Fiddle::TYPE_VOIDP, Fiddle::TYPE_INT],
+        Fiddle::TYPE_INT
+      )
+
       @ready = true
     rescue => e
       @ready = false
@@ -84,6 +91,9 @@ module BoosokTools
       # SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER = 0x0027
       SetWindowPos.call(hwnd, 0, 0, 0, 0, 0, 0x0027) rescue nil
 
+      # RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW = 0x0401 | 0x0001 | 0x0100 = 0x0501
+      RedrawWindow.call(hwnd, nil, nil, 0x0501) rescue nil
+
       log("apply_dark_titlebar hwnd=#{hwnd} dark=#{is_dark} r20=#{r20} r19=#{r19} r35=#{r35} r36=#{r36}")
     end
 
@@ -108,7 +118,7 @@ module BoosokTools
       saved = Sketchup.read_default("BoosokTools", "theme", "light")
       is_dark = (saved.to_s == 'dark')
 
-      [0.1, 0.3, 0.6, 1.0, 1.5].each do |delay|
+      [0.3, 0.6, 1.0, 1.5, 2.5].each do |delay|
         UI.start_timer(delay, false) { set_theme(title, is_dark) }
       end
     end
