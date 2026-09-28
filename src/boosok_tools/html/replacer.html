@@ -86,16 +86,16 @@
     function showSuccessStep(msg) {
       document.getElementById('success-message').textContent = msg;
       showStep(3);
-      autoFitHeight(18);
+      autoFitHeight(0);
     }
 
     var origShowStep = showStep;
     showStep = function (n) {
       origShowStep(n);
-      autoFitHeight(18);
+      autoFitHeight(0);
     };
 
-    autoFitHeight(18);
+    autoFitHeight(0);
   </script>
 </body>
 </html>

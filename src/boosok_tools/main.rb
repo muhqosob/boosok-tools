@@ -22,8 +22,8 @@ module TheSelectorPlugin
           :dialog_title => "The Selector",
           :scrollable => false,
           :resizable => false,
-          :width => 390,
-          :height => 500, # tinggi form tanpa filter atribut (lihat H_BASE di selector.html)
+          :width => 380,
+          :height => 500,
           :style => UI::HtmlDialog::STYLE_DIALOG
         }
       )
@@ -34,7 +34,7 @@ module TheSelectorPlugin
 
       html_path = File.join(File.dirname(__FILE__), 'html', 'selector.html')
       dialog.set_file(html_path)
-      BoosokTools::TitleBar.attach(dialog, "The Selector", width: 390)
+      BoosokTools::TitleBar.attach(dialog, "The Selector", width: 380)
 
       dialog.add_action_callback("closeDialog") do |action_context|
         dialog.close
@@ -42,7 +42,7 @@ module TheSelectorPlugin
 
       # Fungsi otomatis memperbesar/memperkecil jendela dari HTML
       dialog.add_action_callback("resize_dialog") do |action_context, height|
-        dialog.set_size(390, height.to_i)
+        dialog.set_size(380, height.to_i)
       end
 
       dialog.add_action_callback("save_position") do |action_context, pos_json|

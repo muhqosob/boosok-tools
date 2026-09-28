@@ -247,24 +247,13 @@ function backToHub() {
 // ==========================================
 var _lastFitHeight = 0;
 function autoFitHeight(extraPadding) {
-  extraPadding = (extraPadding !== undefined) ? extraPadding : 16;
+  // extraPadding: ruang tambahan di bawah konten, default 8px (cukup nyaman, tidak mepet, tidak jauh)
+  extraPadding = (extraPadding !== undefined) ? extraPadding : 8;
   setTimeout(function () {
     try {
-      var maxBottom = 0;
-      var children = document.body.children;
-      for (var i = 0; i < children.length; i++) {
-        var el = children[i];
-        if (el.nodeType === 1 && el.tagName !== 'SCRIPT' && el.id !== 'toast' && el.id !== 'boot') {
-          var b = el.offsetTop + el.offsetHeight;
-          if (b > maxBottom) maxBottom = b;
-        }
-      }
-      var bodyStyle = window.getComputedStyle(document.body);
-      var padBottom = parseFloat(bodyStyle.paddingBottom) || 20;
-      var contentInner = Math.ceil(maxBottom + padBottom + extraPadding);
-
-      var scrollH = Math.ceil(document.body.scrollHeight + extraPadding);
-      var targetInner = Math.max(contentInner, scrollH);
+      // scrollHeight body sudah termasuk paddingTop + paddingBottom dari CSS body
+      // Tambahkan hanya extraPadding kecil sebagai buffer visual
+      var targetInner = Math.ceil(document.body.scrollHeight) + extraPadding;
 
       // Selisih antara outerHeight window dan innerHeight document di Windows (~35-40px)
       var frameDiff = (window.outerHeight && window.innerHeight) ? (window.outerHeight - window.innerHeight) : 38;

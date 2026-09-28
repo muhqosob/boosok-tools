@@ -149,9 +149,9 @@ module HideOnSceneManager
         :dialog_title => "Hide on Scene",
         :scrollable => false,
         :resizable => true,
-        :width => 390,
-        :min_width => 390,
-        :max_width => 390,
+        :width => 380,
+        :min_width => 380,
+        :max_width => 380,
         :height => 580,
         :min_height => 450,
         :style => UI::HtmlDialog::STYLE_DIALOG
@@ -163,7 +163,7 @@ module HideOnSceneManager
     end
 
     dialog.set_file(File.join(__dir__, 'html', 'hidescene.html'))
-    BoosokTools::TitleBar.attach(dialog, "Hide on Scene", width: 390)
+    BoosokTools::TitleBar.attach(dialog, "Hide on Scene", width: 380)
 
     dialog.add_action_callback("ready") do |action_context|
       current_model = Sketchup.active_model

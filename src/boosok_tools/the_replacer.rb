@@ -28,7 +28,7 @@ module TheReplacer
         :dialog_title => "The Replacer",
         :scrollable => false,
         :resizable => false,
-        :width => 360,
+        :width => 380,
         :height => 425,
         :style => UI::HtmlDialog::STYLE_DIALOG
       }
@@ -41,7 +41,7 @@ module TheReplacer
     end
 
     @@dialog.set_file(File.join(__dir__, 'html', 'replacer.html'))
-    BoosokTools::TitleBar.attach(@@dialog, "The Replacer", width: 360)
+    BoosokTools::TitleBar.attach(@@dialog, "The Replacer", width: 380)
 
     @@dialog.set_on_closed {
       BoosokTools.capture_current_position("The Replacer")

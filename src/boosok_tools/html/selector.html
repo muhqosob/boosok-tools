@@ -136,7 +136,6 @@
 
   <script>
     var ALL = '(Semua Tag / Abaikan)'; // Ruby membandingkan string ini persis
-    var H_BASE = 505, H_ATTR = 635;
     var tags = [], keys = [];
     var $ = function (id) { return document.getElementById(id); };
 
@@ -208,7 +207,7 @@
       var on = $('useAttr').getAttribute('aria-checked') !== 'true';
       $('useAttr').setAttribute('aria-checked', on);
       $('attr').classList.toggle('open', on);
-      sketchup.resize_dialog(on ? H_ATTR : H_BASE);
+      autoFitHeight(0);
     }
     $('useAttr').addEventListener('click', toggleAttr);
     $('useAttr').addEventListener('keydown', function (e) {
@@ -255,11 +254,13 @@
       tags = data.tags || [];
       keys = data.keys || ['a_posisi'];
       renderKeys();
+    autoFitHeight(0);
     }
     function showSuccessStep(msg) {
       $('success-msg').innerHTML = msg;
       resetSubmitButton();
       showStep(2);
+    autoFitHeight(0);
     }
     function resetSubmitButton() { busy('btnSubmit', false); }
 
@@ -279,13 +280,9 @@
     $('keyword').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnSubmit').click(); });
     $('attrVal').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnSubmit').click(); });
 
-    // Simpan posisi jendela
-    setInterval(function () {
-      var x = window.screenX, y = window.screenY;
-      if (x > 10 && y > 10 && window.sketchup) sketchup.save_position(JSON.stringify({ left: x, top: y }));
-    }, 1500);
 
     if (window.sketchup) sketchup.get_init_data();
+    autoFitHeight(0);
   </script>
 </body>
 </html>

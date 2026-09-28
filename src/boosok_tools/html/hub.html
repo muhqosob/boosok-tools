@@ -185,7 +185,7 @@
           '<div class="spacer"></div>' +
           '<div class="actions"><button class="btn primary" onclick="retry(this)">' +
           icon('refresh-cw') + '<span>Coba lagi</span></button></div>';
-        autoFitHeight(20);
+      autoFitHeight(0);
         return;
       }
 
@@ -200,7 +200,7 @@
           '<div class="spacer"></div>' +
           '<div class="actions"><button class="btn ghost" onclick="retry(this)">' +
           icon('refresh-cw') + '<span>Muat ulang</span></button></div>' + foot;
-        autoFitHeight(20);
+      autoFitHeight(0);
         return;
       }
 
@@ -214,7 +214,7 @@
         '<div class="note">' + icon('info') + '<span><b>' + stats.selected + '</b> terseleksi · <b>' +
         stats.objects + '</b> group/component · <b>' + stats.scenes + '</b> scene</span></div>' +
         '<div class="spacer"></div>' + foot;
-      autoFitHeight(22);
+      autoFitHeight(0);
     }
 
     function openTool(id) {
@@ -250,14 +250,6 @@
       if (S.status === 'ready' || S.status === 'error') requestState();
     });
 
-    // Simpan posisi jendela jika digeser
-    setInterval(function () {
-      var x = window.screenX || window.screenLeft || 0;
-      var y = window.screenY || window.screenTop || 0;
-      if (x > 10 && y > 10 && window.sketchup && typeof sketchup.save_position === 'function') {
-        sketchup.save_position(JSON.stringify({ left: x, top: y }));
-      }
-    }, 2000);
 
     requestState();
   </script>

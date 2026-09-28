@@ -12,7 +12,7 @@ module UntagUnpaintManager
         :dialog_title => "Untag & Unpaint",
         :scrollable => false,
         :resizable => false,
-        :width => 360,
+        :width => 380,
         :height => 465,
         :style => UI::HtmlDialog::STYLE_DIALOG
       }
@@ -23,7 +23,7 @@ module UntagUnpaintManager
     end
 
     dialog.set_file(File.join(__dir__, 'html', 'untagnpaint.html'))
-    BoosokTools::TitleBar.attach(dialog, "Untag & Unpaint", width: 360)
+    BoosokTools::TitleBar.attach(dialog, "Untag & Unpaint", width: 380)
 
     dialog.set_on_closed {
       BoosokTools.capture_current_position("Untag & Unpaint")
