@@ -1,5 +1,5 @@
 {
-  "version": "1.2.1",
-  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.2.1/boosok_tools_v1.2.1.rbz",
-  "changelog": "v1.2.1: Perbaikan Selector, Replacer, Posisi Dialog & Fitur End Isolate\n\n- Selector: Dialog height otomatis fit kembali saat klik 'Seleksi lagi'\n\n- Replacer: Item lama kini tersimpan stabil saat memilih group pengganti\n\n- Hide on Scene: Penambahan tombol 'End Isolate' untuk menampilkan kembali semua objek tersembunyi hingga ke dalam group\n\n- Hub: Dialog otomatis berada di center area kerja SketchUp saat pertama dibuka, dan mengingat posisi jika digeser\n\n- Update: Label tombol diubah menjadi 'Tutup' dan ketinggian dialog update otomatis fit dengan panjang deskripsi\n\n- Fix: Seluruh tombol fungsi tidak lagi mengalami macet di status memproses"
+  "version": "1.2.2",
+  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.2.2/boosok_tools_v1.2.2.rbz",
+  "changelog": "Perbaikan Selector, Replacer, Posisi Dialog & Fitur End Isolate\n\n- Selector: Dialog height otomatis fit kembali saat klik 'Seleksi lagi'\n\n- Replacer: Item lama kini tersimpan stabil saat memilih group pengganti\n\n- Hide on Scene: Penambahan tombol 'End Isolate' untuk menampilkan kembali semua objek tersembunyi hingga ke dalam group\n\n- Hub: Dialog otomatis berada di center area kerja SketchUp saat pertama dibuka, dan mengingat posisi jika digeser\n\n- Update: Label tombol diubah menjadi 'Tutup' dan ketinggian dialog update otomatis fit dengan panjang deskripsi\n\n- Fix: Seluruh tombol fungsi tidak lagi mengalami macet di status memproses\n\n- Fix: Notifikasi yang menghalangi"
 }
