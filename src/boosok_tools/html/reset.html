@@ -4,6 +4,37 @@
   <meta charset="UTF-8">
   <title>Reset Scale</title>
   <link rel="stylesheet" href="../css/ui.css">
+  <style>
+    body { gap: 12px; }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .opt-card {
+      display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px;
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+      cursor: pointer; transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+    .opt-card:hover { border-color: var(--line-strong); }
+    .opt-card.active {
+      border-color: var(--dark-gray);
+      box-shadow: 0 0 0 1px var(--dark-gray);
+      background: var(--surface);
+    }
+    .opt-card:focus-visible { outline: 2px solid var(--dark-gray); outline-offset: 2px; }
+    .opt-radio {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 1.5px solid var(--line-strong); margin-top: 2px;
+      flex-shrink: 0; display: grid; place-items: center;
+      transition: border-color .15s, background .15s;
+    }
+    .opt-card.active .opt-radio { border-color: var(--dark-gray); }
+    .opt-card.active .opt-radio::after {
+      content: ""; width: 8px; height: 8px; border-radius: 50%;
+      background: var(--dark-gray);
+    }
+    .opt-txt { flex: 1; min-width: 0; }
+    .opt-title { font-weight: 600; font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
+    .opt-desc { font-size: 11.5px; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+    .toggle { padding: 9px 12px; }
+  </style>
 </head>
 <body>
   <script src="../js/ui.js"></script>
@@ -12,27 +43,47 @@
     <div class="mark"><svg><use href="#i-scale-3d"/></svg></div>
     <div class="txt">
       <h1>Reset Scale</h1>
-      <p>Kembalikan skala group / component</p>
+      <p>Atur ulang skala group / component</p>
     </div>
   </header>
 
   <section class="step active" id="step1">
-    <div class="card">
-      <div class="cap">Yang dilakukan</div>
-      <ul class="steps">
-        <li>
-          <div class="ic"><svg><use href="#i-scale-3d"/></svg></div>
-          <div><div class="t">Skala X / Y / Z jadi 1</div><div class="s">Posisi & rotasi tetap</div></div>
-        </li>
-        <li>
-          <div class="ic"><svg><use href="#i-layers"/></svg></div>
-          <div><div class="t">Semua seleksi sekaligus</div><div class="s">Selain group / component dilewati</div></div>
-        </li>
-      </ul>
+    <div class="label">Pilihan Reset Skala</div>
+
+    <div class="options" role="radiogroup">
+      <div class="opt-card active" data-mode="preserve" role="radio" aria-checked="true" tabindex="0">
+        <div class="opt-radio"></div>
+        <div class="opt-txt">
+          <div class="opt-title">
+            <span>Pertahankan Ukuran</span>
+            <span class="pill new">Bake</span>
+          </div>
+          <div class="opt-desc">Skala jadi 1:1:1 tanpa mengubah ukuran saat ini (ukuran hasil skala tetap).</div>
+        </div>
+      </div>
+
+      <div class="opt-card" data-mode="original" role="radio" aria-checked="false" tabindex="0">
+        <div class="opt-radio"></div>
+        <div class="opt-txt">
+          <div class="opt-title">Kembalikan ke Ukuran Asli</div>
+          <div class="opt-desc">Skala jadi 1:1:1 dan ukuran kembali ke bentuk awal sebelum diskala.</div>
+        </div>
+      </div>
     </div>
+
+    <div class="toggle" id="deep" role="switch" aria-checked="false" tabindex="0">
+      <svg class="ic"><use href="#i-layers"/></svg>
+      <div class="txt">
+        <div class="t">Rekursif</div>
+        <div class="s">Ikut proses group & component di dalam</div>
+      </div>
+      <div class="switch"></div>
+    </div>
+
     <div class="spacer"></div>
-    <button class="btn primary" id="btnExec" onclick="busy(this, true); sketchup.reset()">
-      <svg><use href="#i-refresh-cw"/></svg><span>Reset skala</span>
+
+    <button class="btn primary" id="btnExec" onclick="executeReset()">
+      <svg><use href="#i-refresh-cw"/></svg><span id="btnText">Reset Skala (Tetap Ukuran)</span>
     </button>
   </section>
 
@@ -45,15 +96,71 @@
     <div class="spacer"></div>
     <div class="actions row">
       <button class="btn ghost" onclick="sketchup.close()">Tutup</button>
-      <button class="btn primary" onclick="showStep(1)">
+      <button class="btn primary" onclick="showStep(1); updateButtonText();">
         <svg><use href="#i-rotate-ccw"/></svg><span>Lagi</span>
       </button>
     </div>
   </section>
 
   <script>
+    var currentMode = 'preserve';
+    var cards = document.querySelectorAll('.opt-card');
+    var deepToggle = document.getElementById('deep');
+
+    function updateButtonText() {
+      var btnText = document.getElementById('btnText');
+      if (btnText) {
+        btnText.textContent = (currentMode === 'preserve') ? 'Reset Skala (Tetap Ukuran)' : 'Reset ke Ukuran Asli';
+      }
+    }
+
+    function selectMode(mode) {
+      currentMode = mode;
+      cards.forEach(function (card) {
+        var isTarget = (card.dataset.mode === mode);
+        card.classList.toggle('active', isTarget);
+        card.setAttribute('aria-checked', isTarget ? 'true' : 'false');
+      });
+      updateButtonText();
+    }
+
+    cards.forEach(function (card) {
+      card.addEventListener('click', function () {
+        selectMode(card.dataset.mode);
+      });
+      card.addEventListener('keydown', function (e) {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          selectMode(card.dataset.mode);
+        }
+      });
+    });
+
+    function toggleDeep() {
+      var val = deepToggle.getAttribute('aria-checked') !== 'true';
+      deepToggle.setAttribute('aria-checked', val ? 'true' : 'false');
+    }
+
+    deepToggle.addEventListener('click', toggleDeep);
+    deepToggle.addEventListener('keydown', function (e) {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        toggleDeep();
+      }
+    });
+
+    function executeReset() {
+      var isDeep = (deepToggle.getAttribute('aria-checked') === 'true');
+      busy('btnExec', true);
+      sketchup.reset(currentMode, isDeep);
+    }
+
     // Dipanggil dari Ruby: showToast(msg), resetExecButton(), showSuccessStep(msg)
-    function resetExecButton() { busy('btnExec', false); }
+    function resetExecButton() {
+      busy('btnExec', false);
+      updateButtonText();
+    }
+
     function showSuccessStep(msg) {
       resetExecButton();
       document.getElementById('success-message').textContent = msg;
