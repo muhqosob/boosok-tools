@@ -1,33 +1,15 @@
 require 'sketchup'
 require 'json'
 load File.join(__dir__, 'titlebar.rb')
+load File.join(__dir__, 'hub.rb')
 
 module TheResetScale
   def self.run
-    # Tutup dialog lama jika masih ada agar selalu memuat versi terbaru
-    @dialog.close if @dialog && @dialog.visible?
+    BoosokTools::Hub.open_or_show('reset')
+  end
 
-    pos = BoosokTools.get_position
-
-    dialog = @dialog = UI::HtmlDialog.new(
-      dialog_title: "Reset Scale",
-      scrollable: false, resizable: false,
-      width: 380, height: 475,
-      style: UI::HtmlDialog::STYLE_DIALOG
-    )
-
-    if pos && pos[0] > 5 && pos[1] > 5
-      dialog.set_position(pos[0], pos[1])
-    end
-
-    dialog.set_file(File.join(__dir__, 'html', 'reset.html'))
-    BoosokTools::TitleBar.attach(dialog, "Reset Scale", width: 380)
-
-    dialog.set_on_closed {
-      BoosokTools.capture_current_position("Reset Scale")
-    }
-
-    dialog.add_action_callback("close") { dialog.close }
+  def self.attach_callbacks(dialog)
+    return unless dialog
 
     dialog.add_action_callback("reset") do |_action_context, mode, recursive|
       mode_str = mode.to_s.empty? ? "preserve" : mode.to_s
@@ -40,17 +22,17 @@ module TheResetScale
         else
           "Skala #{result} objek kembali ke ukuran asli."
         end
-        dialog.execute_script("showSuccessStep(#{msg.to_json})")
+        dialog.execute_script("showSuccessStep(#{msg.to_json});")
       else
-        dialog.execute_script("resetExecButton(); showToast(#{result.to_json})")
+        dialog.execute_script("resetExecButton(); showToast(#{result.to_json});")
       end
     end
-
-    dialog.show
   end
 
   def self.reset_selection(mode = "preserve", recursive = false)
     model = Sketchup.active_model
+    return "Tidak ada model aktif." unless model
+
     targets = model.selection.select { |e| e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) }
     return "Pilih minimal 1 group / component dulu." if targets.empty?
 

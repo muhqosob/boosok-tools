@@ -1,9 +1,7 @@
 load File.join(__dir__, 'titlebar.rb')
+load File.join(__dir__, 'hub.rb')
 
 module ConvertToCleanGroup
-  @@dialog = nil
-  @@last_pos = nil
-
   # --- FUNGSI INTI ---
 
   def self.purge_attributes(entity)
@@ -79,110 +77,81 @@ module ConvertToCleanGroup
   # --- UI & DIALOG ---
 
   def self.run
-    if @@dialog && @@dialog.visible?
-      begin
-        pos = @@dialog.get_position
-        @@last_pos = pos if pos.is_a?(Array) && pos.length == 2
-      rescue
-      end
-      @@dialog.close
-    end
-    pos = BoosokTools.get_position
+    BoosokTools::Hub.open_or_show('clean')
+  end
 
-    @@dialog = UI::HtmlDialog.new(
-      {
-        :dialog_title => "Clean Group Converter",
-        :scrollable => false,
-        :resizable => false,
-        :width => 380,
-        :height => 435,
-        :style => UI::HtmlDialog::STYLE_DIALOG
-      }
-    )
-
-    if pos && pos[0] > 5 && pos[1] > 5
-      @@dialog.set_position(pos[0], pos[1])
-    else
-      @@dialog.center if @@dialog.respond_to?(:center)
-    end
-
-    @@dialog.set_file(File.join(__dir__, 'html', 'cleangroup.html'))
-    BoosokTools::TitleBar.attach(@@dialog, "Clean Group Converter", width: 380)
-
-    @@dialog.set_on_closed {
-      BoosokTools.capture_current_position("Clean Group Converter")
-    }
-
-    @@dialog.add_action_callback("close_dialog") do |action_context|
-      @@dialog.close if @@dialog && @@dialog.visible?
-    end
+  def self.attach_callbacks(dialog)
+    return unless dialog
 
     # --- CALLBACK: MULAI KEMBALI ---
-    @@dialog.add_action_callback("restart_process") do |action_context|
-      Sketchup.active_model.selection.clear
-      @@dialog.execute_script("showStep(1); resetExecButton();")
+    dialog.add_action_callback("restart_process") do |_action_context|
+      Sketchup.active_model.selection.clear if Sketchup.active_model
+      dialog.execute_script("showStep(1); resetExecButton();")
     end
 
-    # --- CALLBACK: PROSES EKSEKUSI (VALIDASI SELESAI DI SINI) ---
-    @@dialog.add_action_callback("proses_clean_group") do |action_context|
-      model = Sketchup.active_model
-      sel = model.selection.to_a
-      
-      # Validasi Cepat di Awal
-      if sel.length != 1
-        @@dialog.execute_script("showToast('Silakan pilih tepat 1 objek di layar!'); resetExecButton();")
-        next
-      elsif !sel[0].is_a?(Sketchup::ComponentInstance)
-        @@dialog.execute_script("showToast('Error: Objek yang dipilih BUKAN Component!'); resetExecButton();")
-        next
-      end
+    # --- CALLBACK: PROSES EKSEKUSI ---
+    dialog.add_action_callback("proses_clean_group") do |_action_context|
+      execute_clean(dialog)
+    end
+  end
 
-      item = sel[0]
-      main_layer = item.layer
+  def self.execute_clean(dialog)
+    model = Sketchup.active_model
+    return dialog.execute_script("resetExecButton(); showToast('Tidak ada model aktif.');") unless model
 
-      model.start_operation("Convert to Clean Group", true)
-      begin
-
-        # 1. Jadikan unik agar instans lain aman
-        item = item.make_unique
-
-        tr = item.transformation
-        parent_ents = item.parent.entities
-        source_defn = item.definition
-
-        # 2. Hapus 2d__Line di source_defn
-        remove_target_completely(source_defn.entities)
-        purge_attributes(source_defn)
-
-        # 3. Buat Group Master
-        master_group = parent_ents.add_group
-        master_group.transformation = tr
-        master_group.layer = main_layer if main_layer
-
-        # 4. Masukkan isi ke dalam master group
-        temp_inst = master_group.entities.add_instance(source_defn, Geom::Transformation.new)
-        temp_inst.explode if temp_inst
-
-        # 5. Hapus komponen asli
-        item.erase!
-
-        # 6. Ubah seluruh struktur di dalamnya menjadi grup dan bersihkan atribut
-        purge_attributes(master_group)
-        convert_remaining_to_groups(master_group.entities)
-
-        model.commit_operation
-      rescue => e
-        model.abort_operation
-        @@dialog.execute_script("resetExecButton();")
-        @@dialog.execute_script("showToast(#{("Gagal: " + e.message).to_json});")
-        next
-      end
-      model.selection.clear
-
-      @@dialog.execute_script("resetExecButton();")
-      @@dialog.execute_script("showSuccessStep('Selesai! Komponen berhasil dibersihkan menjadi Grup murni.');")
+    sel = model.selection.to_a
+    
+    # Validasi Cepat di Awal
+    if sel.length != 1
+      dialog.execute_script("showToast('Silakan pilih tepat 1 objek di layar!'); resetExecButton();")
+      return
+    elsif !sel[0].is_a?(Sketchup::ComponentInstance)
+      dialog.execute_script("showToast('Error: Objek yang dipilih BUKAN Component!'); resetExecButton();")
+      return
     end
 
-    @@dialog.show
+    item = sel[0]
+    main_layer = item.layer
+
+    model.start_operation("Convert to Clean Group", true)
+    begin
+      # 1. Jadikan unik agar instans lain aman
+      item = item.make_unique
+
+      tr = item.transformation
+      parent_ents = item.parent.entities
+      source_defn = item.definition
+
+      # 2. Hapus 2d__Line di source_defn
+      remove_target_completely(source_defn.entities)
+      purge_attributes(source_defn)
+
+      # 3. Buat Group Master
+      master_group = parent_ents.add_group
+      master_group.transformation = tr
+      master_group.layer = main_layer if main_layer
+
+      # 4. Masukkan isi ke dalam master group
+      temp_inst = master_group.entities.add_instance(source_defn, Geom::Transformation.new)
+      temp_inst.explode if temp_inst
+
+      # 5. Hapus komponen asli
+      item.erase!
+
+      # 6. Ubah seluruh struktur di dalamnya menjadi grup dan bersihkan atribut
+      purge_attributes(master_group)
+      convert_remaining_to_groups(master_group.entities)
+
+      model.commit_operation
+    rescue => e
+      model.abort_operation
+      dialog.execute_script("resetExecButton();")
+      dialog.execute_script("showToast(#{("Gagal: " + e.message).to_json});")
+      return
+    end
+    model.selection.clear
+
+    dialog.execute_script("resetExecButton();")
+    dialog.execute_script("showSuccessStep('Selesai! Komponen berhasil dibersihkan menjadi Grup murni.');")
   end
 end

@@ -131,57 +131,22 @@ module HideOnSceneManager
   end
 
   def self.run
-    if @dialog && @dialog.visible?
-      @dialog.bring_to_front
-      sync_scenes_and_tags
-      return
-    end
+    BoosokTools::Hub.open_or_show('scene')
+  end
 
+  def self.attach_callbacks(dialog)
+    @dialog = dialog
     detach_all_observers
 
     model = Sketchup.active_model
-    @cached_scenes = model.pages.map(&:name)
-    pos = BoosokTools.get_position
+    @cached_scenes = model ? model.pages.map(&:name) : []
 
-    # --- BUAT DIALOG UI ---
-    dialog = @dialog = UI::HtmlDialog.new(
-      {
-        :dialog_title => "Hide on Scene",
-        :scrollable => false,
-        :resizable => true,
-        :width => 380,
-        :min_width => 380,
-        :max_width => 380,
-        :height => 580,
-        :min_height => 450,
-        :style => UI::HtmlDialog::STYLE_DIALOG
-      }
-    )
-
-    if pos && pos[0] > 5 && pos[1] > 5
-      dialog.set_position(pos[0], pos[1])
-    end
-
-    dialog.set_file(File.join(__dir__, 'html', 'hidescene.html'))
-    BoosokTools::TitleBar.attach(dialog, "Hide on Scene", width: 380)
-
-    dialog.add_action_callback("ready") do |action_context|
+    dialog.add_action_callback("ready") do |_action_context|
       current_model = Sketchup.active_model
-      @cached_scenes = current_model.pages.map(&:name)
-      @cached_tags = current_model.layers.map(&:name)
+      @cached_scenes = current_model ? current_model.pages.map(&:name) : []
+      @cached_tags = current_model ? current_model.layers.map(&:name) : []
       data = { scenes: @cached_scenes, tags: @cached_tags }
-      dialog.execute_script("init(#{data.to_json})")
-    end
-
-    # --- CALLBACK: TUTUP DIALOG ---
-    dialog.add_action_callback("closeDialog") do |action_context|
-      dialog.close
-    end
-
-    dialog.set_on_closed do
-      BoosokTools.capture_current_position("Hide on Scene")
-      HideOnSceneManager.detach_all_observers
-      HideOnSceneManager.instance_variable_set(:@dialog, nil)
+      dialog.execute_script("if (typeof init === 'function') init(#{data.to_json});")
     end
 
     @app_observer ||= AppObserver.new
@@ -190,7 +155,7 @@ module HideOnSceneManager
     rescue => e
     end
 
-    attach_to_model(model)
+    attach_to_model(model) if model
 
     # --- CALLBACK 1: PROSES ISOLATE SCENE AKTIF (LANGSUNG REFRESH VIEWPORT) ---
     dialog.add_action_callback("prosesIsolateActive") do |action_context|
@@ -375,7 +340,5 @@ module HideOnSceneManager
         dialog.execute_script("showToast(#{("Kesalahan Sistem: " + e.message).to_json}, 'error');")
       end
     end
-
-    dialog.show
   end
 end

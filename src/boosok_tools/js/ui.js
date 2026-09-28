@@ -228,18 +228,18 @@ window.addEventListener('storage', function (e) {
 });
 
 // ==========================================
-// NAVIGASI KEMBALI KE HUB BOSOK TOOLS
+// NAVIGASI KEMBALI KE HUB BOOSOK TOOLS
 // ==========================================
 function backToHub() {
   var x = window.screenX || window.screenLeft || 0;
   var y = window.screenY || window.screenTop || 0;
+  if (x > 10 && y > 10 && window.sketchup && typeof window.sketchup.save_position === 'function') {
+    window.sketchup.save_position(JSON.stringify({ left: x, top: y }));
+  }
   if (window.sketchup && typeof window.sketchup.back_to_hub === 'function') {
     window.sketchup.back_to_hub(JSON.stringify({ left: x, top: y }));
-  } else if (window.sketchup && typeof window.sketchup.closeDialog === 'function') {
-    window.sketchup.closeDialog();
-  } else if (window.sketchup && typeof window.sketchup.close === 'function') {
-    window.sketchup.close();
   }
+  window.location.replace('hub.html');
 }
 
 // ==========================================
@@ -247,27 +247,43 @@ function backToHub() {
 // ==========================================
 var _lastFitHeight = 0;
 function autoFitHeight(extraPadding) {
-  // extraPadding: ruang tambahan di bawah konten, default 8px (cukup nyaman, tidak mepet, tidak jauh)
-  extraPadding = (extraPadding !== undefined) ? extraPadding : 8;
+  // extraPadding: ruang tambahan di bawah konten visual, default 6px (nyaman & proporsional)
+  extraPadding = (extraPadding !== undefined) ? extraPadding : 6;
   setTimeout(function () {
     try {
-      // scrollHeight body sudah termasuk paddingTop + paddingBottom dari CSS body
-      // Tambahkan hanya extraPadding kecil sebagai buffer visual
-      var targetInner = Math.ceil(document.body.scrollHeight) + extraPadding;
+      var bodyStyle = window.getComputedStyle(document.body);
+      var pb = parseInt(bodyStyle.paddingBottom) || 18;
+
+      // Hitung batas bawah elemen konten yang sedang aktif/tampak
+      var maxBottom = 0;
+      var els = document.body.children;
+      for (var i = 0; i < els.length; i++) {
+        var el = els[i];
+        if (el.nodeType === 1 && el.id !== 'toast' && el.id !== 'boot') {
+          if (el.offsetParent !== null || el.offsetHeight > 0) {
+            var rect = el.getBoundingClientRect();
+            if (rect.bottom > maxBottom) {
+              maxBottom = rect.bottom;
+            }
+          }
+        }
+      }
+
+      var targetInner = maxBottom > 50 ? Math.ceil(maxBottom + pb + extraPadding) : Math.ceil(document.body.scrollHeight + extraPadding);
 
       // Selisih antara outerHeight window dan innerHeight document di Windows (~35-40px)
       var frameDiff = (window.outerHeight && window.innerHeight) ? (window.outerHeight - window.innerHeight) : 38;
       if (frameDiff <= 0 || frameDiff > 70) frameDiff = 38;
 
       var targetOuter = targetInner + frameDiff;
-      if (Math.abs(targetOuter - _lastFitHeight) > 4 && targetOuter > 200 && targetOuter < 1100) {
+      if (Math.abs(targetOuter - _lastFitHeight) >= 4 && targetOuter > 200 && targetOuter < 1100) {
         _lastFitHeight = targetOuter;
         if (window.sketchup && typeof window.sketchup.set_dialog_height === 'function') {
           window.sketchup.set_dialog_height(targetOuter);
         }
       }
     } catch (e) {}
-  }, 50);
+  }, 60);
 }
 
 // Auto save position jika window digeser

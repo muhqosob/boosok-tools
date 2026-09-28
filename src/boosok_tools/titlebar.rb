@@ -159,9 +159,13 @@ module BoosokTools
         else
           BoosokTools.capture_current_position(title)
         end
-        dialog.close rescue nil
+        HideOnSceneManager.detach_all_observers rescue nil if defined?(HideOnSceneManager)
         load File.join(__dir__, 'hub.rb')
-        BoosokTools::Hub.show
+        BoosokTools::Hub.back_to_hub
+      end
+
+      ['closeDialog', 'close_dialog', 'close'].each do |cb|
+        dialog.add_action_callback(cb) { dialog.close }
       end
 
       dialog.add_action_callback("set_dialog_height") do |_ctx, height|
@@ -179,6 +183,16 @@ module BoosokTools
         UI.start_timer(delay, false) { set_theme(title, is_dark) }
       end
     end
+  end
+
+  @dialog = nil
+
+  def self.dialog
+    @dialog
+  end
+
+  def self.dialog=(d)
+    @dialog = d
   end
 
   @dialog_pos = nil

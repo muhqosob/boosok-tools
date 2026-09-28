@@ -1,58 +1,30 @@
 require 'sketchup'
 require 'json'
 load File.join(__dir__, 'titlebar.rb')
+load File.join(__dir__, 'hub.rb')
 
 module TheSelectorPlugin
   class << self
     def run_selector
-      # Satu dialog saja. Buka ulang supaya daftar tag ikut ter-refresh.
-      @dialog.close if @dialog && @dialog.visible?
+      BoosokTools::Hub.open_or_show('selector')
+    end
 
-      model = Sketchup.active_model
-      all_tags = model.layers.map { |layer| layer.name }.sort
+    def attach_callbacks(dialog)
+      return unless dialog
 
-      pos = BoosokTools.get_position
-
-      saved_keys_str = Sketchup.read_default("TheSelectorPlugin", "attr_keys_v2", "a_posisi").to_s
-      saved_keys = saved_keys_str.empty? ? ["a_posisi"] : saved_keys_str.split("|")
-
-      # Dibuat fixed (resizable: false) dengan tinggi default lega (Fit In)
-      dialog = @dialog = UI::HtmlDialog.new(
-        {
-          :dialog_title => "The Selector",
-          :scrollable => false,
-          :resizable => false,
-          :width => 380,
-          :height => 500,
-          :style => UI::HtmlDialog::STYLE_DIALOG
+      dialog.add_action_callback("get_init_data") do |_ctx|
+        model = Sketchup.active_model
+        all_tags = model ? model.layers.map(&:name).sort : []
+        saved_keys_str = Sketchup.read_default("TheSelectorPlugin", "attr_keys_v2", "a_posisi").to_s
+        saved_keys = saved_keys_str.empty? ? ["a_posisi"] : saved_keys_str.split("|")
+        init_data = {
+          tags: all_tags,
+          keys: saved_keys
         }
-      )
-
-      if pos && pos[0] > 5 && pos[1] > 5
-        dialog.set_position(pos[0], pos[1])
+        dialog.execute_script("if (typeof initUIData === 'function') initUIData(#{init_data.to_json});")
       end
 
-      html_path = File.join(File.dirname(__FILE__), 'html', 'selector.html')
-      dialog.set_file(html_path)
-      BoosokTools::TitleBar.attach(dialog, "The Selector", width: 380)
-
-      dialog.add_action_callback("closeDialog") do |action_context|
-        dialog.close
-      end
-
-      # Fungsi otomatis memperbesar/memperkecil jendela dari HTML
-      dialog.add_action_callback("resize_dialog") do |action_context, height|
-        dialog.set_size(380, height.to_i)
-      end
-
-      dialog.add_action_callback("save_position") do |action_context, pos_json|
-        pos_data = JSON.parse(pos_json) rescue nil
-        if pos_data && pos_data["left"].to_i > 10 && pos_data["top"].to_i > 10
-          BoosokTools.save_position(pos_data["left"].to_i, pos_data["top"].to_i)
-        end
-      end
-
-      dialog.add_action_callback("save_new_key") do |action_context, new_key|
+      dialog.add_action_callback("save_new_key") do |_ctx, new_key|
         new_key = new_key.to_s.strip.downcase
         unless new_key.empty?
           str = Sketchup.read_default("TheSelectorPlugin", "attr_keys_v2", "a_posisi").to_s
@@ -64,7 +36,7 @@ module TheSelectorPlugin
         end
       end
 
-      dialog.add_action_callback("delete_key") do |action_context, key_to_delete|
+      dialog.add_action_callback("delete_key") do |_ctx, key_to_delete|
         key_to_delete = key_to_delete.to_s.strip.downcase
         str = Sketchup.read_default("TheSelectorPlugin", "attr_keys_v2", "a_posisi").to_s
         keys = str.empty? ? ["a_posisi"] : str.split("|")
@@ -73,108 +45,101 @@ module TheSelectorPlugin
         Sketchup.write_default("TheSelectorPlugin", "attr_keys_v2", keys.join("|"))
       end
 
-      dialog.add_action_callback("perform_selection") do |action_context, json_data|
-        begin
-          data = JSON.parse(json_data) rescue {}
-          if data.empty?
-            dialog.execute_script("resetSubmitButton();")
-            next
-          end
+      dialog.add_action_callback("perform_selection") do |_ctx, json_data|
+        execute_selection(dialog, json_data)
+      end
+    end
 
-          if data["left"] && data["top"] && data["left"].to_i > 10 && data["top"].to_i > 10
-            Sketchup.write_default("TheSelectorPlugin", "dialog_left", data["left"].to_i)
-            Sketchup.write_default("TheSelectorPlugin", "dialog_top", data["top"].to_i)
-          end
+    def execute_selection(dialog, json_data)
+      data = JSON.parse(json_data) rescue {}
+      if data.empty?
+        dialog.execute_script("resetSubmitButton();")
+        return
+      end
 
-          tag_utama = data["tag_utama"].to_s.strip
-          tag_kedua = data["tag_kedua"].to_s.strip
-          search_type = data["search_type"]
-          target_keyword = data["keyword"].to_s.strip.downcase
-          use_attribute = data["use_attr"]
-          target_attr_key = data["attr_key"].to_s.strip.downcase
-          target_attr_val = data["attr_val"].to_s.strip.downcase
+      if data["left"] && data["top"] && data["left"].to_i > 10 && data["top"].to_i > 10
+        BoosokTools.save_position(data["left"].to_i, data["top"].to_i)
+      end
 
-          model = Sketchup.active_model # dialog tetap terbuka, model aktif bisa sudah ganti (Mac)
-          selection = model.selection
-          selection.clear
-          matching_entities = []
-          search_entities = model.active_entities
+      tag_utama = data["tag_utama"].to_s.strip
+      tag_kedua = data["tag_kedua"].to_s.strip
+      search_type = data["search_type"]
+      target_keyword = data["keyword"].to_s.strip.downcase
+      use_attribute = data["use_attr"]
+      target_attr_key = data["attr_key"].to_s.strip.downcase
+      target_attr_val = data["attr_val"].to_s.strip.downcase
 
-          find_entities = lambda do |entities, current_parent_tag = nil|
-            entities.each do |ent|
-              if ent.is_a?(Sketchup::Group) || ent.is_a?(Sketchup::ComponentInstance)
-                ent_tag = ent.layer.name.strip
-              
-                active_parent_tag = current_parent_tag
-                if tag_utama == "(Semua Tag / Abaikan)" || ent_tag.downcase == tag_utama.downcase
-                  active_parent_tag = ent_tag
-                end
+      model = Sketchup.active_model
+      return dialog.execute_script("resetSubmitButton(); showToast('Tidak ada model yang aktif.');") unless model
 
-                match_tag_utama = true
-                if tag_utama != "(Semua Tag / Abaikan)"
-                  is_self_tag = (ent_tag.downcase == tag_utama.downcase)
-                  is_inside_parent = (active_parent_tag && active_parent_tag.downcase == tag_utama.downcase)
-                  match_tag_utama = is_self_tag || is_inside_parent
-                end
+      selection = model.selection
+      selection.clear
+      matching_entities = []
+      search_entities = model.active_entities
 
-                match_tag_kedua = (tag_kedua == "(Semua Tag / Abaikan)") || (ent_tag.downcase == tag_kedua.downcase)
-              
-                current_name = (search_type == "Instance Name") ? ent.name.strip.downcase : ent.definition.name.strip.downcase
-                match_name = target_keyword.empty? || (current_name == target_keyword)
-              
-                match_attr = true
-                if use_attribute
-                  match_attr = false
-                  unless target_attr_key.empty?
-                    dictionaries = ent.attribute_dictionaries.to_a + (ent.definition.attribute_dictionaries ? ent.definition.attribute_dictionaries.to_a : [])
-                    dictionaries.each do |dict|
-                      next if dict.nil?
-                      if dict.keys.any? { |k| k.to_s.downcase == target_attr_key }
-                        val = dict[target_attr_key] || dict[dict.keys.find { |k| k.to_s.downcase == target_attr_key }]
-                        if target_attr_val.empty? || val.to_s.strip.downcase == target_attr_val
-                          match_attr = true
-                          break
-                        end
-                      end
+      find_entities = lambda do |entities, current_parent_tag = nil|
+        entities.each do |ent|
+          if ent.is_a?(Sketchup::Group) || ent.is_a?(Sketchup::ComponentInstance)
+            ent_tag = ent.layer.name.strip
+
+            active_parent_tag = current_parent_tag
+            if tag_utama == "(Semua Tag / Abaikan)" || ent_tag.downcase == tag_utama.downcase
+              active_parent_tag = ent_tag
+            end
+
+            match_tag_utama = true
+            if tag_utama != "(Semua Tag / Abaikan)"
+              is_self_tag = (ent_tag.downcase == tag_utama.downcase)
+              is_inside_parent = (active_parent_tag && active_parent_tag.downcase == tag_utama.downcase)
+              match_tag_utama = is_self_tag || is_inside_parent
+            end
+
+            match_tag_kedua = (tag_kedua == "(Semua Tag / Abaikan)") || (ent_tag.downcase == tag_kedua.downcase)
+
+            current_name = (search_type == "Instance Name") ? ent.name.strip.downcase : ent.definition.name.strip.downcase
+            match_name = target_keyword.empty? || (current_name == target_keyword)
+
+            match_attr = true
+            if use_attribute
+              match_attr = false
+              unless target_attr_key.empty?
+                dictionaries = ent.attribute_dictionaries.to_a + (ent.definition.attribute_dictionaries ? ent.definition.attribute_dictionaries.to_a : [])
+                dictionaries.each do |dict|
+                  next if dict.nil?
+                  if dict.keys.any? { |k| k.to_s.downcase == target_attr_key }
+                    val = dict[target_attr_key] || dict[dict.keys.find { |k| k.to_s.downcase == target_attr_key }]
+                    if target_attr_val.empty? || val.to_s.strip.downcase == target_attr_val
+                      match_attr = true
+                      break
                     end
                   end
                 end
-
-                if match_tag_kedua && match_tag_utama && match_name && match_attr
-                  matching_entities << ent
-                end
-              
-                inner = ent.is_a?(Sketchup::Group) ? ent.entities : ent.definition.entities
-                find_entities.call(inner, active_parent_tag)
               end
             end
-          end
 
-          find_entities.call(search_entities, nil)
+            if match_tag_kedua && match_tag_utama && match_name && match_attr
+              matching_entities << ent
+            end
 
-          if matching_entities.any?
-            selection.add(matching_entities)
-            pesan = "Sukses! Ditemukan dan menyeleksi <b>#{matching_entities.size}</b> objek."
-            dialog.execute_script("showSuccessStep('#{pesan}');")
-          else
-            dialog.execute_script("resetSubmitButton();")
-            dialog.execute_script("showToast('Tidak ditemukan objek dengan kriteria tersebut.');")
+            inner = ent.is_a?(Sketchup::Group) ? ent.entities : ent.definition.entities
+            find_entities.call(inner, active_parent_tag)
           end
-        rescue => e
-          dialog.execute_script("resetSubmitButton();")
-          dialog.execute_script("showToast(#{("Gagal: " + e.message).to_json});")
         end
       end
 
-      dialog.add_action_callback("get_init_data") do |action_context|
-        init_data = {
-          tags: all_tags,
-          keys: saved_keys
-        }
-        dialog.execute_script("initUIData(#{init_data.to_json});")
-      end
+      find_entities.call(search_entities, nil)
 
-      dialog.show
+      if matching_entities.any?
+        selection.add(matching_entities)
+        pesan = "Sukses! Ditemukan dan menyeleksi <b>#{matching_entities.size}</b> objek."
+        dialog.execute_script("showSuccessStep('#{pesan}');")
+      else
+        dialog.execute_script("resetSubmitButton();")
+        dialog.execute_script("showToast('Tidak ditemukan objek dengan kriteria tersebut.');")
+      end
+    rescue => e
+      dialog.execute_script("resetSubmitButton();")
+      dialog.execute_script("showToast(#{("Gagal: " + e.message).to_json});")
     end
   end
 end
