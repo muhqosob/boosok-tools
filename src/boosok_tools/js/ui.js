@@ -81,6 +81,7 @@ function busy(btn, on) {
 }
 
 var toastTimer;
+var toastFitTimer;
 // type: 'error' (default) | 'success'
 function showToast(msg, type) {
   var t = document.getElementById('toast');
@@ -88,19 +89,38 @@ function showToast(msg, type) {
     t = document.createElement('div');
     t.id = 'toast';
     t.setAttribute('role', 'status');
-    document.body.appendChild(t);
+    // Sisipkan sebagai elemen PERTAMA di body agar konten terdorong ke bawah
+    document.body.insertBefore(t, document.body.firstChild);
   }
   type = type || 'error';
   t.innerHTML = icon(type === 'success' ? 'circle-check' : 'circle-alert') + '<span></span>';
   t.lastChild.innerHTML = msg; // pesan dari Ruby boleh berisi <b>
   t.className = type;
+  // Paksa browser hitung layout dulu (flush), lalu tambah class show
+  void t.offsetWidth;
   t.className = type + ' show';
   t.onclick = function () {
     clearTimeout(toastTimer);
+    clearTimeout(toastFitTimer);
     t.classList.remove('show');
+    // Tunggu transisi selesai lalu fit ulang (dialog mengecil)
+    toastFitTimer = setTimeout(function () {
+      if (typeof autoFitHeight === 'function') autoFitHeight(0);
+    }, 320);
   };
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(function () { t.className = type; }, 3000);
+  clearTimeout(toastFitTimer);
+  // Auto-fit setelah toast selesai muncul (transiton ~280ms)
+  toastFitTimer = setTimeout(function () {
+    if (typeof autoFitHeight === 'function') autoFitHeight(0);
+  }, 320);
+  toastTimer = setTimeout(function () {
+    t.className = type;
+    // Auto-fit setelah toast menghilang
+    setTimeout(function () {
+      if (typeof autoFitHeight === 'function') autoFitHeight(0);
+    }, 320);
+  }, 3000);
 }
 
 // Nonaktifkan klik kanan agar tidak membuka context menu / inspect element / devtools
@@ -259,7 +279,8 @@ function autoFitHeight(extraPadding) {
       var els = document.body.children;
       for (var i = 0; i < els.length; i++) {
         var el = els[i];
-        if (el.nodeType === 1 && el.id !== 'toast' && el.id !== 'boot') {
+        // Toast sekarang in-flow (bukan fixed), ikut dihitung saat tampil
+        if (el.nodeType === 1 && el.id !== 'boot') {
           if (el.offsetParent !== null || el.offsetHeight > 0) {
             var rect = el.getBoundingClientRect();
             if (rect.bottom > maxBottom) {
