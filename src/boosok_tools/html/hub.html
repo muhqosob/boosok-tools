@@ -133,7 +133,14 @@
     // Dipanggil dari Ruby. Selama loader belum kelar, tahan dulu.
     function render(st) {
       clearTimeout(bootTimer);
-      if (S.status === 'booting') {
+      if (st.has_booted) {
+        var bootEl = document.getElementById('boot');
+        if (bootEl) {
+          bootEl.style.display = 'none';
+          bootEl.classList.add('done');
+        }
+        S.status = 'ready';
+      } else if (S.status === 'booting') {
         pending = st;
         setTimeout(finishBoot, Math.max(0, MIN_BOOT_MS - (Date.now() - bootStart)));
         return;
@@ -152,7 +159,9 @@
       S.status = 'ready';
       var st = pending; pending = null;
       render(st);
-      document.getElementById('boot').classList.add('done');
+      var bootEl = document.getElementById('boot');
+      if (bootEl) bootEl.classList.add('done');
+      if (window.sketchup && sketchup.boot_done) sketchup.boot_done();
     }
 
     function draw() {
@@ -166,6 +175,7 @@
           '<div class="spacer"></div>' +
           '<div class="actions"><button class="btn primary" onclick="retry(this)">' +
           icon('refresh-cw') + '<span>Coba lagi</span></button></div>';
+        autoFitHeight(20);
         return;
       }
 
@@ -180,6 +190,7 @@
           '<div class="spacer"></div>' +
           '<div class="actions"><button class="btn ghost" onclick="retry(this)">' +
           icon('refresh-cw') + '<span>Muat ulang</span></button></div>' + foot;
+        autoFitHeight(20);
         return;
       }
 
@@ -193,6 +204,7 @@
         '<div class="note">' + icon('info') + '<span><b>' + stats.selected + '</b> terseleksi · <b>' +
         stats.objects + '</b> group/component · <b>' + stats.scenes + '</b> scene</span></div>' +
         '<div class="spacer"></div>' + foot;
+      autoFitHeight(22);
     }
 
     function openTool(id) {
@@ -205,7 +217,9 @@
           el.querySelector('.ic').innerHTML = icon('loader-circle');
         }
       });
-      sketchup.open(id); // sukses: Ruby menutup jendela ini
+      var x = window.screenX || window.screenLeft || 0;
+      var y = window.screenY || window.screenTop || 0;
+      sketchup.open(id, JSON.stringify({ left: x, top: y })); // kirim posisi dan buka tool
     }
 
     // Dipanggil dari Ruby kalau tool gagal dibuka
@@ -225,6 +239,15 @@
     window.addEventListener('focus', function () {
       if (S.status === 'ready' || S.status === 'error') requestState();
     });
+
+    // Simpan posisi jendela jika digeser
+    setInterval(function () {
+      var x = window.screenX || window.screenLeft || 0;
+      var y = window.screenY || window.screenTop || 0;
+      if (x > 10 && y > 10 && window.sketchup && typeof sketchup.save_position === 'function') {
+        sketchup.save_position(JSON.stringify({ left: x, top: y }));
+      }
+    }, 2000);
 
     requestState();
   </script>

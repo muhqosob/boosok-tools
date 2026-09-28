@@ -87,33 +87,30 @@ module ConvertToCleanGroup
       end
       @@dialog.close
     end
-    
+    pos = BoosokTools.get_position
+
     @@dialog = UI::HtmlDialog.new(
       {
         :dialog_title => "Clean Group Converter",
         :scrollable => false,
         :resizable => false,
         :width => 360,
-        :height => 420,
+        :height => 435,
         :style => UI::HtmlDialog::STYLE_DIALOG
       }
     )
 
-    @@dialog.set_file(File.join(__dir__, 'html', 'cleangroup.html'))
-    BoosokTools::TitleBar.attach(@@dialog, "Clean Group Converter")
-
-    if @@last_pos.is_a?(Array) && @@last_pos.length == 2
-      @@dialog.set_position(@@last_pos[0], @@last_pos[1])
+    if pos && pos[0] > 5 && pos[1] > 5
+      @@dialog.set_position(pos[0], pos[1])
     else
       @@dialog.center if @@dialog.respond_to?(:center)
     end
 
+    @@dialog.set_file(File.join(__dir__, 'html', 'cleangroup.html'))
+    BoosokTools::TitleBar.attach(@@dialog, "Clean Group Converter", width: 360)
+
     @@dialog.set_on_closed {
-      begin
-        pos = @@dialog.get_position
-        @@last_pos = pos if pos.is_a?(Array) && pos.length == 2
-      rescue
-      end
+      BoosokTools.capture_current_position("Clean Group Converter")
     }
 
     @@dialog.add_action_callback("close_dialog") do |action_context|

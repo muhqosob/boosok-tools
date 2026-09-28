@@ -38,6 +38,12 @@ module BoosokTools
         Fiddle::TYPE_INTPTR_T
       )
 
+      GetWindowRect = Fiddle::Function.new(
+        User32['GetWindowRect'],
+        [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_VOIDP],
+        Fiddle::TYPE_INT
+      )
+
       @ready = true
     rescue => e
       @ready = false
@@ -66,6 +72,30 @@ module BoosokTools
       end
 
       0
+    end
+
+    def self.get_window_pos(title)
+      return nil unless ready?
+      hwnd = find_hwnd(title)
+      return nil if hwnd == 0
+
+      buf = [0, 0, 0, 0].pack('l4')
+      if GetWindowRect.call(hwnd, buf) != 0
+        left, top, right, bottom = buf.unpack('l4')
+        return [left, top] if left > -2000 && top > -2000
+      end
+      nil
+    rescue => e
+      log("get_window_pos error: #{e.message}")
+      nil
+    end
+
+    def self.set_window_pos(title, x, y)
+      return unless ready?
+      hwnd = find_hwnd(title)
+      return if hwnd == 0
+      # SWP_NOSIZE = 0x0001, SWP_NOZORDER = 0x0004, SWP_NOACTIVATE = 0x0010
+      SetWindowPos.call(hwnd, 0, x.to_i, y.to_i, 0, 0, 0x0015) rescue nil
     end
 
     def self.apply_dark_titlebar(hwnd, is_dark)
@@ -105,7 +135,7 @@ module BoosokTools
       end
     end
 
-    def self.attach(dialog, title)
+    def self.attach(dialog, title, width: nil)
       return unless dialog
       log("attach '#{title}' ready=#{ready?}")
 
@@ -115,6 +145,33 @@ module BoosokTools
         set_theme(title, is_dark)
       end
 
+      dialog.add_action_callback("save_position") do |_ctx, pos_json|
+        pos = JSON.parse(pos_json) rescue nil
+        if pos && pos["left"] && pos["top"]
+          BoosokTools.save_position(pos["left"], pos["top"])
+        end
+      end
+
+      dialog.add_action_callback("back_to_hub") do |_ctx, pos_json|
+        pos = JSON.parse(pos_json) rescue nil
+        if pos && pos["left"] && pos["top"]
+          BoosokTools.save_position(pos["left"], pos["top"])
+        else
+          BoosokTools.capture_current_position(title)
+        end
+        dialog.close rescue nil
+        load File.join(__dir__, 'hub.rb')
+        BoosokTools::Hub.show
+      end
+
+      dialog.add_action_callback("set_dialog_height") do |_ctx, height|
+        h = height.to_i
+        if h > 200 && h < 1200
+          w = width ? width.to_i : 380
+          dialog.set_size(w, h)
+        end
+      end
+
       saved = Sketchup.read_default("BoosokTools", "theme", "light")
       is_dark = (saved.to_s == 'dark')
 
@@ -122,5 +179,39 @@ module BoosokTools
         UI.start_timer(delay, false) { set_theme(title, is_dark) }
       end
     end
+  end
+
+  @dialog_pos = nil
+
+  def self.save_position(x, y)
+    left = x.to_i
+    top = y.to_i
+    if left > 5 && top > 5
+      @dialog_pos = [left, top]
+      Sketchup.write_default("BoosokTools", "dialog_left", left)
+      Sketchup.write_default("BoosokTools", "dialog_top", top)
+    end
+  end
+
+  def self.get_position
+    if @dialog_pos
+      return @dialog_pos
+    end
+    x = Sketchup.read_default("BoosokTools", "dialog_left", nil)
+    y = Sketchup.read_default("BoosokTools", "dialog_top", nil)
+    if x && y && x.to_i > 5 && y.to_i > 5
+      @dialog_pos = [x.to_i, y.to_i]
+      return @dialog_pos
+    end
+    [320, 200]
+  end
+
+  def self.capture_current_position(title)
+    pos = TitleBar.get_window_pos(title)
+    if pos
+      save_position(pos[0], pos[1])
+      return pos
+    end
+    get_position
   end
 end

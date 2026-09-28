@@ -227,4 +227,67 @@ window.addEventListener('storage', function (e) {
   }
 });
 
+// ==========================================
+// NAVIGASI KEMBALI KE HUB BOSOK TOOLS
+// ==========================================
+function backToHub() {
+  var x = window.screenX || window.screenLeft || 0;
+  var y = window.screenY || window.screenTop || 0;
+  if (window.sketchup && typeof window.sketchup.back_to_hub === 'function') {
+    window.sketchup.back_to_hub(JSON.stringify({ left: x, top: y }));
+  } else if (window.sketchup && typeof window.sketchup.closeDialog === 'function') {
+    window.sketchup.closeDialog();
+  } else if (window.sketchup && typeof window.sketchup.close === 'function') {
+    window.sketchup.close();
+  }
+}
+
+// ==========================================
+// AUTO FIT HEIGHT DIALOG
+// ==========================================
+var _lastFitHeight = 0;
+function autoFitHeight(extraPadding) {
+  extraPadding = (extraPadding !== undefined) ? extraPadding : 16;
+  setTimeout(function () {
+    try {
+      var maxBottom = 0;
+      var children = document.body.children;
+      for (var i = 0; i < children.length; i++) {
+        var el = children[i];
+        if (el.nodeType === 1 && el.tagName !== 'SCRIPT' && el.id !== 'toast' && el.id !== 'boot') {
+          var b = el.offsetTop + el.offsetHeight;
+          if (b > maxBottom) maxBottom = b;
+        }
+      }
+      var bodyStyle = window.getComputedStyle(document.body);
+      var padBottom = parseFloat(bodyStyle.paddingBottom) || 20;
+      var contentInner = Math.ceil(maxBottom + padBottom + extraPadding);
+
+      var scrollH = Math.ceil(document.body.scrollHeight + extraPadding);
+      var targetInner = Math.max(contentInner, scrollH);
+
+      // Selisih antara outerHeight window dan innerHeight document di Windows (~35-40px)
+      var frameDiff = (window.outerHeight && window.innerHeight) ? (window.outerHeight - window.innerHeight) : 38;
+      if (frameDiff <= 0 || frameDiff > 70) frameDiff = 38;
+
+      var targetOuter = targetInner + frameDiff;
+      if (Math.abs(targetOuter - _lastFitHeight) > 4 && targetOuter > 200 && targetOuter < 1100) {
+        _lastFitHeight = targetOuter;
+        if (window.sketchup && typeof window.sketchup.set_dialog_height === 'function') {
+          window.sketchup.set_dialog_height(targetOuter);
+        }
+      }
+    } catch (e) {}
+  }, 50);
+}
+
+// Auto save position jika window digeser
+setInterval(function () {
+  var x = window.screenX || window.screenLeft || 0;
+  var y = window.screenY || window.screenTop || 0;
+  if (x > 10 && y > 10 && window.sketchup && typeof window.sketchup.save_position === 'function') {
+    window.sketchup.save_position(JSON.stringify({ left: x, top: y }));
+  }
+}, 2000);
+
 

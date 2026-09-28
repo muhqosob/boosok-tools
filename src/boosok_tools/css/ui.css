@@ -38,13 +38,13 @@
 
 * { box-sizing: border-box; }
 html, body {
-  margin: 0; height: 100vh; overflow: hidden;
+  margin: 0; min-height: 100vh; overflow: hidden;
   background: var(--bg); color: var(--ink);
   font: 13px/1.45 "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased; user-select: none;
   transition: background .2s var(--ease), color .2s var(--ease);
 }
-body { display: flex; flex-direction: column; padding: 18px 16px 16px; gap: 16px; }
+body { display: flex; flex-direction: column; padding: 18px 16px 20px; gap: 14px; box-sizing: border-box; }
 svg { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; }
 b { font-weight: 600; color: var(--ink); }
@@ -288,6 +288,40 @@ input[type="checkbox"] { accent-color: var(--dark-gray); }
 #toast.error svg { color: #f87171; }
 #toast.success svg { color: #4ade80; }
 #toast b { color: #fff; }
+
+/* Tombol Kembali ke Hub di Header */
+.back-btn {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--surface); border: 1px solid var(--line);
+  color: var(--muted); cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s, transform .12s var(--ease), box-shadow .15s;
+}
+.back-btn svg { width: 15px; height: 15px; transition: transform .15s var(--ease); }
+.back-btn:hover {
+  background: var(--line);
+  border-color: var(--line-strong);
+  color: var(--ink);
+  transform: translateX(-2px);
+}
+.back-btn:active { transform: scale(.92) translateX(-2px); }
+.back-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+[data-theme="dark"] .back-btn {
+  background: var(--surface);
+  border-color: var(--line);
+  color: #f4f4f6;
+}
+[data-theme="dark"] .back-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.25);
+}
+[data-theme="dark"] .back-btn svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
 
 /* Tombol Ganti Tema di Pojok Kanan Atas */
 .theme-btn {

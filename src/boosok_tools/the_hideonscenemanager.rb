@@ -141,13 +141,12 @@ module HideOnSceneManager
 
     model = Sketchup.active_model
     @cached_scenes = model.pages.map(&:name)
-    @cached_tags = model.layers.map(&:name)
+    pos = BoosokTools.get_position
 
     # --- BUAT DIALOG UI ---
     dialog = @dialog = UI::HtmlDialog.new(
       {
         :dialog_title => "Hide on Scene",
-        :preferences_key => "com.sketchup.hidemanager.pro",
         :scrollable => false,
         :resizable => true,
         :width => 390,
@@ -158,8 +157,13 @@ module HideOnSceneManager
         :style => UI::HtmlDialog::STYLE_DIALOG
       }
     )
+
+    if pos && pos[0] > 5 && pos[1] > 5
+      dialog.set_position(pos[0], pos[1])
+    end
+
     dialog.set_file(File.join(__dir__, 'html', 'hidescene.html'))
-    BoosokTools::TitleBar.attach(dialog, "Hide on Scene")
+    BoosokTools::TitleBar.attach(dialog, "Hide on Scene", width: 390)
 
     dialog.add_action_callback("ready") do |action_context|
       current_model = Sketchup.active_model
@@ -175,6 +179,7 @@ module HideOnSceneManager
     end
 
     dialog.set_on_closed do
+      BoosokTools.capture_current_position("Hide on Scene")
       HideOnSceneManager.detach_all_observers
       HideOnSceneManager.instance_variable_set(:@dialog, nil)
     end

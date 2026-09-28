@@ -11,31 +11,30 @@ module TheSelectorPlugin
       model = Sketchup.active_model
       all_tags = model.layers.map { |layer| layer.name }.sort
 
-      last_x = Sketchup.read_default("TheSelectorPlugin", "dialog_left", 300).to_i
-      last_y = Sketchup.read_default("TheSelectorPlugin", "dialog_top", 300).to_i
-      last_x = 300 if last_x < 50
-      last_y = 300 if last_y < 50
+      pos = BoosokTools.get_position
 
       saved_keys_str = Sketchup.read_default("TheSelectorPlugin", "attr_keys_v2", "a_posisi").to_s
       saved_keys = saved_keys_str.empty? ? ["a_posisi"] : saved_keys_str.split("|")
 
-      # Dibuat fixed (resizable: false) dengan tinggi default pas (Fit In)
+      # Dibuat fixed (resizable: false) dengan tinggi default lega (Fit In)
       dialog = @dialog = UI::HtmlDialog.new(
         {
           :dialog_title => "The Selector",
           :scrollable => false,
           :resizable => false,
           :width => 390,
-          :height => 470, # tinggi form tanpa filter atribut (lihat H_BASE di selector.html)
+          :height => 500, # tinggi form tanpa filter atribut (lihat H_BASE di selector.html)
           :style => UI::HtmlDialog::STYLE_DIALOG
         }
       )
 
-      dialog.set_position(last_x, last_y)
+      if pos && pos[0] > 5 && pos[1] > 5
+        dialog.set_position(pos[0], pos[1])
+      end
 
       html_path = File.join(File.dirname(__FILE__), 'html', 'selector.html')
       dialog.set_file(html_path)
-      BoosokTools::TitleBar.attach(dialog, "The Selector")
+      BoosokTools::TitleBar.attach(dialog, "The Selector", width: 390)
 
       dialog.add_action_callback("closeDialog") do |action_context|
         dialog.close
@@ -47,10 +46,9 @@ module TheSelectorPlugin
       end
 
       dialog.add_action_callback("save_position") do |action_context, pos_json|
-        pos = JSON.parse(pos_json) rescue nil
-        if pos && pos["left"].to_i > 10 && pos["top"].to_i > 10
-          Sketchup.write_default("TheSelectorPlugin", "dialog_left", pos["left"].to_i)
-          Sketchup.write_default("TheSelectorPlugin", "dialog_top", pos["top"].to_i)
+        pos_data = JSON.parse(pos_json) rescue nil
+        if pos_data && pos_data["left"].to_i > 10 && pos_data["top"].to_i > 10
+          BoosokTools.save_position(pos_data["left"].to_i, pos_data["top"].to_i)
         end
       end
 

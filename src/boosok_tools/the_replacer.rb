@@ -19,6 +19,8 @@ module TheReplacer
       end
       @@dialog.close
     end
+
+    pos = BoosokTools.get_position
     
     # --- KONFIGURASI DIALOG FIX (Dinaikkan ukurannya agar lebih lega) ---
     @@dialog = UI::HtmlDialog.new(
@@ -27,26 +29,22 @@ module TheReplacer
         :scrollable => false,
         :resizable => false,
         :width => 360,
-        :height => 390,
+        :height => 425,
         :style => UI::HtmlDialog::STYLE_DIALOG
       }
     )
 
-    @@dialog.set_file(File.join(__dir__, 'html', 'replacer.html'))
-    BoosokTools::TitleBar.attach(@@dialog, "The Replacer")
-
-    if @@last_pos.is_a?(Array) && @@last_pos.length == 2
-      @@dialog.set_position(@@last_pos[0], @@last_pos[1])
+    if pos && pos[0] > 5 && pos[1] > 5
+      @@dialog.set_position(pos[0], pos[1])
     else
       @@dialog.center if @@dialog.respond_to?(:center)
     end
 
+    @@dialog.set_file(File.join(__dir__, 'html', 'replacer.html'))
+    BoosokTools::TitleBar.attach(@@dialog, "The Replacer", width: 360)
+
     @@dialog.set_on_closed {
-      begin
-        pos = @@dialog.get_position
-        @@last_pos = pos if pos.is_a?(Array) && pos.length == 2
-      rescue
-      end
+      BoosokTools.capture_current_position("The Replacer")
     }
 
     @@dialog.add_action_callback("close_dialog") do |action_context|

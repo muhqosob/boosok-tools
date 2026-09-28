@@ -15,6 +15,7 @@
   <script src="../js/ui.js"></script>
 
   <header class="head">
+    <button class="back-btn" type="button" title="Kembali ke The Bosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()"><svg><use href="#i-arrow-left"/></svg></button>
     <div class="mark"><svg><use href="#i-eraser"/></svg></div>
     <div class="txt">
       <h1>Untag & Unpaint</h1>
@@ -91,6 +92,8 @@
     // Dipanggil dari Ruby
     function onProcessComplete(msg) { setBusy(null); showToast(msg, 'success'); }
     function onError(msg) { setBusy(null); showToast(msg, 'error'); }
+
+    autoFitHeight(18);
   </script>
 </body>
 </html>

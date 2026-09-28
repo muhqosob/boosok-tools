@@ -7,15 +7,25 @@ module TheResetScale
     # Tutup dialog lama jika masih ada agar selalu memuat versi terbaru
     @dialog.close if @dialog && @dialog.visible?
 
+    pos = BoosokTools.get_position
+
     dialog = @dialog = UI::HtmlDialog.new(
       dialog_title: "Reset Scale",
-      preferences_key: "BoosokToolsResetScale",
       scrollable: false, resizable: false,
-      width: 360, height: 430,
+      width: 360, height: 475,
       style: UI::HtmlDialog::STYLE_DIALOG
     )
+
+    if pos && pos[0] > 5 && pos[1] > 5
+      dialog.set_position(pos[0], pos[1])
+    end
+
     dialog.set_file(File.join(__dir__, 'html', 'reset.html'))
-    BoosokTools::TitleBar.attach(dialog, "Reset Scale")
+    BoosokTools::TitleBar.attach(dialog, "Reset Scale", width: 360)
+
+    dialog.set_on_closed {
+      BoosokTools.capture_current_position("Reset Scale")
+    }
 
     dialog.add_action_callback("close") { dialog.close }
 

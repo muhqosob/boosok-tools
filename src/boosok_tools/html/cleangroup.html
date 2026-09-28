@@ -9,6 +9,7 @@
   <script src="../js/ui.js"></script>
 
   <header class="head">
+    <button class="back-btn" type="button" title="Kembali ke The Bosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()"><svg><use href="#i-arrow-left"/></svg></button>
     <div class="mark"><svg><use href="#i-sparkles"/></svg></div>
     <div class="txt">
       <h1>Clean Group</h1>
@@ -63,7 +64,16 @@
     function showSuccessStep(msg) {
       document.getElementById('success-message').textContent = msg;
       showStep(2);
+      autoFitHeight(18);
     }
+
+    var origShowStep = showStep;
+    showStep = function (n) {
+      origShowStep(n);
+      autoFitHeight(18);
+    };
+
+    autoFitHeight(18);
   </script>
 </body>
 </html>

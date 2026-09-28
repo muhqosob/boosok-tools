@@ -21,6 +21,7 @@
   <script src="../js/ui.js"></script>
 
   <header class="head">
+    <button class="back-btn" type="button" title="Kembali ke The Bosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()"><svg><use href="#i-arrow-left"/></svg></button>
     <div class="mark"><svg><use href="#i-mouse-pointer-click"/></svg></div>
     <div class="txt">
       <h1>The Selector</h1>
@@ -135,7 +136,7 @@
 
   <script>
     var ALL = '(Semua Tag / Abaikan)'; // Ruby membandingkan string ini persis
-    var H_BASE = 470, H_ATTR = 610;
+    var H_BASE = 505, H_ATTR = 635;
     var tags = [], keys = [];
     var $ = function (id) { return document.getElementById(id); };
 

@@ -4,20 +4,30 @@ module UntagUnpaintManager
   def self.run
     require 'json'
 
+    pos = BoosokTools.get_position
+
     # --- MEMBUAT UI DIALOG ---
     dialog = UI::HtmlDialog.new(
       {
         :dialog_title => "Untag & Unpaint",
-        :preferences_key => "com.sketchup.untagunpaint.manager",
         :scrollable => false,
         :resizable => false,
         :width => 360,
-        :height => 420,
+        :height => 465,
         :style => UI::HtmlDialog::STYLE_DIALOG
       }
     )
+
+    if pos && pos[0] > 5 && pos[1] > 5
+      dialog.set_position(pos[0], pos[1])
+    end
+
     dialog.set_file(File.join(__dir__, 'html', 'untagnpaint.html'))
-    BoosokTools::TitleBar.attach(dialog, "Untag & Unpaint")
+    BoosokTools::TitleBar.attach(dialog, "Untag & Unpaint", width: 360)
+
+    dialog.set_on_closed {
+      BoosokTools.capture_current_position("Untag & Unpaint")
+    }
 
     # --- CALLBACK PROCESS ---
     dialog.add_action_callback("prosesAction") do |context, action_type, deep_process|
