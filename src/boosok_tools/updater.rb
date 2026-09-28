@@ -1,7 +1,7 @@
 require 'sketchup'
 require 'json'
 require 'tmpdir'
-require_relative 'titlebar'
+load File.join(__dir__, 'titlebar.rb')
 
 module MyCustomPlugins
   # Update di dalam SketchUp: cek -> download .rbz -> install -> hot reload langsung aktif.

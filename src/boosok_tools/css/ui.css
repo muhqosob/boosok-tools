@@ -328,85 +328,68 @@ input[type="checkbox"] { accent-color: var(--dark-gray); }
 }
 
 /* ======================================================== */
-/* PENYESUAIAN KHUSUS DARK MODE (MONOCHROME PUTIH BERCAHAYA) */
+/* PENYESUAIAN KHUSUS DARK MODE (MONOCHROME PUTIH & HITAM)  */
 /* ======================================================== */
 
-/* 1. Ikon-ikon Putih Light Bercahaya (Luminous Glowing White) */
-[data-theme="dark"] .mark svg,
-[data-theme="dark"] .theme-btn svg,
-[data-theme="dark"] .with-ic > svg,
-[data-theme="dark"] .btn.ghost svg,
-[data-theme="dark"] .btn.icon svg,
-[data-theme="dark"] .btn.link svg,
+/* 1. Header Mark Icon: Background Putih, Garis Icon Hitam */
+[data-theme="dark"] .mark {
+  background: #ffffff !important;
+  color: #141416 !important;
+  border: 1px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+[data-theme="dark"] .mark svg {
+  color: #141416 !important;
+  stroke: #141416 !important;
+  filter: none !important;
+}
+
+/* 2. Status Badge / Notifikasi Ceklis Terupdate: Background Putih, Garis Ceklis Hitam */
+[data-theme="dark"] .badge,
+[data-theme="dark"] .badge.ok {
+  background: #ffffff !important;
+  color: #141416 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+[data-theme="dark"] .badge svg,
+[data-theme="dark"] .badge.ok svg {
+  color: #141416 !important;
+  stroke: #141416 !important;
+  filter: none !important;
+}
+
+/* 3. Icon Wadah di Kartu / Langkah: Background Putih, Garis Hitam */
+[data-theme="dark"] .steps .ic,
+[data-theme="dark"] .tile .ic {
+  background: #ffffff !important;
+  color: #141416 !important;
+  border: 1px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
 [data-theme="dark"] .steps .ic svg,
-[data-theme="dark"] .tile .ic svg,
-[data-theme="dark"] .toggle .ic,
-[data-theme="dark"] .toggle > svg,
-[data-theme="dark"] .badge:not(.ok):not(.err) svg,
-[data-theme="dark"] .note:not(.err) svg,
-[data-theme="dark"] .seg button svg,
-[data-theme="dark"] .field label svg,
-[data-theme="dark"] .card-icon svg,
-[data-theme="dark"] .keys .k .btn svg,
-[data-theme="dark"] .versions svg {
-  color: #ffffff !important;
-  stroke: #ffffff !important;
-  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7)) drop-shadow(0 0 1px rgba(255, 255, 255, 0.9));
-  transition: filter .18s var(--ease), transform .18s var(--ease);
+[data-theme="dark"] .tile .ic svg {
+  color: #141416 !important;
+  stroke: #141416 !important;
+  filter: none !important;
 }
 
-/* Efek hover ikon lebih berpendar */
-[data-theme="dark"] .btn.ghost:hover svg,
-[data-theme="dark"] .btn.icon:hover svg,
-[data-theme="dark"] .btn.link:hover svg,
-[data-theme="dark"] .theme-btn:hover svg,
-[data-theme="dark"] .tile:hover .ic svg,
-[data-theme="dark"] .toggle:hover .ic,
-[data-theme="dark"] .toggle:hover > svg,
-[data-theme="dark"] .seg button:hover svg {
-  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 2px rgba(255, 255, 255, 1));
+/* 4. Tombol Utama (Primary): Background Putih, Teks & Ikon Hitam */
+[data-theme="dark"] .btn.primary {
+  background: #ffffff !important;
+  color: #141416 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
-
-/* Danger icon dengan pendaran merah elegan */
-[data-theme="dark"] .btn.danger svg {
-  color: #f87171 !important;
-  stroke: #f87171 !important;
-  filter: drop-shadow(0 0 3.5px rgba(239, 68, 68, 0.65));
+[data-theme="dark"] .btn.primary:hover {
+  background: #f4f4f6 !important;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2);
 }
-[data-theme="dark"] .btn.danger:hover svg {
-  filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.9));
-}
-
-/* Pastikan ikon di tombol primary putih tetap gelap agar kontras */
 [data-theme="dark"] .btn.primary svg {
   color: #141416 !important;
   stroke: #141416 !important;
   filter: none !important;
 }
 
-/* Ikon centang checkbox di kotak putih tetap hitam tanpa glow */
-[data-theme="dark"] .check input:checked + .box svg {
-  color: #141416 !important;
-  stroke: #141416 !important;
-  filter: none !important;
-}
-
-[data-theme="dark"] .mark {
-  background: #27272e;
-  color: #ffffff;
-  border: 1px solid var(--line-strong);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.12), 0 2px 8px rgba(0,0,0,.3);
-}
-
-[data-theme="dark"] .btn.primary {
-  background: #f4f4f6;
-  color: #141416;
-}
-[data-theme="dark"] .btn.primary:hover {
-  background: #ffffff;
-  box-shadow: 0 0 16px rgba(255,255,255,.35);
-}
-
+/* 5. Tombol Ghost & Ikon Lainnya: Garis Putih Bersih (Tanpa Efek Menyala Blur) */
 [data-theme="dark"] .btn.ghost {
   background: var(--surface);
   color: var(--ink);
@@ -417,6 +400,41 @@ input[type="checkbox"] { accent-color: var(--dark-gray); }
   border-color: var(--line-strong);
 }
 
+[data-theme="dark"] .with-ic > svg,
+[data-theme="dark"] .btn.ghost svg,
+[data-theme="dark"] .btn.icon svg,
+[data-theme="dark"] .btn.link svg,
+[data-theme="dark"] .toggle .ic,
+[data-theme="dark"] .toggle > svg,
+[data-theme="dark"] .note:not(.err) svg,
+[data-theme="dark"] .seg button svg,
+[data-theme="dark"] .field label svg,
+[data-theme="dark"] .card-icon svg,
+[data-theme="dark"] .keys .k .btn svg,
+[data-theme="dark"] .versions svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  filter: none !important;
+}
+
+/* Tombol ganti tema */
+[data-theme="dark"] .theme-btn {
+  background: var(--surface);
+  border-color: var(--line);
+  color: #ffffff;
+}
+[data-theme="dark"] .theme-btn:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #141416;
+}
+[data-theme="dark"] .theme-btn:hover svg {
+  color: #141416 !important;
+  stroke: #141416 !important;
+  filter: none !important;
+}
+
+/* Danger Button */
 [data-theme="dark"] .btn.danger {
   background: rgba(239, 68, 68, 0.12);
   color: #f87171;
@@ -425,6 +443,23 @@ input[type="checkbox"] { accent-color: var(--dark-gray); }
 [data-theme="dark"] .btn.danger:hover {
   background: rgba(239, 68, 68, 0.22);
   border-color: #ef4444;
+}
+[data-theme="dark"] .btn.danger svg {
+  color: #f87171 !important;
+  stroke: #f87171 !important;
+  filter: none !important;
+}
+
+/* Checkbox centang di kotak putih */
+[data-theme="dark"] .check input:checked + .box {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #141416;
+}
+[data-theme="dark"] .check input:checked + .box svg {
+  color: #141416 !important;
+  stroke: #141416 !important;
+  filter: none !important;
 }
 
 [data-theme="dark"] .note.err {
@@ -438,26 +473,6 @@ input[type="checkbox"] { accent-color: var(--dark-gray); }
   border-color: rgba(255, 255, 255, 0.25);
   color: #ffffff;
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
-}
-
-[data-theme="dark"] .steps .ic {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.18);
-}
-
-[data-theme="dark"] .tile .ic {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.18);
-}
-
-[data-theme="dark"] .badge {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  box-shadow: 0 0 16px rgba(255, 255, 255, 0.2);
 }
 
 [data-theme="dark"] .input,

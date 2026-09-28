@@ -1,4 +1,4 @@
-require_relative 'titlebar'
+load File.join(__dir__, 'titlebar.rb')
 
 module ConvertToCleanGroup
   @@dialog = nil

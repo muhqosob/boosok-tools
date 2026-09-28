@@ -1,6 +1,6 @@
 require 'sketchup'
 require 'json'
-require_relative 'titlebar'
+load File.join(__dir__, 'titlebar.rb')
 
 module TheResetScale
   def self.run
