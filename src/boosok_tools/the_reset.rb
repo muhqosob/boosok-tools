@@ -20,6 +20,7 @@ module TheResetScale
     dialog.add_action_callback("reset") do |_action_context, mode, recursive|
       mode_str = mode.to_s.empty? ? "preserve" : mode.to_s
       is_recursive = (recursive == true)
+      puts "[TheReset] mode=#{mode_str}, recursive=#{is_recursive}"
 
       result = reset_selection(mode_str, is_recursive)
       if result.is_a?(Integer)
@@ -50,31 +51,19 @@ module TheResetScale
 
       parent_entities = model.active_entities
 
-      process_entity = lambda do |entity, container|
-        return nil unless entity.respond_to?(:valid?) && entity.valid?
-        return nil unless entity.is_a?(Sketchup::Group) || entity.is_a?(Sketchup::ComponentInstance)
+      targets.each do |entity|
+        next unless entity.respond_to?(:valid?) && entity.valid?
+        next unless entity.is_a?(Sketchup::Group) || entity.is_a?(Sketchup::ComponentInstance)
 
-        res_ent = if mode == "preserve"
-          reset_scale_preserve(entity, container)
+        if mode == "preserve"
+          res_ent = reset_scale_preserve(entity, parent_entities)
         else
           reset_scale_original(entity)
-          entity
+          res_ent = entity
         end
 
         processed_count += 1
-
-        if recursive && res_ent && res_ent.valid?
-          defn = res_ent.respond_to?(:definition) ? res_ent.definition : res_ent.entities.parent
-          children = defn.entities.select { |child| child.is_a?(Sketchup::Group) || child.is_a?(Sketchup::ComponentInstance) }
-          children.each { |child| process_entity.call(child, defn.entities) }
-        end
-
-        res_ent
-      end
-
-      targets.each do |entity|
-        res = process_entity.call(entity, parent_entities)
-        final_entities << res if res && res.valid?
+        final_entities << res_ent if res_ent && res_ent.respond_to?(:valid?) && res_ent.valid?
       end
 
       # Perbarui seleksi ke entitas yang baru
@@ -86,35 +75,39 @@ module TheResetScale
       processed_count
     rescue => e
       model.abort_operation
+      puts "[TheReset] ERROR: #{e.message}"
+      puts e.backtrace.first(5).join("\n")
       return "Reset skala gagal: #{e.message}"
     end
   end
 
-  # Reset skala ke 1:1:1 dengan metode Explode & Regroup (ukuran hasil skala tetap sama persis)
+  # Reset skala ke 1:1:1 tanpa mengubah ukuran (explode lalu group kembali)
   def self.reset_scale_preserve(entity, parent_entities)
     return entity unless entity.respond_to?(:valid?) && entity.valid?
     return entity unless entity.is_a?(Sketchup::Group) || entity.is_a?(Sketchup::ComponentInstance)
 
     t = entity.transformation
-    sx = t.xaxis.length
-    sy = t.yaxis.length
-    sz = t.zaxis.length
+    sx = t.xaxis.length.to_f
+    sy = t.yaxis.length.to_f
+    sz = t.zaxis.length.to_f
+
+    puts "[TheReset] === PRESERVE START ==="
+    puts "[TheReset] Entity: #{entity.class}, name=#{entity.name.inspect}"
+    puts "[TheReset] Scale: X=#{sx}, Y=#{sy}, Z=#{sz}"
+    puts "[TheReset] BBox SEBELUM: #{entity.bounds.width.to_mm.round(1)}mm x #{entity.bounds.height.to_mm.round(1)}mm x #{entity.bounds.depth.to_mm.round(1)}mm"
 
     is_scaled = (sx - 1.0).abs > 1e-5 || (sy - 1.0).abs > 1e-5 || (sz - 1.0).abs > 1e-5
+    puts "[TheReset] is_scaled=#{is_scaled}"
 
-    # Jika objek memang tidak diskala (1:1:1), cukup normalisasi sumbu
+    # Jika objek sudah 1:1:1, tidak perlu apa-apa
     unless is_scaled
-      nx = t.xaxis.normalize
-      ny = t.yaxis.normalize
-      nz = t.zaxis.normalize
-      entity.transformation = Geom::Transformation.axes(t.origin, nx, ny, nz)
+      puts "[TheReset] Sudah 1:1:1, skip."
       return entity
     end
 
+    # Simpan metadata
     is_component = entity.is_a?(Sketchup::ComponentInstance)
     orig_defn_name = is_component ? entity.definition.name : nil
-
-    # Simpan metadata group / component
     layer = entity.layer
     material = entity.material
     name = entity.name
@@ -123,7 +116,7 @@ module TheResetScale
     casts_shadows = entity.casts_shadows?
     receives_shadows = entity.receives_shadows?
 
-    # Simpan atribut dictionary (termasuk dynamic attributes jika ada)
+    # Simpan atribut
     attrs = {}
     if entity.respond_to?(:attribute_dictionaries) && entity.attribute_dictionaries
       entity.attribute_dictionaries.each do |dict|
@@ -135,18 +128,61 @@ module TheResetScale
 
     entity.locked = false if locked
 
-    # 1. Explode group/component yang sudah diskala
-    # Ukuran fisik geometri sekarang berada pada koordinat hasil skala (misal 500x200x200)
+    # === LANGKAH 1: Explode ===
+    puts "[TheReset] Exploding..."
     exploded = entity.explode
-    return entity unless exploded && exploded.is_a?(Array)
+    puts "[TheReset] Explode result class: #{exploded.class}"
+
+    unless exploded.is_a?(Array)
+      puts "[TheReset] GAGAL: explode tidak mengembalikan Array!"
+      return nil
+    end
 
     valid_ents = exploded.select { |e| e.respond_to?(:valid?) && e.valid? }
-    return entity if valid_ents.empty?
+    puts "[TheReset] Exploded entities: #{exploded.length} total, #{valid_ents.length} valid"
 
-    # 2. Jadikan group kembali dari geometri yang sudah mekar/ter-skala
+    if valid_ents.empty?
+      puts "[TheReset] GAGAL: tidak ada entity valid setelah explode!"
+      return nil
+    end
+
+    # Cek tipe entity yang ada
+    type_counts = {}
+    valid_ents.each do |e|
+      cn = e.class.name.split('::').last
+      type_counts[cn] = (type_counts[cn] || 0) + 1
+    end
+    puts "[TheReset] Tipe entities: #{type_counts.inspect}"
+
+    # Cek bounding box dari entity-entity yang di-explode
+    all_pts = []
+    valid_ents.each do |e|
+      if e.respond_to?(:bounds)
+        bb = e.bounds
+        all_pts << bb.min
+        all_pts << bb.max
+      end
+    end
+    unless all_pts.empty?
+      xs = all_pts.map(&:x)
+      ys = all_pts.map(&:y)
+      zs = all_pts.map(&:z)
+      w = (xs.max - xs.min).to_mm.round(1)
+      h = (ys.max - ys.min).to_mm.round(1)
+      d = (zs.max - zs.min).to_mm.round(1)
+      puts "[TheReset] BBox entities SETELAH explode: #{w}mm x #{h}mm x #{d}mm"
+    end
+
+    # === LANGKAH 2: Jadikan group kembali ===
+    puts "[TheReset] Membuat group baru..."
     new_group = parent_entities.add_group(valid_ents)
+    puts "[TheReset] New group class: #{new_group.class}"
 
-    # 3. Kembalikan semua properti & metadata
+    new_t = new_group.transformation
+    puts "[TheReset] New group scale: X=#{new_t.xaxis.length.to_f}, Y=#{new_t.yaxis.length.to_f}, Z=#{new_t.zaxis.length.to_f}"
+    puts "[TheReset] BBox SESUDAH regroup: #{new_group.bounds.width.to_mm.round(1)}mm x #{new_group.bounds.height.to_mm.round(1)}mm x #{new_group.bounds.depth.to_mm.round(1)}mm"
+
+    # Kembalikan metadata
     new_group.name = name unless name.to_s.empty?
     new_group.layer = layer if layer
     new_group.material = material if material
@@ -154,21 +190,9 @@ module TheResetScale
     new_group.casts_shadows = casts_shadows
     new_group.receives_shadows = receives_shadows
 
-    # Kembalikan atribut
     attrs.each do |dict_name, pairs|
       dict = new_group.attribute_dictionary(dict_name, true)
       pairs.each { |k, v| dict[k] = v }
-
-      # Jika ada Dynamic Component attributes, sesuaikan lenx/leny/lenz ke ukuran baru
-      if dict_name.downcase == 'dynamic_attributes'
-        bb = new_group.bounds
-        dict['lenx'] = bb.width.to_f if dict.keys.include?('lenx')
-        dict['leny'] = bb.height.to_f if dict.keys.include?('leny')
-        dict['lenz'] = bb.depth.to_f if dict.keys.include?('lenz')
-        dict['_lenx_nominal'] = bb.width.to_f if dict.keys.include?('_lenx_nominal')
-        dict['_leny_nominal'] = bb.height.to_f if dict.keys.include?('_leny_nominal')
-        dict['_lenz_nominal'] = bb.depth.to_f if dict.keys.include?('_lenz_nominal')
-      end
     end
 
     result_entity = if is_component
@@ -180,6 +204,7 @@ module TheResetScale
     end
 
     result_entity.locked = locked if locked
+    puts "[TheReset] === PRESERVE DONE ==="
     result_entity
   end
 
