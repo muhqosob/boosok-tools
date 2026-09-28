@@ -1,5 +1,5 @@
 {
-  "version": "1.0.16",
-  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.0.16/boosok_tools_v1.0.16.rbz",
-  "changelog": "Merge branch 'main' of https://github.com/muhqosob/boosok-tools"
+  "version": "1.1.0",
+  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.1.0/boosok_tools_v1.1.0.rbz",
+  "changelog": "Perbaikan Fitur Baru Reset Scale Origin, Perubahan Notification UI"
 }
