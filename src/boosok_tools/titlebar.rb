@@ -31,11 +31,11 @@ module BoosokTools
         Fiddle::TYPE_INT
       )
 
-      # RedrawWindow(hwnd, lprcUpdate, hrgnUpdate, flags)
-      RedrawWindow = Fiddle::Function.new(
-        User32['RedrawWindow'],
-        [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_VOIDP, Fiddle::TYPE_VOIDP, Fiddle::TYPE_INT],
-        Fiddle::TYPE_INT
+      # SendMessageA(hwnd, msg, wParam, lParam)
+      SendMessageA = Fiddle::Function.new(
+        User32['SendMessageA'],
+        [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_INT, Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_INTPTR_T],
+        Fiddle::TYPE_INTPTR_T
       )
 
       @ready = true
@@ -60,7 +60,6 @@ module BoosokTools
 
       begin
         hwnd = FindWindowA.call(nil, title.to_s)
-        log("FindWindowA('#{title}') => hwnd=#{hwnd}")
         return hwnd if hwnd && hwnd != 0
       rescue => e
         log("FindWindowA error: #{e.message}")
@@ -74,40 +73,41 @@ module BoosokTools
 
       val = [is_dark ? 1 : 0].pack('l')
 
-      # DWMWA_USE_IMMERSIVE_DARK_MODE = 20 (Win10 20H1+ / Win11)
-      r20 = DwmSetWindowAttribute.call(hwnd, 20, val, 4) rescue -1
+      # DWMWA_USE_IMMERSIVE_DARK_MODE = 20 (Win10 20H1+/Win11)
+      DwmSetWindowAttribute.call(hwnd, 20, val, 4) rescue nil
       # Fallback DWMWA = 19 (Win10 1809..1909)
-      r19 = DwmSetWindowAttribute.call(hwnd, 19, val, 4) rescue -1
+      DwmSetWindowAttribute.call(hwnd, 19, val, 4) rescue nil
 
       # DWMWA_CAPTION_COLOR = 35 (Win11 22H2+)
-      # Dark: #141416 -> COLORREF 0x00161414 | Light: DWMWA_COLOR_DEFAULT 0xFFFFFFFF
       bg = is_dark ? [0x00161414].pack('L') : [0xFFFFFFFF].pack('L')
-      r35 = DwmSetWindowAttribute.call(hwnd, 35, bg, 4) rescue -1
+      DwmSetWindowAttribute.call(hwnd, 35, bg, 4) rescue nil
 
       # DWMWA_TEXT_COLOR = 36
       fg = is_dark ? [0x00F4F4F6].pack('L') : [0xFFFFFFFF].pack('L')
-      r36 = DwmSetWindowAttribute.call(hwnd, 36, fg, 4) rescue -1
+      DwmSetWindowAttribute.call(hwnd, 36, fg, 4) rescue nil
 
-      # SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER = 0x0027
+      # Force titlebar repaint: toggle WM_NCACTIVATE off then on
+      # WM_NCACTIVATE = 0x0086
+      SendMessageA.call(hwnd, 0x0086, 0, 0) rescue nil
+      SendMessageA.call(hwnd, 0x0086, 1, 0) rescue nil
+
+      # Also SWP_FRAMECHANGED for good measure
       SetWindowPos.call(hwnd, 0, 0, 0, 0, 0, 0x0027) rescue nil
 
-      # RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW = 0x0401 | 0x0001 | 0x0100 = 0x0501
-      RedrawWindow.call(hwnd, nil, nil, 0x0501) rescue nil
-
-      log("apply_dark_titlebar hwnd=#{hwnd} dark=#{is_dark} r20=#{r20} r19=#{r19} r35=#{r35} r36=#{r36}")
+      log("apply hwnd=#{hwnd} dark=#{is_dark}")
     end
 
     def self.set_theme(title, is_dark)
-      log("set_theme '#{title}' dark=#{is_dark} ready=#{ready?} err=#{@init_error}")
       return unless ready?
-
       hwnd = find_hwnd(title)
-      apply_dark_titlebar(hwnd, is_dark) if hwnd != 0
+      if hwnd != 0
+        apply_dark_titlebar(hwnd, is_dark)
+      end
     end
 
     def self.attach(dialog, title)
       return unless dialog
-      log("attach '#{title}' ready=#{ready?} err=#{@init_error}")
+      log("attach '#{title}' ready=#{ready?}")
 
       dialog.add_action_callback("syncTheme") do |_ctx, theme|
         is_dark = (theme.to_s == 'dark')
