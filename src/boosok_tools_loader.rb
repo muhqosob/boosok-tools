@@ -4,7 +4,7 @@ require 'json'
 
 module MyCustomPlugins
   # Naikkan angka ini lalu push ke main: GitHub Actions otomatis bikin release + update version.json
-  PLUGIN_VERSION = "1.1.1"
+  PLUGIN_VERSION = "1.1.2"
 
   # Semua versi yang sudah dirilis (1.0.10+) membaca URL ini. Jangan dipindah.
   VERSION_URL = "https://raw.githubusercontent.com/muhqosob/boosok-tools/main/the_bosok/version.json"
@@ -21,7 +21,7 @@ module MyCustomPlugins
     ext.version     = PLUGIN_VERSION
     ext.creator     = "Muh Qosob"
     ext.author      = "Muh Qosob" if ext.respond_to?(:author=)
-    ext.copyright   = "Muh Qosob"
+    ext.copyright   = "2026"
     ext.description = "Plugin Bosok ini hanya untuk yang membutuhkannya saja."
 
     Sketchup.register_extension(ext, true)
