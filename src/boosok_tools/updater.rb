@@ -88,7 +88,8 @@ module MyCustomPlugins
           'the_reset.rb',
           'the_hideonscenemanager.rb',
           'untagnpaint.rb',
-          'updater.rb'
+          'updater.rb',
+          'hub.rb'
         ]
 
         ruby_files.each do |f|

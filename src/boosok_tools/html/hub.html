@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>The Bosok Tools</title>
+  <link rel="stylesheet" href="../css/ui.css">
+  <style>
+    #app { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+    .tile.off .s { color: var(--err); }
+    .tile.opening .ic svg { animation: spin .8s linear infinite; }
+    .foot { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+
+    /* Loader (asal: Uiverse.io by dexter-st), dibuat "slow luxury": pelan, tipis, lega. Warna ikut tema */
+    :root { --glow: rgba(24, 24, 27, .25); --lux: cubic-bezier(.22, 1, .36, 1); --cycle: 5s; }
+    [data-theme="dark"] { --glow: rgba(255, 255, 255, .55); }
+    #boot {
+      position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
+      background: var(--bg); transition: opacity .9s var(--lux), filter .9s var(--lux), transform .9s var(--lux);
+    }
+    #boot.done { opacity: 0; filter: blur(6px); transform: scale(1.03); pointer-events: none; }
+    .lux { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .loader-wrapper {
+      position: relative; display: flex; align-items: center; justify-content: center;
+      height: 96px; padding: 0 16px;
+      font-size: 22px; font-weight: 300; letter-spacing: .16em; color: var(--ink);
+    }
+    .loader {
+      position: absolute; inset: 0; z-index: 1; opacity: .6;
+      mask: repeating-linear-gradient(90deg, transparent 0, transparent 6px, black 7px, black 8px);
+      -webkit-mask: repeating-linear-gradient(90deg, transparent 0, transparent 6px, black 7px, black 8px);
+    }
+    .loader::after {
+      content: ""; position: absolute; inset: 0;
+      background-image:
+        radial-gradient(circle at 50% 50%, var(--ink) 0%, transparent 50%),
+        radial-gradient(circle at 45% 45%, var(--muted) 0%, transparent 45%),
+        radial-gradient(circle at 55% 55%, var(--line-strong) 0%, transparent 45%),
+        radial-gradient(circle at 45% 55%, var(--muted) 0%, transparent 45%),
+        radial-gradient(circle at 55% 45%, var(--ink) 0%, transparent 45%);
+      mask: radial-gradient(circle at 50% 50%, transparent 0%, transparent 10%, black 25%);
+      -webkit-mask: radial-gradient(circle at 50% 50%, transparent 0%, transparent 10%, black 25%);
+      animation: transform-animation 3.6s infinite alternate, opacity-animation 7.2s infinite;
+      animation-timing-function: var(--lux);
+    }
+    @keyframes transform-animation { 0% { transform: translate(-50%); } 100% { transform: translate(50%); } }
+    @keyframes opacity-animation { 0%, 100% { opacity: 0; } 20% { opacity: .8; } 70% { opacity: 0; } }
+    .loader-letter {
+      display: inline-block; white-space: pre; z-index: 2;
+      animation: loader-letter-anim var(--cycle) infinite var(--lux) both;
+    }
+    /* Muncul dari blur, bertahan sebentar, lalu tenang di opacity rendah (kata tetap terbaca samar) */
+    @keyframes loader-letter-anim {
+      0%   { opacity: 0; filter: blur(6px); transform: translateY(4px); }
+      10%  { opacity: 1; filter: blur(0); transform: none; text-shadow: 0 0 10px var(--glow); }
+      30%  { opacity: .3; text-shadow: none; }
+      100% { opacity: .15; }
+    }
+    /* Garis tipis melebar pelan selama loader: sekaligus penanda progres */
+    .hairline { width: 180px; height: 1px; background: var(--line); overflow: hidden; }
+    .hairline > div {
+      height: 100%; background: var(--ink); opacity: .6;
+      transform: scaleX(0); transform-origin: left; animation: hair var(--boot, 3s) var(--lux) forwards;
+    }
+    @keyframes hair { to { transform: scaleX(1); } }
+    .lux small { font-size: 10.5px; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); opacity: .8; }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+  <script src="../js/ui.js"></script>
+
+  <div id="boot" role="status" aria-label="Memuat The Bosok Tools">
+    <div class="lux">
+      <div class="loader-wrapper" id="loaderText"><div class="loader"></div></div>
+      <div class="hairline"><div></div></div>
+      <small>Memuat</small>
+    </div>
+  </div>
+
+  <header class="head">
+    <div class="mark"><svg><use href="#i-package"/></svg></div>
+    <div class="txt">
+      <h1>The Bosok Tools</h1>
+      <p>Pilih tool yang mau dipakai</p>
+    </div>
+    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema"></button>
+  </header>
+
+  <main id="app" aria-live="polite"></main>
+
+  <script>
+    var LETTER_STEP = 0.12;    // detik antar huruf
+    var CYCLE = 5;             // detik, harus sama dengan --cycle di CSS
+    var BOOT_TIMEOUT_MS = 10000;
+    var WORD = 'The Bosok Tools';
+    // Loader baru hilang setelah huruf terakhir selesai muncul dan tenang (30% siklus)
+    var MIN_BOOT_MS = Math.round((0.1 + (WORD.length - 1) * LETTER_STEP + CYCLE * 0.3) * 1000);
+    document.documentElement.style.setProperty('--boot', MIN_BOOT_MS + 'ms');
+
+    // needs: data model yang wajib ada, kalau 0 tile nonaktif dengan alasan
+    var TOOLS = [
+      { id: 'selector', icon: 'mouse-pointer-click', t: 'The Selector',    s: 'Seleksi by tag, nama, atribut', needs: 'objects' },
+      { id: 'replacer', icon: 'replace',             t: 'The Replacer',    s: 'Ganti objek sekaligus',         needs: 'objects' },
+      { id: 'clean',    icon: 'sparkles',            t: 'Clean Group',     s: 'Component jadi group murni',    needs: 'objects' },
+      { id: 'reset',    icon: 'scale-3d',            t: 'Reset Scale',     s: 'Kembalikan skala group',        needs: 'objects' },
+      { id: 'scene',    icon: 'eye-off',             t: 'Hide on Scene',   s: 'Atur visibilitas per scene',    needs: 'scenes' },
+      { id: 'untag',    icon: 'paint-bucket',        t: 'Untag & Unpaint', s: 'Hapus tag & material',          needs: 'objects' }
+    ];
+    var EMPTY_REASON = { objects: 'Belum ada group / component', scenes: 'Belum ada scene' };
+
+    // status: booting | ready | error | opening
+    var S = { status: 'booting', data: null, lastKey: null };
+    var bootStart = Date.now(), pending = null, bootTimer;
+
+    (function buildLoader() {
+      var box = document.getElementById('loaderText');
+      WORD.split('').forEach(function (ch, i) {
+        var span = document.createElement('span');
+        span.className = 'loader-letter';
+        span.textContent = ch;
+        span.style.animationDelay = (0.1 + i * LETTER_STEP).toFixed(3) + 's';
+        box.insertBefore(span, box.lastChild);
+      });
+    })();
+
+    function requestState() {
+      clearTimeout(bootTimer);
+      bootTimer = setTimeout(function () {
+        render({ status: 'error', error: 'SketchUp tidak merespon. Tutup jendela ini lalu buka lagi dari menu Extensions.' });
+      }, BOOT_TIMEOUT_MS);
+      if (window.sketchup && sketchup.ready) sketchup.ready();
+    }
+
+    // Dipanggil dari Ruby. Selama loader belum kelar, tahan dulu.
+    function render(st) {
+      clearTimeout(bootTimer);
+      if (S.status === 'booting') {
+        pending = st;
+        setTimeout(finishBoot, Math.max(0, MIN_BOOT_MS - (Date.now() - bootStart)));
+        return;
+      }
+      if (st.theme && !getStoredTheme()) applyTheme(st.theme); // tema terakhir yang tersimpan di SketchUp
+      var key = JSON.stringify(st);
+      if (key === S.lastKey) return; // refresh saat fokus: jangan animasi ulang kalau tidak berubah
+      S.lastKey = key;
+      S.status = st.status;
+      S.data = st;
+      draw();
+    }
+
+    function finishBoot() {
+      if (S.status !== 'booting' || !pending) return;
+      S.status = 'ready';
+      var st = pending; pending = null;
+      render(st);
+      document.getElementById('boot').classList.add('done');
+    }
+
+    function draw() {
+      var app = document.getElementById('app');
+      app.classList.remove('enter'); void app.offsetWidth; app.classList.add('enter');
+      if (S.status === 'error') {
+        app.innerHTML =
+          '<div class="hero"><div class="badge err">' + icon('triangle-alert') + '</div>' +
+          '<h2>Gagal memuat</h2><p>Tool belum bisa dibuka.</p></div>' +
+          '<div class="note err">' + icon('circle-alert') + '<span>' + esc(S.data.error) + '</span></div>' +
+          '<div class="spacer"></div>' +
+          '<div class="actions"><button class="btn primary" onclick="retry(this)">' +
+          icon('refresh-cw') + '<span>Coba lagi</span></button></div>';
+        return;
+      }
+
+      var stats = S.data.stats;
+      var foot = '<div class="foot"><span class="pill">v' + esc(S.data.version) + '</span>' +
+        '<button class="btn link" onclick="sketchup.updates()">' + icon('download') + '<span>Cek update</span></button></div>';
+
+      if (!stats.objects && !stats.scenes) {
+        app.innerHTML =
+          '<div class="hero"><div class="badge">' + icon('box') + '</div>' +
+          '<h2>Model masih kosong</h2><p>Belum ada group, component, atau scene.<br>Buat objek dulu, lalu muat ulang.</p></div>' +
+          '<div class="spacer"></div>' +
+          '<div class="actions"><button class="btn ghost" onclick="retry(this)">' +
+          icon('refresh-cw') + '<span>Muat ulang</span></button></div>' + foot;
+        return;
+      }
+
+      app.innerHTML = '<div class="grid">' + TOOLS.map(function (t) {
+        var off = !stats[t.needs];
+        return '<button class="tile' + (off ? ' off' : '') + '" data-id="' + t.id + '"' + (off ? ' disabled' : '') +
+          ' onclick="openTool(\'' + t.id + '\')">' +
+          '<div class="ic">' + icon(t.icon) + '</div><div class="t">' + esc(t.t) + '</div>' +
+          '<div class="s">' + esc(off ? EMPTY_REASON[t.needs] : t.s) + '</div></button>';
+      }).join('') + '</div>' +
+        '<div class="note">' + icon('info') + '<span><b>' + stats.selected + '</b> terseleksi · <b>' +
+        stats.objects + '</b> group/component · <b>' + stats.scenes + '</b> scene</span></div>' +
+        '<div class="spacer"></div>' + foot;
+    }
+
+    function openTool(id) {
+      if (S.status !== 'ready') return;
+      S.status = 'opening';
+      document.querySelectorAll('.tile').forEach(function (el) {
+        el.disabled = true;
+        if (el.dataset.id === id) {
+          el.classList.add('opening');
+          el.querySelector('.ic').innerHTML = icon('loader-circle');
+        }
+      });
+      sketchup.open(id); // sukses: Ruby menutup jendela ini
+    }
+
+    // Dipanggil dari Ruby kalau tool gagal dibuka
+    function onOpenFailed(msg) {
+      S.status = 'ready';
+      draw();
+      showToast(esc(msg));
+    }
+
+    function retry(btn) {
+      busy(btn, true);
+      S.lastKey = null;
+      requestState();
+    }
+
+    // Balik dari SketchUp (seleksi/model bisa berubah): minta angka terbaru
+    window.addEventListener('focus', function () {
+      if (S.status === 'ready' || S.status === 'error') requestState();
+    });
+
+    requestState();
+  </script>
+</body>
+</html>
