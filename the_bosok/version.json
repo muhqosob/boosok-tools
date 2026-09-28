@@ -1,5 +1,5 @@
 {
-  "version": "1.1.7",
-  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.1.7/boosok_tools_v1.1.7.rbz",
-  "changelog": "Merge branch 'main' of https://github.com/muhqosob/boosok-tools"
+  "version": "1.2.0",
+  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.2.0/boosok_tools_v1.2.0.rbz",
+  "changelog": "- Semua tool sekarang ada di satu menu: Extensions > The Bosok Tools (restart SketchUp sekali setelah update biar menu barunya muncul)\n- Jendela pembuka baru dengan animasi loading, ikut tema terang/gelap\n- Tool yang belum bisa dipakai (mis. belum ada scene) diberi tanda dan alasannya\n- Pesan error lebih jelas, ada tombol \"Coba lagi\"\n- Cek update sekarang ada di jendela pembuka"
 }
