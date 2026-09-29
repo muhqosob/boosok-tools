@@ -11,16 +11,20 @@ module BoosokTools
     WIDTH = 380 unless defined?(WIDTH)
     DEFAULT_HEIGHT = 480 unless defined?(DEFAULT_HEIGHT)
 
+    # JANGAN pakai `unless defined?` di sini — TOOL_PAGES HARUS selalu di-assign ulang
+    # setiap kali hub.rb di-load (hot-reload / update plugin). Kalau pakai `unless defined?`,
+    # SketchUp akan terus pakai versi lama TOOL_PAGES dari memori → error "tidak dikenal".
+    remove_const(:TOOL_PAGES) if defined?(TOOL_PAGES)
     TOOL_PAGES = {
-      'selector' => { file: 'main.rb',                   page: 'selector.html',        title: 'Selector' },
-      'replacer' => { file: 'the_replacer.rb',           page: 'replacer.html',        title: 'Group Replacer' },
-      'clean'    => { file: 'the_cleangroup.rb',         page: 'cleangroup.html',      title: 'Group Cleaner' },
-      'reset'    => { file: 'the_reset.rb',              page: 'reset.html',           title: 'Reset Scale' },
-      'scene'    => { file: 'the_hideonscenemanager.rb', page: 'hidescene.html',       title: 'Hide on Scene' },
+      'selector'      => { file: 'main.rb',                   page: 'selector.html',        title: 'Selector' },
+      'replacer'      => { file: 'the_replacer.rb',           page: 'replacer.html',        title: 'Group Replacer' },
+      'clean'         => { file: 'the_cleangroup.rb',         page: 'cleangroup.html',      title: 'Group Cleaner' },
+      'reset'         => { file: 'the_reset.rb',              page: 'reset.html',           title: 'Reset Scale' },
+      'scene'         => { file: 'the_hideonscenemanager.rb', page: 'hidescene.html',       title: 'Hide on Scene' },
       'untag'         => { file: 'untagnpaint.rb',            page: 'untagnpaint.html',     title: 'Untag & Unpaint' },
       'deep'          => { file: 'deep_properties.rb',        page: 'deep_properties.html', title: 'Deep Properties' },
       'custom_select' => { file: 'the_custom_select.rb',      page: nil,                    title: '5D Select Tool' }
-    }.freeze unless defined?(TOOL_PAGES)
+    }.freeze
 
     @current_tool ||= 'hub'
 
