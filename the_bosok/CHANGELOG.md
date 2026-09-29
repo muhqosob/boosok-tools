@@ -5,6 +5,26 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.5.2] — 2026-09-30
+
+### 🔧 Perbaikan
+
+- **Fix: Highlight Nested Level 1 & 2 pada 5D Select Tool**
+
+  Highlight sebelumnya hanya berfungsi di nested level 0 (outermost group) atau deepest edge karena
+  ketergantungan pada `InstancePath` yang mengembalikan transformasi identitas untuk intermediate instances.
+  
+  **Diperbaiki** dengan:
+  - Mengakumulasikan transformasi hierarki dunia (`container_world_transform` & `parent_world_transform`)
+    langsung dari rantai instance induk ke anak secara mandiri tanpa bug `InstancePath`.
+  - Mengambil bounding box lokal (`definition.bounds` / `local_bounds`) dan mentransformasikannya secara
+    akurat ke koordinat dunia di semua kedalaman level (0, 1, 2, dst.).
+  - Triangulasi permukaan Face menggunakan `face.mesh` (`GL_TRIANGLES`) dengan sedikit offset ke arah kamera
+    untuk mengeliminasi Z-fighting pada bidang opaque model.
+  - Border Face digambar tegas menggunakan `GL_LINE_LOOP` warna solid pink (`line_width: 3`).
+
+---
+
 ## [1.5.1] — 2026-09-30
 
 ### 🔧 Perbaikan

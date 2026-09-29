@@ -58,82 +58,194 @@ module BoosokTools::SelectTool5D
       target_entity = path[depth]
       return unless target_entity && target_entity.respond_to?(:valid?) && target_entity.valid?
 
-      # Transformasi kumulatif dari root ke entity
-      sub_path = path[0..depth]
-      transformation = Geom::Transformation.new
-      begin
-        ip = Sketchup::InstancePath.new(sub_path)
-        transformation = ip.transformation if ip.respond_to?(:valid?) && ip.valid?
-      rescue
-      end
-
-      # Warna Pink / Magenta seperti gambar 1, 2, 3
+      # Warna Pink / Magenta khas 5D Select Tool
       color_outline = Sketchup::Color.new(233, 30, 99)       # #e91e63
-      color_fill    = Sketchup::Color.new(245, 175, 215, 50) # Soft pink transparan
+      color_fill    = Sketchup::Color.new(245, 175, 215, 60) # Soft pink transparan
 
       if target_entity.is_a?(Sketchup::Edge)
-        pts = target_entity.vertices.map { |v| v.position.transform(transformation) }
-        # Garis edge tebal berwarna orange/kuning (seperti gambar-4)
-        view.drawing_color = Sketchup::Color.new(255, 153, 0)
-        view.line_width = 4
-        view.line_stipple = ""
-        view.draw(GL_LINES, pts)
+        parent_tr = parent_world_transform(path, depth)
+        draw_edge_highlight(view, target_entity, parent_tr)
 
       elsif target_entity.is_a?(Sketchup::Face)
-        pts = target_entity.outer_loop.vertices.map { |v| v.position.transform(transformation) }
-
-        # 1. Fill transparan
-        view.drawing_color = color_fill
-        view.draw(GL_POLYGON, pts)
-
-        # 2. Garis tepi putus-putus warna pink
-        view.drawing_color = color_outline
-        view.line_width = 2
-        view.line_stipple = "-"
-        view.draw(GL_LINE_LOOP, pts)
-        view.line_stipple = ""
+        parent_tr = parent_world_transform(path, depth)
+        draw_face_highlight(view, target_entity, parent_tr, color_fill, color_outline)
 
       elsif target_entity.respond_to?(:definition) || target_entity.respond_to?(:bounds)
-        b = if target_entity.respond_to?(:definition)
-              target_entity.definition.bounds
-            else
-              target_entity.bounds
-            end
-
-        corners = (0..7).map { |i| b.corner(i).transform(transformation) }
-
-        # 6 bidang bounding box untuk fill transparan
-        faces = [
-          [corners[0], corners[1], corners[3], corners[2]], # Bawah
-          [corners[4], corners[5], corners[7], corners[6]], # Atas
-          [corners[0], corners[1], corners[5], corners[4]], # Depan
-          [corners[1], corners[3], corners[7], corners[5]], # Kanan
-          [corners[3], corners[2], corners[6], corners[7]], # Belakang
-          [corners[2], corners[0], corners[4], corners[6]]  # Kiri
-        ]
-
-        # 1. Fill transparan setiap sisi bounding box
-        view.drawing_color = color_fill
-        faces.each do |quad_pts|
-          view.draw(GL_POLYGON, quad_pts)
-        end
-
-        # 2. Garis tepi bounding box putus-putus pink
-        view.drawing_color = color_outline
-        view.line_width = 2
-        view.line_stipple = "-"
-
-        points = [
-          corners[0], corners[1], corners[1], corners[3],
-          corners[3], corners[2], corners[2], corners[0],
-          corners[4], corners[5], corners[5], corners[7],
-          corners[7], corners[6], corners[6], corners[4],
-          corners[0], corners[4], corners[1], corners[5],
-          corners[2], corners[6], corners[3], corners[7]
-        ]
-        view.draw(GL_LINES, points)
-        view.line_stipple = ""
+        corners = get_world_corners_for_container(path, depth)
+        draw_bounding_box_highlight(view, corners, color_fill, color_outline) if corners
       end
+    rescue => e
+      warn "[5D Select Tool] Error during draw_target_highlight: #{e.message}" if $DEBUG
+    end
+
+    # Menghitung transformasi kumulatif dunia untuk container (Group / ComponentInstance)
+    # dari root model sampai ke container pada index depth (inklusif)
+    def container_world_transform(path, depth)
+      tr = Geom::Transformation.new
+      (0..depth).each do |i|
+        ent = path[i]
+        if ent && ent.respond_to?(:transformation) && ent.transformation
+          tr = tr * ent.transformation
+        end
+      end
+      tr
+    rescue
+      Geom::Transformation.new
+    end
+
+    # Menghitung transformasi kumulatif dunia untuk parent container dari suatu entitas (Face / Edge)
+    # dari root model sampai ke index depth - 1
+    def parent_world_transform(path, depth)
+      tr = Geom::Transformation.new
+      (0...depth).each do |i|
+        ent = path[i]
+        if ent && ent.respond_to?(:transformation) && ent.transformation
+          tr = tr * ent.transformation
+        end
+      end
+      tr
+    rescue
+      Geom::Transformation.new
+    end
+
+    # Menghitung 8 titik sudut bounding box dalam koordinat dunia (world coordinates)
+    # untuk Group atau ComponentInstance di level kedalaman apapun
+    def get_world_corners_for_container(path, depth)
+      target_entity = path[depth]
+      return nil unless target_entity
+
+      # 1. Coba ambil local bounding box yang belum tertransformasi
+      local_bb = nil
+      if target_entity.respond_to?(:local_bounds) && target_entity.local_bounds
+        local_bb = target_entity.local_bounds
+      elsif target_entity.respond_to?(:definition) && target_entity.definition && target_entity.definition.respond_to?(:bounds)
+        local_bb = target_entity.definition.bounds
+      end
+
+      if local_bb
+        # Transformasikan seluruh sudut local_bb menggunakan world transform instance ini
+        tr = container_world_transform(path, depth)
+        return (0..7).map { |i| local_bb.corner(i).transform(tr) }
+      end
+
+      # 2. Fallback: target_entity.bounds (koordinat relatif terhadap parent container)
+      if target_entity.respond_to?(:bounds) && target_entity.bounds
+        parent_tr = parent_world_transform(path, depth)
+        return (0..7).map { |i| target_entity.bounds.corner(i).transform(parent_tr) }
+      end
+
+      nil
+    rescue
+      nil
+    end
+
+    # Menggambar highlight bounding box 3D untuk Group / Component
+    def draw_bounding_box_highlight(view, corners, color_fill, color_outline)
+      return unless corners && corners.length == 8
+
+      # 6 bidang bounding box untuk fill transparan
+      faces = [
+        [corners[0], corners[1], corners[3], corners[2]], # Bawah
+        [corners[4], corners[5], corners[7], corners[6]], # Atas
+        [corners[0], corners[1], corners[5], corners[4]], # Depan
+        [corners[1], corners[3], corners[7], corners[5]], # Kanan
+        [corners[3], corners[2], corners[6], corners[7]], # Belakang
+        [corners[2], corners[0], corners[4], corners[6]]  # Kiri
+      ]
+
+      # 1. Fill transparan setiap sisi bounding box
+      view.drawing_color = color_fill
+      faces.each do |quad_pts|
+        view.draw(GL_POLYGON, quad_pts)
+      end
+
+      # 2. Garis tepi bounding box (wireframe pink solid tebal)
+      view.drawing_color = color_outline
+      view.line_width = 2.5
+      view.line_stipple = ""
+
+      points = [
+        corners[0], corners[1], corners[1], corners[3],
+        corners[3], corners[2], corners[2], corners[0],
+        corners[4], corners[5], corners[5], corners[7],
+        corners[7], corners[6], corners[6], corners[4],
+        corners[0], corners[4], corners[1], corners[5],
+        corners[2], corners[6], corners[3], corners[7]
+      ]
+      view.draw(GL_LINES, points)
+    rescue => e
+      warn "[5D Select Tool] Error drawing bbox highlight: #{e.message}" if $DEBUG
+    end
+
+    # Menggambar highlight untuk Face dengan triangulasi dan offset anti Z-fighting
+    def draw_face_highlight(view, face, world_tr, color_fill, color_outline)
+      return unless face && face.respond_to?(:valid?) && face.valid?
+
+      # Vektor offset ke arah kamera/mata pengamat agar tidak terjadi z-fighting dengan bidang SketchUp
+      cam_eye = view.camera.eye rescue nil
+      normal = (face.normal.transform(world_tr).normalize rescue nil)
+
+      offset_vec = Geom::Vector3d.new(0, 0, 0)
+      if normal && normal.respond_to?(:valid?) && normal.valid?
+        if cam_eye
+          sample_pt = (face.vertices.first.position.transform(world_tr) rescue Geom::Point3d.new(0, 0, 0))
+          view_dir = cam_eye - sample_pt
+          normal.reverse! if (view_dir % normal) < 0 rescue nil
+        end
+        offset_vec = normal
+        offset_vec.length = 0.02 rescue nil # offset ~0.5 mm ke arah kamera
+      end
+
+      # 1. Fill Permukaan Menggunakan Triangulasi (PolygonMesh) agar mendukung bidang concave / lubang
+      mesh_pts = []
+      begin
+        mesh = face.mesh
+        if mesh && mesh.respond_to?(:count_polygons) && mesh.count_polygons > 0
+          (1..mesh.count_polygons).each do |i|
+            pts = mesh.polygon_points_at(i)
+            pts.each do |pt|
+              mesh_pts << (pt.transform(world_tr) + offset_vec)
+            end
+          end
+        end
+      rescue
+        mesh_pts = []
+      end
+
+      # Fallback jika mesh gagal atau kosong: gunakan outer_loop
+      if mesh_pts.empty? && face.respond_to?(:outer_loop) && face.outer_loop
+        outer_pts = face.outer_loop.vertices.map { |v| (v.position.transform(world_tr) + offset_vec) }
+        view.drawing_color = color_fill
+        view.draw(GL_POLYGON, outer_pts)
+      elsif !mesh_pts.empty?
+        view.drawing_color = color_fill
+        view.draw(GL_TRIANGLES, mesh_pts)
+      end
+
+      # 2. Garis Tepi (Edges & Loops) Tebal dan Tegas Berwarna Pink Solid
+      view.drawing_color = color_outline
+      view.line_width = 3
+      view.line_stipple = ""
+
+      loops = face.respond_to?(:loops) ? face.loops : [face.outer_loop]
+      loops.each do |lp|
+        next unless lp && lp.respond_to?(:vertices)
+        loop_pts = lp.vertices.map { |v| (v.position.transform(world_tr) + offset_vec) }
+        view.draw(GL_LINE_LOOP, loop_pts)
+      end
+    rescue => e
+      warn "[5D Select Tool] Error drawing face highlight: #{e.message}" if $DEBUG
+    end
+
+    # Menggambar highlight garis Edge tebal orange
+    def draw_edge_highlight(view, edge, world_tr)
+      pts = edge.vertices.map { |v| v.position.transform(world_tr) }
+      view.drawing_color = Sketchup::Color.new(255, 153, 0)
+      view.line_width = 4
+      view.line_stipple = ""
+      view.draw(GL_LINES, pts)
+    rescue => e
+      warn "[5D Select Tool] Error drawing edge highlight: #{e.message}" if $DEBUG
     end
 
     # Menggambar Card Info Hirarki Mengambang di Viewport Persis Seperti Gambar

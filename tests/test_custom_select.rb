@@ -15,35 +15,72 @@ module Sketchup
   end
 
   class Edge
+    attr_accessor :vertices
+    def initialize(v1 = nil, v2 = nil)
+      @vertices = [
+        v1 || Struct.new(:position).new(Geom::Point3d.new(0, 0, 0)),
+        v2 || Struct.new(:position).new(Geom::Point3d.new(10, 0, 0))
+      ]
+    end
     def valid?; true; end
-    def vertices; []; end
     def typename; "Edge"; end
     def layer; nil; end
   end
 
+  class PolygonMesh
+    attr_accessor :points
+    def initialize(pts = [])
+      @points = pts
+    end
+    def count_polygons
+      @points.empty? ? 0 : 1
+    end
+    def polygon_points_at(_idx)
+      @points
+    end
+  end
+
   class Face
+    attr_accessor :vertices, :normal, :loops
+    def initialize(pts = nil)
+      @pts = pts || [Geom::Point3d.new(0, 0, 0), Geom::Point3d.new(10, 0, 0), Geom::Point3d.new(10, 10, 0), Geom::Point3d.new(0, 10, 0)]
+      @vertices = @pts.map { |p| Struct.new(:position).new(p) }
+      @normal = Geom::Vector3d.new(0, 0, 1)
+      @loops = [Struct.new(:vertices).new(@vertices)]
+    end
     def valid?; true; end
     def outer_loop
-      Struct.new(:vertices).new([])
+      @loops.first
+    end
+    def mesh
+      PolygonMesh.new(@pts)
     end
     def typename; "Face"; end
     def layer; nil; end
   end
 
   class MockBounds
-    def corner(_i)
-      Geom::Point3d.new(0, 0, 0)
+    def initialize(min_x = 0, min_y = 0, min_z = 0, max_x = 10, max_y = 10, max_z = 10)
+      @min = [min_x, min_y, min_z]
+      @max = [max_x, max_y, max_z]
+    end
+    def corner(i)
+      x = (i & 1 == 0) ? @min[0] : @max[0]
+      y = (i & 2 == 0) ? @min[1] : @max[1]
+      z = (i & 4 == 0) ? @min[2] : @max[2]
+      Geom::Point3d.new(x, y, z)
     end
   end
 
   class Group
-    attr_accessor :entityID, :name, :layer, :is_valid, :is_locked
-    def initialize(id, name = "Group")
+    attr_accessor :entityID, :name, :layer, :is_valid, :is_locked, :transformation
+    def initialize(id, name = "Group", tx = 0, ty = 0, tz = 0)
       @entityID = id
       @name = name
       @layer = Struct.new(:name).new("Layer0")
       @is_valid = true
       @is_locked = false
+      @transformation = Geom::Transformation.new(tx, ty, tz)
     end
     def valid?; @is_valid; end
     def locked?; @is_locked; end
@@ -51,13 +88,16 @@ module Sketchup
     def bounds
       MockBounds.new
     end
+    def local_bounds
+      bounds
+    end
+    def definition
+      Struct.new(:name, :bounds).new(@name, bounds)
+    end
   end
 
   class ComponentInstance < Group
     def typename; "ComponentInstance"; end
-    def definition
-      Struct.new(:name, :bounds).new(@name, bounds)
-    end
   end
 
   class InstancePath
@@ -122,25 +162,30 @@ module Sketchup
   end
 
   class View
-    attr_accessor :pick_helper, :invalidated, :should_raise_on_draw
+    attr_accessor :pick_helper, :invalidated, :should_raise_on_draw, :draw_calls
     def initialize
       @pick_helper = PickHelper.new
       @invalidated = false
       @should_raise_on_draw = false
+      @draw_calls = []
     end
     def invalidate
       @invalidated = true
     end
     def vpwidth; 1920; end
     def vpheight; 1080; end
+    def camera
+      Struct.new(:eye).new(Geom::Point3d.new(0, 0, 500))
+    end
     def draw_text(*args)
       raise "Simulated Draw Error" if @should_raise_on_draw
     end
-    def drawing_color=(*args); end
-    def line_width=(*args); end
-    def line_stipple=(*args); end
-    def draw(*args)
+    def drawing_color=(c); @color = c; end
+    def line_width=(w); @width = w; end
+    def line_stipple=(s); @stipple = s; end
+    def draw(mode, pts)
       raise "Simulated Draw Error" if @should_raise_on_draw
+      @draw_calls << { mode: mode, points: pts, color: @color, width: @width }
     end
     def draw2d(*args)
       raise "Simulated Draw Error" if @should_raise_on_draw
@@ -158,11 +203,44 @@ module Geom
     def initialize(x = 0, y = 0, z = 0)
       @x, @y, @z = x, y, z
     end
+    def transform(t)
+      return self unless t
+      Geom::Point3d.new(@x + t.x, @y + t.y, @z + t.z)
+    end
+    def +(other)
+      if other.is_a?(Geom::Vector3d) || other.is_a?(Geom::Point3d)
+        Geom::Point3d.new(@x + other.x, @y + other.y, @z + other.z)
+      else
+        self
+      end
+    end
+    def -(other)
+      Geom::Vector3d.new(@x - other.x, @y - other.y, @z - other.z)
+    end
+  end
+
+  class Vector3d
+    attr_accessor :x, :y, :z
+    def initialize(x = 0, y = 0, z = 0)
+      @x, @y, @z = x, y, z
+    end
+    def normalize; self; end
+    def length=(val); end
+    def reverse!; self; end
+    def %(other); 1; end
+    def valid?; true; end
     def transform(_t); self; end
   end
 
   class Transformation
-    def initialize; end
+    attr_accessor :x, :y, :z
+    def initialize(x = 0, y = 0, z = 0)
+      @x, @y, @z = x, y, z
+    end
+    def *(other)
+      return self unless other
+      Geom::Transformation.new(@x + other.x, @y + other.y, @z + other.z)
+    end
   end
 end
 
@@ -179,6 +257,7 @@ def file_loaded(*args); true; end
 GL_LINES = 1
 GL_LINE_LOOP = 2
 GL_POLYGON = 3
+GL_TRIANGLES = 4
 COPY_MODIFIER_MASK = 1
 CONSTRAIN_MODIFIER_MASK = 2
 COPY_MODIFIER_KEY = 17
@@ -369,6 +448,93 @@ tool.onLButtonDown(0, 150, 150, view)
 raise "Test 18 FAILED: Status text harus memperingatkan bahwa objek terkunci! Didapat: #{Sketchup.status_text}" unless Sketchup.status_text.downcase.include?("terkunci")
 puts "✓ Test 18 Passed: Locked entity is safely handled and user is alerted!"
 
+# -------------------------------------------------------------
+# BAGIAN 5: NESTED HIGHLIGHT AT DEPTH 0, 1, 2, 3 (The Core Fix)
+# -------------------------------------------------------------
+# Setup nested hierarchy with real transformations:
+# RootGroup (at [100, 0, 0])
+#   └── SubGroup_L1 (at [20, 0, 0] relative to L0)
+#         └── SubComp_L2 (at [0, 30, 0] relative to L1)
+#               ├── NestedFace_L3
+#               └── NestedEdge_L3
+g_l0 = Sketchup::Group.new(101, "Root_L0", 100, 0, 0)
+g_l1 = Sketchup::Group.new(102, "Sub_L1", 20, 0, 0)
+c_l2 = Sketchup::ComponentInstance.new(103, "Comp_L2", 0, 30, 0)
+f_l3 = Sketchup::Face.new
+e_l3 = Sketchup::Edge.new
+
+full_nested_path = [g_l0, g_l1, c_l2, f_l3]
+
+# Test 19: Container World Transformation kumulatif
+draw_h = tool.instance_variable_get(:@draw_handler)
+tr_l0 = draw_h.send(:container_world_transform, full_nested_path, 0)
+raise "Test 19 FAILED: tr_l0 x harus 100, didapat: #{tr_l0.x}" unless tr_l0.x == 100
+
+tr_l1 = draw_h.send(:container_world_transform, full_nested_path, 1)
+raise "Test 19 FAILED: tr_l1 x harus 120, didapat: #{tr_l1.x}" unless tr_l1.x == 120
+
+tr_l2 = draw_h.send(:container_world_transform, full_nested_path, 2)
+raise "Test 19 FAILED: tr_l2 harus [120, 30, 0], didapat: [#{tr_l2.x}, #{tr_l2.y}, #{tr_l2.z}]" unless tr_l2.x == 120 && tr_l2.y == 30
+puts "✓ Test 19 Passed: container_world_transform correctly accumulates translations across depth 0, 1, and 2!"
+
+# Test 20: Parent World Transformation untuk Face/Edge
+ptr_l3 = draw_h.send(:parent_world_transform, full_nested_path, 3)
+raise "Test 20 FAILED: ptr_l3 harus sama dengan tr_l2 (parent container transform)" unless ptr_l3.x == 120 && ptr_l3.y == 30
+puts "✓ Test 20 Passed: parent_world_transform correctly retrieves parent container transform for leaf entities!"
+
+# Test 21: Bounding Box World Corners untuk Nested Group Level 1
+corners_l1 = draw_h.send(:get_world_corners_for_container, full_nested_path, 1)
+raise "Test 21 FAILED: corners_l1 kosong atau panjangnya bukan 8" unless corners_l1 && corners_l1.length == 8
+raise "Test 21 FAILED: Sudut pertama harus memiliki offset x = 120 (100 + 20), didapat: #{corners_l1[0].x}" unless corners_l1[0].x == 120
+puts "✓ Test 21 Passed: Nested Level 1 Group world bounding box corners calculated accurately in world space!"
+
+# Test 22: Bounding Box World Corners untuk Nested Component Level 2
+corners_l2 = draw_h.send(:get_world_corners_for_container, full_nested_path, 2)
+raise "Test 22 FAILED: corners_l2 kosong" unless corners_l2 && corners_l2.length == 8
+raise "Test 22 FAILED: Sudut L2 harus memiliki x=120, y=30, didapat x=#{corners_l2[0].x}, y=#{corners_l2[0].y}" unless corners_l2[0].x == 120 && corners_l2[0].y == 30
+puts "✓ Test 22 Passed: Nested Level 2 Component world bounding box corners calculated accurately across 3 nested levels!"
+
+# Test 23: Viewport Draw Highlight pada Nested Level 1 (Group Highlight)
+tool.hover_path = full_nested_path
+tool.target_depth = 1
+view.draw_calls.clear
+tool.draw(view)
+# Verifikasi bahwa draw dipanggil untuk bounding box
+has_polygon = view.draw_calls.any? { |c| c[:mode] == GL_POLYGON }
+has_lines = view.draw_calls.any? { |c| c[:mode] == GL_LINES }
+raise "Test 23 FAILED: DrawHandler tidak menggambar polygon fill untuk Level 1 Group!" unless has_polygon
+raise "Test 23 FAILED: DrawHandler tidak menggambar lines wireframe untuk Level 1 Group!" unless has_lines
+puts "✓ Test 23 Passed: DrawHandler successfully highlights Nested Level 1 Group with fill and wireframe!"
+
+# Test 24: Viewport Draw Highlight pada Nested Level 2 (Component Highlight)
+tool.target_depth = 2
+view.draw_calls.clear
+tool.draw(view)
+has_polygon_l2 = view.draw_calls.any? { |c| c[:mode] == GL_POLYGON }
+has_lines_l2 = view.draw_calls.any? { |c| c[:mode] == GL_LINES }
+raise "Test 24 FAILED: DrawHandler tidak menggambar highlight untuk Level 2 Component!" unless has_polygon_l2 && has_lines_l2
+puts "✓ Test 24 Passed: DrawHandler successfully highlights Nested Level 2 Component!"
+
+# Test 25: Viewport Draw Highlight pada Nested Face (Level 3 Face)
+tool.target_depth = 3
+view.draw_calls.clear
+tool.draw(view)
+has_triangles = view.draw_calls.any? { |c| c[:mode] == GL_TRIANGLES }
+has_line_loop = view.draw_calls.any? { |c| c[:mode] == GL_LINE_LOOP }
+raise "Test 25 FAILED: Face highlight tidak menggambar GL_TRIANGLES untuk fill anti z-fighting!" unless has_triangles
+raise "Test 25 FAILED: Face highlight tidak menggambar GL_LINE_LOOP untuk border outline!" unless has_line_loop
+puts "✓ Test 25 Passed: DrawHandler successfully highlights Nested Face using GL_TRIANGLES & GL_LINE_LOOP!"
+
+# Test 26: Viewport Draw Highlight pada Nested Edge
+full_edge_path = [g_l0, g_l1, c_l2, e_l3]
+tool.hover_path = full_edge_path
+tool.target_depth = 3
+view.draw_calls.clear
+tool.draw(view)
+has_edge_lines = view.draw_calls.any? { |c| c[:mode] == GL_LINES && c[:width] == 4 }
+raise "Test 26 FAILED: Edge highlight tidak menggambar garis tebal orange (line_width 4)!" unless has_edge_lines
+puts "✓ Test 26 Passed: DrawHandler successfully highlights Nested Edge with width 4!"
+
 puts "\n======================================================="
-puts "ALL 18 TESTS PASSED SUCCESSFULLY IN DOCKER CONTAINER! 🎉"
+puts "ALL 26 TESTS PASSED SUCCESSFULLY IN DOCKER CONTAINER! 🎉"
 puts "======================================================="
