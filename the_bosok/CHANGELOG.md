@@ -5,6 +5,15 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.2.7] — 2026-09-29
+
+### ✨ Baru
+- **Header & Icon pada Modal Notifikasi**:
+  - Menambahkan baris header di bagian atas kotak notifikasi modal (*floating alert*) dengan judul **Boosok Tools** serta icon box paket (`#i-package`) yang identik dengan header menu utama Hub.
+  - Tampilan icon otomatis menyesuaikan tema (latar hitam icon putih pada tema terang, latar putih icon hitam pada tema gelap).
+
+---
+
 ## [1.2.6] — 2026-09-29
 
 ### ✨ Baru

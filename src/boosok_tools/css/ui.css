@@ -284,8 +284,8 @@ input[type="checkbox"] { accent-color: var(--dark-gray); }
 #notif-sheet {
   width: 280px;
   max-width: calc(100% - 48px);
-  padding: 16px;
-  gap: 14px;
+  padding: 14px 16px;
+  gap: 12px;
   border-radius: 12px;
   border: 1px solid var(--line);
   box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.25);
@@ -295,8 +295,35 @@ input[type="checkbox"] { accent-color: var(--dark-gray); }
   from { opacity: 0; transform: scale(.93); }
   to   { opacity: 1; transform: scale(1); }
 }
+.notif-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--line);
+}
+.notif-mark {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 7px !important;
+  flex-shrink: 0;
+}
+.notif-mark svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+.notif-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  line-height: 1;
+}
 .notif-body {
-  display: flex; gap: 10px; align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 2px 0;
 }
 .notif-icon {
   width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;

@@ -92,6 +92,10 @@ function showNotif(msg, type) {
     overlay.id = 'notif-overlay';
     overlay.innerHTML =
       '<div class="sheet" id="notif-sheet">' +
+        '<div class="notif-head">' +
+          '<div class="mark notif-mark"><svg aria-hidden="true"><use href="#i-package"/></svg></div>' +
+          '<span class="notif-title">Boosok Tools</span>' +
+        '</div>' +
         '<div class="notif-body">' +
           '<svg class="notif-icon" id="notif-icon" aria-hidden="true">' +
             '<use id="notif-icon-href" href="#i-circle-alert"/>' +
