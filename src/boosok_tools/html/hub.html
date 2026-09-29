@@ -208,13 +208,8 @@
     }
     #boot.done { opacity: 0; filter: blur(6px); transform: scale(1.03); pointer-events: none; }
     .lux { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-    .loader-wrapper {
-      position: relative; display: flex; align-items: center; justify-content: center;
-      height: 96px; padding: 0 16px;
-      font-size: 22px; font-weight: 300; letter-spacing: .16em; color: var(--ink);
-    }
     .loader {
-      position: absolute; inset: 0; z-index: 1; opacity: .6;
+      position: relative; width: 160px; height: 60px; opacity: .6;
       mask: repeating-linear-gradient(90deg, transparent 0, transparent 6px, black 7px, black 8px);
       -webkit-mask: repeating-linear-gradient(90deg, transparent 0, transparent 6px, black 7px, black 8px);
     }
@@ -233,16 +228,6 @@
     }
     @keyframes transform-animation { 0% { transform: translate(-50%); } 100% { transform: translate(50%); } }
     @keyframes opacity-animation { 0%, 100% { opacity: 0; } 20% { opacity: .8; } 70% { opacity: 0; } }
-    .loader-letter {
-      display: inline-block; white-space: pre; z-index: 2;
-      animation: loader-letter-anim var(--cycle) infinite var(--lux) both;
-    }
-    @keyframes loader-letter-anim {
-      0%   { opacity: 0; filter: blur(6px); transform: translateY(4px); }
-      10%  { opacity: 1; filter: blur(0); transform: none; text-shadow: 0 0 10px var(--glow); }
-      30%  { opacity: .3; text-shadow: none; }
-      100% { opacity: .15; }
-    }
     .hairline { width: 180px; height: 1px; background: var(--line); overflow: hidden; }
     .hairline > div { height: 100%; background: var(--ink); opacity: .6; transform: scaleX(0); transform-origin: left; animation: hair var(--boot, 3s) var(--lux) forwards; }
     @keyframes hair { to { transform: scaleX(1); } }
@@ -254,7 +239,7 @@
 
   <div id="boot" role="status" aria-label="Memuat Boosok Tools">
     <div class="lux">
-      <div class="loader-wrapper" id="loaderText"><div class="loader"></div></div>
+      <div class="loader"></div>
       <div class="hairline"><div></div></div>
       <small>Memuat</small>
     </div>
@@ -320,8 +305,8 @@
        Constants & Hub State
     ═══════════════════════════════════════════════ */
     var isAlreadyBooted = sessionStorage.getItem('boosok_hub_booted') === '1';
-    var LETTER_STEP = 0.12, CYCLE = 5, BOOT_TIMEOUT_MS = 10000, WORD = 'Boosok Tools';
-    var MIN_BOOT_MS = Math.round((0.1 + (WORD.length - 1) * LETTER_STEP + CYCLE * 0.3) * 1000);
+    var BOOT_TIMEOUT_MS = 10000;
+    var MIN_BOOT_MS = 1800;
     document.documentElement.style.setProperty('--boot', MIN_BOOT_MS + 'ms');
 
     var LS_RECENT = 'boosok_recent_tool';
@@ -343,25 +328,7 @@
     var bootStart = Date.now(), pending = null, bootTimer;
     var searchQuery = '';
 
-    /* ═══════════════════════════════════════════════
-       Boot Loader
-    ═══════════════════════════════════════════════ */
-    (function buildLoader() {
-      if (isAlreadyBooted) return;
-      var box = document.getElementById('loaderText');
-      if (!box) return;
-      WORD.split('').forEach(function(ch, i) {
-        var span = document.createElement('span');
-        span.className = 'loader-letter';
-        span.textContent = ch;
-        span.style.animationDelay = (0.1 + i * LETTER_STEP).toFixed(3) + 's';
-        box.insertBefore(span, box.lastChild);
-      });
-    })();
 
-    /* ═══════════════════════════════════════════════
-       Recent Tool (localStorage)
-    ═══════════════════════════════════════════════ */
     function getRecent() {
       try { return JSON.parse(localStorage.getItem(LS_RECENT)) || []; } catch(e) { return []; }
     }

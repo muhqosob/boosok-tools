@@ -1,6 +1,6 @@
 {
-  "version": "1.5.2",
-  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.5.2/boosok_tools_v1.5.2.rbz",
-  "changelog": "chore(release): bump v1.5.2 - fix nested level 1 & 2 highlight on 5D select tool",
+  "version": "1.5.3",
+  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.5.3/boosok_tools_v1.5.3.rbz",
+  "changelog": "chore(release): bump v1.5.3 - simplify boot loader, remove text wrapper",
   "sha256": ""
 }
