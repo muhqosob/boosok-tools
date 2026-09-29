@@ -21,7 +21,7 @@
   <script src="../js/ui.js"></script>
 
   <header class="head">
-    <button class="back-btn" type="button" title="Kembali ke The Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()"><svg><use href="#i-arrow-left"/></svg></button>
+    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()"><svg><use href="#i-arrow-left"/></svg></button>
     <div class="mark"><svg><use href="#i-mouse-pointer-click"/></svg></div>
     <div class="txt">
       <h1>Selector</h1>
@@ -155,6 +155,7 @@
             }).join('')
           : '<div class="none">' + (emptyMsg || 'Tidak ditemukan') + '</div>';
       }
+      box._fill = fill;
       function close() {
         box.classList.remove('open');
         if (!input.value.trim()) input.value = input.dataset.old || getFallback();
@@ -250,11 +251,33 @@
     $('modal').addEventListener('mousedown', function (e) { if (e.target === this) this.classList.remove('open'); });
 
     // ---- Dipanggil dari Ruby ----
+    function updateTags(newTags) {
+      tags = newTags || [];
+      // Jika tag yang sedang dipilih sudah terhapus di SketchUp, reset ke ALL
+      ['tag1', 'tag2'].forEach(function (id) {
+        var el = $(id);
+        if (el && el.value !== ALL && tags.indexOf(el.value) === -1) {
+          el.value = ALL;
+          el.dataset.old = ALL;
+        }
+      });
+      // Jika dropdown sedang terbuka, perbarui opsinya secara real-time
+      ['c1', 'c2'].forEach(function (cid) {
+        var box = $(cid);
+        if (box && box.classList.contains('open') && typeof box._fill === 'function') {
+          var input = box.querySelector('input');
+          box._fill(input ? input.value : '');
+        }
+      });
+    }
+
     function initUIData(data) {
-      tags = data.tags || [];
-      keys = data.keys || ['a_posisi'];
-      renderKeys();
-    autoFitHeight(0);
+      if (data.tags) updateTags(data.tags);
+      if (data.keys) {
+        keys = data.keys;
+        renderKeys();
+      }
+      autoFitHeight(0);
     }
     var origShowStep = showStep;
     showStep = function (n) {

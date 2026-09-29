@@ -8,7 +8,7 @@ module MyCustomPlugins
     require_relative 'hub'
 
     # Satu item saja; semua tool + cek update ada di dalam launcher
-    UI.menu("Extensions").add_item("The Boosok Tools") {
+    UI.menu("Extensions").add_item("Boosok Tools") {
       load File.join(__dir__, 'titlebar.rb')
       load File.join(__dir__, 'hub.rb')
       BoosokTools::Hub.show

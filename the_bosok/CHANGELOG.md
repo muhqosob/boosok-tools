@@ -5,6 +5,20 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.2.6] — 2026-09-29
+
+### ✨ Baru
+- **Auto-Sync Tag pada Selector**:
+  - Penambahan `LayersObserver`, `ModelObserver`, `AppObserver`, dan background monitoring (0.4s) pada tool **Selector**: penambahan, penghapusan, atau rename Tag di SketchUp langsung sinkron otomatis secara real-time ke dropdown tag tanpa perlu membuka ulang dialog.
+  - Pembersihan otomatis: jika tag yang sedang dipilih terhapus di SketchUp, nilai seleksi otomatis kembali ke `(Semua Tag / Abaikan)`.
+  - Dropdown yang sedang terbuka otomatis memperbarui daftar tag secara langsung.
+- **Penyederhanaan Nama "Boosok Tools"**:
+  - Mengubah `The Boosok Tools` menjadi **Boosok Tools** di menu Extensions SketchUp, header launcher utama, dan seluruh tombol kembali di setiap tool.
+- **Kredit Pembuat di Updater**:
+  - Menambahkan teks `Dibuat oleh: "Muh-Qosob"` di tengah tampilan dialog pembaruan saat plugin sudah versi terbaru.
+
+---
+
 ## [1.2.5] — 2026-09-29
 
 ### ✨ Baru

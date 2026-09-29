@@ -1,46 +1,167 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <title>Boosok Tools Update</title>
   <link rel="stylesheet" href="../css/ui.css">
   <style>
-    #app { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; }
-    .versions { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: -4px; color: var(--muted); }
-    .versions svg { width: 14px; height: 14px; }
-    .btn.primary:hover svg { transform: translateX(2px); }
-    .btn.ghost:hover svg { transform: rotate(-60deg); }
+    #app {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .versions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: -4px;
+      color: var(--muted);
+    }
+
+    .versions svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .btn.primary:hover svg {
+      transform: translateX(2px);
+    }
+
+    .btn.ghost:hover svg {
+      transform: rotate(-60deg);
+    }
 
     /* Changelog */
-    .card { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
-    .card ul { margin: 0; padding: 4px 12px 12px; list-style: none; overflow-y: auto; max-height: 280px; }
-    .card li { position: relative; padding-left: 14px; font-size: 12.5px; line-height: 1.55; margin-top: 4px; user-select: text; }
-    .card li::before { content: ""; position: absolute; left: 2px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
-    .card ul::-webkit-scrollbar { width: 8px; }
-    .card ul::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 8px; border: 2px solid var(--surface); }
+    .card {
+      flex: 0 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card ul {
+      margin: 0;
+      padding: 4px 12px 12px;
+      list-style: none;
+      overflow-y: auto;
+      max-height: 280px;
+    }
+
+    .card li {
+      position: relative;
+      padding-left: 14px;
+      font-size: 12.5px;
+      line-height: 1.55;
+      margin-top: 4px;
+      user-select: text;
+    }
+
+    .card li::before {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: 8px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .card ul::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .card ul::-webkit-scrollbar-thumb {
+      background: var(--line-strong);
+      border-radius: 8px;
+      border: 2px solid var(--surface);
+    }
 
     /* Progress */
-    .progress { display: flex; flex-direction: column; gap: 8px; }
-    .progress .meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
-    .progress .meta b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
-    .bar { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
-    .bar > div {
-      height: 100%; width: 0; border-radius: inherit;
-      background: var(--accent) linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent) no-repeat;
+    .progress {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .progress .meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .progress .meta b {
+      color: var(--ink);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bar {
+      height: 6px;
+      background: var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar>div {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: var(--accent) linear-gradient(90deg, transparent, rgba(255, 255, 255, .4), transparent) no-repeat;
       background-size: 60px 100%;
       animation: shimmer 1.2s linear infinite;
       transition: width .3s var(--ease);
     }
-    .bar.indeterminate > div { width: 35% !important; animation: slide 1.2s ease-in-out infinite; }
-    @keyframes shimmer { from { background-position: -60px 0; } to { background-position: 360px 0; } }
-    @keyframes slide { from { margin-left: -35%; } to { margin-left: 100%; } }
+
+    .bar.indeterminate>div {
+      width: 35% !important;
+      animation: slide 1.2s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      from {
+        background-position: -60px 0;
+      }
+
+      to {
+        background-position: 360px 0;
+      }
+    }
+
+    @keyframes slide {
+      from {
+        margin-left: -35%;
+      }
+
+      to {
+        margin-left: 100%;
+      }
+    }
+
+    .author-credit {
+      text-align: center;
+      margin: 16px 0;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
   </style>
 </head>
+
 <body oncontextmenu="return false;">
   <script src="../js/ui.js"></script>
 
   <header class="head">
-    <div class="mark"><svg><use href="#i-package"/></svg></div>
+    <div class="mark"><svg>
+        <use href="#i-package" />
+      </svg></div>
     <div class="txt">
       <h1>Boosok Tools</h1>
       <p>Pembaruan plugin</p>
@@ -84,6 +205,7 @@
       latest: function (s) {
         return hero(badge('check', 'ok draw'), 'Sudah versi terbaru',
           'Boosok Tools ' + v(s.current) + ' sudah paling baru.') +
+          '<div class="author-credit">Dibuat oleh: &quot;Muh Qosob&quot;</div>' +
           '<div class="spacer"></div><div class="actions row">' +
           btn('check', 'Cek lagi', 'ghost', 'refresh-cw') + btn('close', 'Tutup', 'primary') + '</div>' +
           '<div class="actions" style="align-items:center">' + btn('changelog', 'Lihat Change Log di GitHub', 'link', 'external-link') + '</div>';
@@ -185,4 +307,5 @@
     autoFitHeight(0);
   </script>
 </body>
+
 </html>

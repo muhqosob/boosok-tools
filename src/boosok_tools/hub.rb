@@ -7,7 +7,7 @@ module BoosokTools
   # Dialog tetap 1 jendela dan berpindah halaman HTML via window.location.replace
   # sehingga posisi jendela di layar tidak pernah bergeser atau berkedip.
   module Hub
-    TITLE = "The Boosok Tools"
+    TITLE = "Boosok Tools"
     WIDTH = 380
     DEFAULT_HEIGHT = 480
 
@@ -84,6 +84,7 @@ module BoosokTools
       dlg.set_on_closed do
         BoosokTools.capture_current_position(TITLE)
         HideOnSceneManager.detach_all_observers rescue nil if defined?(HideOnSceneManager)
+        TheSelectorPlugin.detach_all_observers rescue nil if defined?(TheSelectorPlugin)
         BoosokTools.dialog = nil
         @current_tool = 'hub'
       end
@@ -114,6 +115,9 @@ module BoosokTools
       if @current_tool == 'scene' && id.to_s != 'scene'
         HideOnSceneManager.detach_all_observers rescue nil if defined?(HideOnSceneManager)
       end
+      if @current_tool == 'selector' && id.to_s != 'selector'
+        TheSelectorPlugin.detach_all_observers rescue nil if defined?(TheSelectorPlugin)
+      end
       @current_tool = id.to_s
 
       load_tool_file(id.to_s)
@@ -137,6 +141,9 @@ module BoosokTools
 
       if @current_tool == 'scene'
         HideOnSceneManager.detach_all_observers rescue nil if defined?(HideOnSceneManager)
+      end
+      if @current_tool == 'selector'
+        TheSelectorPlugin.detach_all_observers rescue nil if defined?(TheSelectorPlugin)
       end
       @current_tool = 'hub'
       attach_hub_callbacks(dlg)
