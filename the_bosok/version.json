@@ -1,5 +1,5 @@
 {
-  "version": "1.2.4",
-  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.2.4/boosok_tools_v1.2.4.rbz",
-  "changelog": "feat(v1.2.4): toast in-flow di bawah tombol, autoFitHeight saat muncul/hilang\n\n- ui.js: toast pakai appendChild (muncul setelah konten/tombol, bukan sebelum header)\n\n- ui.js: autoFitHeight dipanggil setelah show (320ms) dan setelah hide (320ms)\n\n- ui.css: toast in-flow pakai max-height+padding transition, bukan position:fixed\n\n- loader.rb: versi naik ke 1.2.4\n\n- CHANGELOG.md: tambah entri v1.2.2, v1.2.3, v1.2.4"
+  "version": "1.2.5",
+  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.2.5/boosok_tools_v1.2.5.rbz",
+  "changelog": "Merge branch 'main' of https://github.com/muhqosob/boosok-tools"
 }
