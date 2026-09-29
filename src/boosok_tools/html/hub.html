@@ -11,6 +11,31 @@
   </script>
   <style>
     #app { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 2px 4px 2px 1px;
+      overflow-y: auto;
+    }
+    .grid::-webkit-scrollbar {
+      width: 8px;
+    }
+    .grid::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .grid::-webkit-scrollbar-thumb {
+      background: var(--line-strong);
+      border-radius: 8px;
+      border: 2px solid var(--bg);
+    }
+    .grid::-webkit-scrollbar-thumb:hover {
+      background: var(--muted);
+    }
+    [data-theme="dark"] .grid::-webkit-scrollbar-thumb {
+      background: #3f3f46;
+      border-color: var(--bg);
+    }
     .tile.off .s { color: var(--err); }
     .tile.opening .ic svg { animation: spin .8s linear infinite; }
     .foot { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
@@ -104,12 +129,13 @@
 
     // needs: data model yang wajib ada, kalau 0 tile nonaktif dengan alasan
     var TOOLS = [
-      { id: 'selector', icon: 'mouse-pointer-click', t: 'Selector',        s: 'Seleksi by tag, nama, atribut', needs: 'objects' },
-      { id: 'replacer', icon: 'replace',             t: 'Group Replacer',  s: 'Ganti objek sekaligus',         needs: 'objects' },
-      { id: 'clean',    icon: 'sparkles',            t: 'Group Cleaner',   s: 'Component jadi group murni',    needs: 'objects' },
-      { id: 'reset',    icon: 'scale-3d',            t: 'Reset Scale',     s: 'Kembalikan skala group',        needs: 'objects' },
-      { id: 'scene',    icon: 'eye-off',             t: 'Hide on Scene',   s: 'Atur visibilitas per scene',    needs: 'scenes' },
-      { id: 'untag',    icon: 'paint-bucket',        t: 'Untag & Unpaint', s: 'Hapus tag & material',          needs: 'objects' }
+      { id: 'selector', icon: 'mouse-pointer-click', t: 'Selector',         s: 'Seleksi by tag, nama, atribut', needs: 'objects' },
+      { id: 'replacer', icon: 'replace',             t: 'Group Replacer',   s: 'Ganti objek sekaligus',         needs: 'objects' },
+      { id: 'clean',    icon: 'sparkles',            t: 'Group Cleaner',    s: 'Component jadi group murni',    needs: 'objects' },
+      { id: 'reset',    icon: 'scale-3d',            t: 'Reset Scale',      s: 'Kembalikan skala group',        needs: 'objects' },
+      { id: 'scene',    icon: 'eye-off',             t: 'Hide on Scene',    s: 'Atur visibilitas per scene',    needs: 'scenes' },
+      { id: 'untag',    icon: 'paint-bucket',        t: 'Untag & Unpaint',  s: 'Hapus tag & material',          needs: 'objects' },
+      { id: 'deep',     icon: 'layers',              t: 'Deep Properties',  s: 'Analisis tag & entitas mendalam', needs: 'objects' }
     ];
     var EMPTY_REASON = { objects: 'Belum ada group / component', scenes: 'Belum ada scene' };
 
@@ -236,7 +262,30 @@
         '<div class="note">' + icon('info') + '<span><b>' + stats.selected + '</b> terseleksi · <b>' +
         stats.objects + '</b> group/component · <b>' + stats.scenes + '</b> scene</span></div>' +
         '<div style="height: 6px;"></div>' + foot;
+
+      function clampGrid() {
+        var gridEl = app.querySelector('.grid');
+        if (gridEl) {
+          var tiles = gridEl.querySelectorAll('.tile');
+          if (tiles.length > 6 && tiles[5]) {
+            var top0 = tiles[0].offsetTop;
+            var bottom5 = tiles[5].offsetTop + tiles[5].offsetHeight;
+            var exactH = bottom5 - top0 + 2;
+            gridEl.style.maxHeight = exactH + 'px';
+            gridEl.style.overflowY = 'auto';
+          } else {
+            gridEl.style.maxHeight = '';
+            gridEl.style.overflowY = '';
+          }
+        }
+      }
+
+      clampGrid();
       autoFitHeight(0);
+      setTimeout(function () {
+        clampGrid();
+        autoFitHeight(0);
+      }, 50);
     }
 
     function openTool(id) {

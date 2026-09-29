@@ -7,18 +7,19 @@ module BoosokTools
   # Dialog tetap 1 jendela dan berpindah halaman HTML via window.location.replace
   # sehingga posisi jendela di layar tidak pernah bergeser atau berkedip.
   module Hub
-    TITLE = "Boosok Tools"
-    WIDTH = 380
-    DEFAULT_HEIGHT = 480
+    TITLE = "Boosok Tools" unless defined?(TITLE)
+    WIDTH = 380 unless defined?(WIDTH)
+    DEFAULT_HEIGHT = 480 unless defined?(DEFAULT_HEIGHT)
 
     TOOL_PAGES = {
-      'selector' => { file: 'main.rb',                   page: 'selector.html',   title: 'Selector' },
-      'replacer' => { file: 'the_replacer.rb',           page: 'replacer.html',   title: 'Group Replacer' },
-      'clean'    => { file: 'the_cleangroup.rb',         page: 'cleangroup.html', title: 'Group Cleaner' },
-      'reset'    => { file: 'the_reset.rb',              page: 'reset.html',      title: 'Reset Scale' },
-      'scene'    => { file: 'the_hideonscenemanager.rb', page: 'hidescene.html',  title: 'Hide on Scene' },
-      'untag'    => { file: 'untagnpaint.rb',            page: 'untagnpaint.html',title: 'Untag & Unpaint' }
-    }.freeze
+      'selector' => { file: 'main.rb',                   page: 'selector.html',        title: 'Selector' },
+      'replacer' => { file: 'the_replacer.rb',           page: 'replacer.html',        title: 'Group Replacer' },
+      'clean'    => { file: 'the_cleangroup.rb',         page: 'cleangroup.html',      title: 'Group Cleaner' },
+      'reset'    => { file: 'the_reset.rb',              page: 'reset.html',           title: 'Reset Scale' },
+      'scene'    => { file: 'the_hideonscenemanager.rb', page: 'hidescene.html',       title: 'Hide on Scene' },
+      'untag'    => { file: 'untagnpaint.rb',            page: 'untagnpaint.html',     title: 'Untag & Unpaint' },
+      'deep'     => { file: 'deep_properties.rb',        page: 'deep_properties.html', title: 'Deep Properties' }
+    }.freeze unless defined?(TOOL_PAGES)
 
     @current_tool ||= 'hub'
 
@@ -118,6 +119,9 @@ module BoosokTools
       if @current_tool == 'selector' && id.to_s != 'selector'
         TheSelectorPlugin.detach_all_observers rescue nil if defined?(TheSelectorPlugin)
       end
+      if @current_tool == 'deep' && id.to_s != 'deep'
+        DeepProperties.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(DeepProperties)
+      end
       @current_tool = id.to_s
 
       load_tool_file(id.to_s)
@@ -133,6 +137,8 @@ module BoosokTools
       return unless cfg && cfg[:file]
       file_path = File.join(__dir__, cfg[:file])
       load file_path if File.exist?(file_path)
+    rescue => e
+      puts "[Boosok Tools] Gagal memuat file tool '#{id}': #{e.class}: #{e.message}"
     end
 
     def self.back_to_hub
@@ -144,6 +150,9 @@ module BoosokTools
       end
       if @current_tool == 'selector'
         TheSelectorPlugin.detach_all_observers rescue nil if defined?(TheSelectorPlugin)
+      end
+      if @current_tool == 'deep'
+        DeepProperties.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(DeepProperties)
       end
       @current_tool = 'hub'
       attach_hub_callbacks(dlg)
@@ -170,6 +179,8 @@ module BoosokTools
           HideOnSceneManager.send_init_data(dlg)
         elsif @current_tool == 'selector' && defined?(TheSelectorPlugin)
           TheSelectorPlugin.send_init_data(dlg)
+        elsif @current_tool == 'deep' && defined?(DeepProperties)
+          DeepProperties.send_init_data(dlg)
         end
       end
 
@@ -198,8 +209,12 @@ module BoosokTools
       attach_hub_callbacks(dlg)
 
       TOOL_PAGES.each do |tid, _cfg|
-        load_tool_file(tid)
-        attach_tool_callbacks(tid, dlg)
+        begin
+          load_tool_file(tid)
+          attach_tool_callbacks(tid, dlg)
+        rescue => e
+          puts "[Boosok Tools] Gagal attach callback '#{tid}': #{e.class}: #{e.message}"
+        end
       end
     end
 
@@ -219,6 +234,8 @@ module BoosokTools
         HideOnSceneManager.attach_callbacks(dlg) if defined?(HideOnSceneManager)
       when 'untag'
         UntagUnpaintManager.attach_callbacks(dlg) if defined?(UntagUnpaintManager)
+      when 'deep'
+        DeepProperties.attach_callbacks(dlg) if defined?(DeepProperties)
       end
     end
 

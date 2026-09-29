@@ -5,6 +5,21 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.3.0] — 2026-09-29
+
+### ✨ Baru & Perbaikan
+- **Deep Properties**:
+  - **Penyatuan Header & Listbox**: Toolbar atas dan daftar listbox kini dirangkum dalam container terpadu (`.dp-box-wrap`), menghilangkan celah terputus sehingga tampilan menyatu elegan dan solid.
+  - **Penyelarasan Tipografi Header Toolbar**: Ukuran font header toolbar ditingkatkan dari 10.5px ke 12px dengan padding yang lebih proporsional sehingga lebih jelas dan nyaman dibaca.
+  - **Counter Tag Dinamis**: Indikator counter tag pada header kini menampilkan jumlah tag yang dipilih per total tag secara real-time saat checklist diubah (contoh: `1/3 tag · 6/26`).
+  - **Respons Tombol Scan Objek Instan**: Menghapus jeda timer buatan pada tombol **Scan Objek**; tombol langsung kembali aktif begitu data selesai discan oleh Ruby tanpa delay.
+  - **Modularisasi Kode JavaScript**: Seluruh logika dan script JavaScript Deep Properties telah dipindahkan dan ditautkan ke `ui.js`, menghasilkan kode HTML yang sangat bersih, terstruktur, dan mudah dirawat.
+  - **Stabilisasi Dialog Height**: Fungsi `autoFitHeight` kini mengabaikan modal overlay fixed sehingga ukuran dialog tidak lagi membesar saat notifikasi muncul dan tetap auto fit secara proporsional.
+- **Hub Boosok Tools**:
+  - **Custom Scrollbar Menu Sesuai Tema**: Scrollbar pada grid menu Hub kini menggunakan scrollbar kustom tema Boosok Tools dengan thumb membulat dan warna adaptif (light/dark mode), menggantikan scrollbar bawaan browser.
+
+---
+
 ## [1.2.7] — 2026-09-29
 
 ### ✨ Baru

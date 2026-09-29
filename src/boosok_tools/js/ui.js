@@ -44,6 +44,13 @@
     '<symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></symbol>' +
     '<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>' +
     '<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>' +
+    '<symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>' +
+    '<symbol id="i-spline" viewBox="0 0 24 24"><path d="M21 7.5C21 8.881 19.881 10 18.5 10S16 8.881 16 7.5 17.119 5 18.5 5 21 6.119 21 7.5z"/><path d="M5.5 17.5C5.5 18.881 4.381 20 3 20s-2.5-1.119-2.5-2.5S1.619 15 3 15s2.5 1.119 2.5 2.5z"/><path d="M6 17.7c1-5.4 6.5-6.8 10-4.2"/></symbol>' +
+    '<symbol id="i-pentagon" viewBox="0 0 24 24"><path d="M3.5 8.7 12 3l8.5 5.7v6.6L12 21l-8.5-5.7z"/></symbol>' +
+    '<symbol id="i-arrow-up-a-z" viewBox="0 0 24 24"><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/><path d="M20 8h-5"/><path d="M15 10V6.5a2.5 2.5 0 0 1 5 0V10"/><path d="M15 14h5l-5 6h5"/></symbol>' +
+    '<symbol id="i-arrow-down-z-a" viewBox="0 0 24 24"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M15 4h5l-5 6h5"/><path d="M20 14h-5"/><path d="M15 20v-3.5a2.5 2.5 0 0 1 5 0V20"/></symbol>' +
+    '<symbol id="i-chevrons-down-up" viewBox="0 0 24 24"><path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/></symbol>' +
+    '<symbol id="i-chevrons-up-down" viewBox="0 0 24 24"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></symbol>' +
     '</svg>';
   document.body.insertAdjacentHTML('afterbegin', sprite);
 })();
@@ -107,9 +114,13 @@ function showNotif(msg, type) {
     document.body.appendChild(overlay);
     document.getElementById('notif-ok').addEventListener('click', function () {
       overlay.classList.remove('open');
+      autoFitHeight(0);
     });
     overlay.addEventListener('click', function (e) {
-      if (e.target === overlay) overlay.classList.remove('open');
+      if (e.target === overlay) {
+        overlay.classList.remove('open');
+        autoFitHeight(0);
+      }
     });
   }
 
@@ -130,7 +141,10 @@ function showNotif(msg, type) {
 
 function hideNotif() {
   var ol = document.getElementById('notif-overlay');
-  if (ol) ol.classList.remove('open');
+  if (ol) {
+    ol.classList.remove('open');
+    autoFitHeight(0);
+  }
 }
 
 // Alias agar semua panggilan showToast() dari Ruby tetap berfungsi
@@ -153,6 +167,7 @@ window.addEventListener('keydown', function (e) {
     var notifOl = document.getElementById('notif-overlay');
     if (notifOl && notifOl.classList.contains('open')) {
       notifOl.classList.remove('open');
+      autoFitHeight(0);
       e.preventDefault();
       return false;
     }
@@ -296,18 +311,23 @@ function autoFitHeight(extraPadding) {
       var bodyStyle = window.getComputedStyle(document.body);
       var pb = parseInt(bodyStyle.paddingBottom) || 18;
 
-      // Hitung batas bawah elemen konten yang sedang aktif/tampak
+      // Hitung batas bawah elemen konten yang sedang aktif/tampak (hanya in-flow content)
       var maxBottom = 0;
       var els = document.body.children;
       for (var i = 0; i < els.length; i++) {
         var el = els[i];
-        // Toast sekarang in-flow (bukan fixed), ikut dihitung saat tampil
-        if (el.nodeType === 1 && el.id !== 'boot') {
-          if (el.offsetParent !== null || el.offsetHeight > 0) {
-            var rect = el.getBoundingClientRect();
-            if (rect.bottom > maxBottom) {
-              maxBottom = rect.bottom;
-            }
+        if (el.nodeType !== 1) continue;
+        if (el.tagName === 'SVG' && el.style.display === 'none') continue;
+        if (el.id === 'boot' || el.id === 'notif-overlay' || el.classList.contains('overlay') || el.classList.contains('modal')) continue;
+
+        // Elemen fixed/backdrop tidak boleh mempengaruhi tinggi jendela
+        var pos = window.getComputedStyle(el).position;
+        if (pos === 'fixed') continue;
+
+        if (el.offsetParent !== null || el.offsetHeight > 0) {
+          var rect = el.getBoundingClientRect();
+          if (rect.bottom > maxBottom) {
+            maxBottom = rect.bottom;
           }
         }
       }
@@ -350,5 +370,636 @@ function checkWindowPos() {
 setInterval(checkWindowPos, 500);
 window.addEventListener('blur', checkWindowPos);
 window.addEventListener('beforeunload', checkWindowPos);
+
+// ==========================================
+// DEEP PROPERTIES MODULE
+// ==========================================
+var _dpTags = [];          // array tag dari Ruby
+var _dpCtxName = null;     // nama context (nama objek/group/component yang di-scan)
+var _dpTotalEnts = 0;
+var _dpSortDir = 'asc';    // 'asc' | 'desc'
+var _dpAllExpanded = false; // track state expand all
+var _dpScanTimer = null;   // timer pengaman tombol scan
+
+// Filter type global (edge, face, group, component) mati secara default
+var _dpGlobalTypes = { edge: false, face: false, group: false, component: false };
+// Per-tag type filter state: { tagName: { edge: bool, face: bool, group: bool, component: bool } }
+var _dpTagFilters = {};
+
+// ── Icons ──────────────────────────────────────────────────────────────────
+function iconEdge() {
+  return '<svg aria-hidden="true"><use href="#i-spline"/></svg>';
+}
+function iconFace() {
+  return '<svg aria-hidden="true"><use href="#i-pentagon"/></svg>';
+}
+function iconGroup() {
+  return '<svg aria-hidden="true"><use href="#i-box"/></svg>';
+}
+function iconComp() {
+  return '<svg aria-hidden="true"><use href="#i-component"/></svg>';
+}
+
+// ── Filter Helpers ─────────────────────────────────────────────────────────
+function hasActiveFilters() {
+  return _dpGlobalTypes.edge || _dpGlobalTypes.face || _dpGlobalTypes.group || _dpGlobalTypes.component;
+}
+
+function activeFilterCount() {
+  var n = 0;
+  if (_dpGlobalTypes.edge) n++;
+  if (_dpGlobalTypes.face) n++;
+  if (_dpGlobalTypes.group) n++;
+  if (_dpGlobalTypes.component) n++;
+  return n;
+}
+
+function updateClearFilterBtn() {
+  var btn = document.getElementById('btnClearFilter');
+  if (!btn) return;
+  btn.style.display = (activeFilterCount() > 1) ? 'grid' : 'none';
+}
+
+function getRowByTag(tagName) {
+  var rows = document.querySelectorAll('.dp-row');
+  for (var i = 0; i < rows.length; i++) {
+    if (rows[i].getAttribute('data-tag') === tagName) return rows[i];
+  }
+  return null;
+}
+
+// ── Hitung entitas aktif per tag (memperhitungkan filter) ──────────────────
+function getTagActiveEnts(tag) {
+  if (!tag) return 0;
+  var filtering = hasActiveFilters();
+  if (!filtering) {
+    return (tag.edges || 0) + (tag.faces || 0) + (tag.groups || 0) + (tag.components || 0);
+  }
+  var showEdge = !filtering || _dpGlobalTypes.edge;
+  var showFace = !filtering || _dpGlobalTypes.face;
+  var showGroup = !filtering || _dpGlobalTypes.group;
+  var showComp = !filtering || _dpGlobalTypes.component;
+
+  var tf = _dpTagFilters[tag.name] || { edge: true, face: true, group: true, component: true };
+  var eVis = showEdge && tf.edge;
+  var fVis = showFace && tf.face;
+  var gVis = showGroup && tf.group;
+  var cVis = showComp && tf.component;
+
+  var sum = 0;
+  if (eVis) sum += (tag.edges || 0);
+  if (fVis) sum += (tag.faces || 0);
+  if (gVis) sum += (tag.groups || 0);
+  if (cVis) sum += (tag.components || 0);
+  return sum;
+}
+
+// ── DOM Manipulation: Filter Global & Per-tag (Tanpa Re-render Penuh) ─────
+function updateRowTotal(tagName) {
+  var row = getRowByTag(tagName);
+  if (!row) return;
+
+  var t = _dpTags.find(function(x) { return x.name === tagName; });
+  if (!t) return;
+
+  var filtering = hasActiveFilters();
+  var showEdge = !filtering || _dpGlobalTypes.edge;
+  var showFace = !filtering || _dpGlobalTypes.face;
+  var showGroup = !filtering || _dpGlobalTypes.group;
+  var showComp = !filtering || _dpGlobalTypes.component;
+
+  var tf = _dpTagFilters[tagName] || { edge: true, face: true, group: true, component: true };
+  var eVis = showEdge && tf.edge;
+  var fVis = showFace && tf.face;
+  var gVis = showGroup && tf.group;
+  var cVis = showComp && tf.component;
+
+  var eCount = t.edges || 0;
+  var fCount = t.faces || 0;
+  var gCount = t.groups || 0;
+  var cCount = t.components || 0;
+
+  var subRows = row.querySelectorAll('.dp-sub-row');
+  subRows.forEach(function(sub) {
+    var subtype = sub.getAttribute('data-subtype');
+    if (subtype === 'edge') sub.classList.toggle('hidden-sub', !eVis);
+    if (subtype === 'face') sub.classList.toggle('hidden-sub', !fVis);
+    if (subtype === 'group') sub.classList.toggle('hidden-sub', !gVis);
+    if (subtype === 'component') sub.classList.toggle('hidden-sub', !cVis);
+  });
+
+  var total = 0;
+  if (eVis) total += eCount;
+  if (fVis) total += fCount;
+  if (gVis) total += gCount;
+  if (cVis) total += cCount;
+
+  var isFilteredOut = filtering && total === 0;
+  row.dataset.filteredOut = isFilteredOut ? 'true' : 'false';
+
+  var q = (document.getElementById('dpSearch').value || '').toLowerCase().trim();
+  var matchSearch = !q || tagName.toLowerCase().indexOf(q) !== -1;
+  row.classList.toggle('hidden-row', isFilteredOut || !matchSearch);
+  updateToolbar();
+}
+
+function toggleTagFilter(tagName, type, btn) {
+  if (!_dpTagFilters[tagName]) {
+    _dpTagFilters[tagName] = { edge: true, face: true, group: true, component: true };
+  }
+  _dpTagFilters[tagName][type] = !_dpTagFilters[tagName][type];
+  if (btn) btn.classList.toggle('active', _dpTagFilters[tagName][type]);
+  updateRowTotal(tagName);
+  updateToolbar();
+  autoFitHeight(0);
+}
+
+function applyFiltersToDom() {
+  var filtering = hasActiveFilters();
+  var showEdge = !filtering || _dpGlobalTypes.edge;
+  var showFace = !filtering || _dpGlobalTypes.face;
+  var showGroup = !filtering || _dpGlobalTypes.group;
+  var showComp = !filtering || _dpGlobalTypes.component;
+  var q = (document.getElementById('dpSearch').value || '').toLowerCase().trim();
+
+  var rows = document.querySelectorAll('.dp-row');
+  rows.forEach(function(row) {
+    var tagName = row.getAttribute('data-tag');
+    var t = _dpTags.find(function(x) { return x.name === tagName; });
+    if (!t) return;
+
+    var tf = _dpTagFilters[tagName] || { edge: true, face: true, group: true, component: true };
+    var eVis = showEdge && tf.edge;
+    var fVis = showFace && tf.face;
+    var gVis = showGroup && tf.group;
+    var cVis = showComp && tf.component;
+
+    var eCount = t.edges || 0;
+    var fCount = t.faces || 0;
+    var gCount = t.groups || 0;
+    var cCount = t.components || 0;
+
+    var subRows = row.querySelectorAll('.dp-sub-row');
+    subRows.forEach(function(sub) {
+      var subtype = sub.getAttribute('data-subtype');
+      if (subtype === 'edge') sub.classList.toggle('hidden-sub', !eVis);
+      if (subtype === 'face') sub.classList.toggle('hidden-sub', !fVis);
+      if (subtype === 'group') sub.classList.toggle('hidden-sub', !gVis);
+      if (subtype === 'component') sub.classList.toggle('hidden-sub', !cVis);
+    });
+
+    var total = 0;
+    if (eVis) total += eCount;
+    if (fVis) total += fCount;
+    if (gVis) total += gCount;
+    if (cVis) total += cCount;
+
+    var isFilteredOut = filtering && total === 0;
+    row.dataset.filteredOut = isFilteredOut ? 'true' : 'false';
+
+    var matchSearch = !q || tagName.toLowerCase().indexOf(q) !== -1;
+    var shouldHide = isFilteredOut || !matchSearch;
+    row.classList.toggle('hidden-row', shouldHide);
+  });
+
+  updateToolbar();
+  autoFitHeight(0);
+  setTimeout(function() { autoFitHeight(0); }, 50);
+}
+
+function toggleGlobalFilter(btn) {
+  var type = btn.dataset.type;
+  _dpGlobalTypes[type] = !_dpGlobalTypes[type];
+  btn.classList.toggle('active', _dpGlobalTypes[type]);
+  updateClearFilterBtn();
+  applyFiltersToDom();
+}
+
+function resetFilters() {
+  _dpGlobalTypes = { edge: false, face: false, group: false, component: false };
+  document.querySelectorAll('#globalFilters .filter-btn').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  updateClearFilterBtn();
+  applyFiltersToDom();
+}
+
+// ── Toolbar: Update counts chips (Tag terpilih / total tag & entitas) ──────
+function updateToolbar() {
+  var visibleTags = _dpTags.filter(function(t) {
+    var row = getRowByTag(t.name);
+    return row && !row.classList.contains('hidden-row');
+  });
+
+  var checkedTagCount = 0;
+  document.querySelectorAll('.dp-row:not(.hidden-row) .dp-check:checked').forEach(function() {
+    checkedTagCount++;
+  });
+
+  var el = document.getElementById('tbTagCount');
+  if (el) {
+    if (visibleTags.length > 0) {
+      el.textContent = checkedTagCount + '/' + visibleTags.length + ' tag';
+    } else {
+      el.textContent = '0 tag';
+    }
+  }
+
+  // checked / total entitas
+  var totalEnts = 0, checkedEnts = 0;
+  _dpTags.forEach(function(t) {
+    var row = getRowByTag(t.name);
+    if (row && !row.classList.contains('hidden-row')) {
+      totalEnts += getTagActiveEnts(t);
+    } else if (!hasActiveFilters()) {
+      totalEnts += getTagActiveEnts(t);
+    }
+  });
+  document.querySelectorAll('.dp-row:not(.hidden-row) .dp-check:checked').forEach(function(cb) {
+    var tag = _dpTags.find(function(x) { return x.name === cb.value; });
+    if (tag) checkedEnts += getTagActiveEnts(tag);
+  });
+  var ctEl = document.getElementById('tbCheckedTotal');
+  if (ctEl) ctEl.textContent = checkedEnts + '/' + totalEnts;
+}
+
+// ── Toolbar: Expand / Collapse All ────────────────────────────────────────
+function toggleExpandAll() {
+  _dpAllExpanded = !_dpAllExpanded;
+  var rows = document.querySelectorAll('.dp-row:not(.hidden-row)');
+  rows.forEach(function(row) {
+    row.classList.toggle('expanded', _dpAllExpanded);
+  });
+  var btn = document.getElementById('btnExpandAll');
+  if (btn) {
+    btn.title = _dpAllExpanded ? 'Collapse semua' : 'Expand semua';
+    var use = btn.querySelector('use');
+    if (use) use.setAttribute('href', _dpAllExpanded ? '#i-chevrons-up-down' : '#i-chevrons-down-up');
+  }
+  autoFitHeight(0);
+  setTimeout(function() { autoFitHeight(0); }, 60);
+}
+
+// ── Toolbar: Select All / Unselect All ────────────────────────────────────
+function toggleSelectAll(cbEl) {
+  var checked = cbEl.checked;
+  var rows = document.querySelectorAll('.dp-row:not(.hidden-row) .dp-check');
+  rows.forEach(function(cb) { cb.checked = checked; });
+  syncSelectAllState();
+  updateToolbar();
+}
+
+function syncSelectAllState() {
+  var all = document.querySelectorAll('.dp-row:not(.hidden-row) .dp-check');
+  var checkedCount = 0;
+  all.forEach(function(cb) { if (cb.checked) checkedCount++; });
+  var cbAll = document.getElementById('cbSelectAll');
+  if (cbAll) {
+    if (checkedCount === 0) {
+      cbAll.checked = false;
+      cbAll.indeterminate = false;
+    } else if (all.length > 0 && checkedCount === all.length) {
+      cbAll.checked = true;
+      cbAll.indeterminate = false;
+    } else {
+      cbAll.checked = false;
+      cbAll.indeterminate = true;
+    }
+  }
+  updateToolbar();
+}
+
+// ── Toolbar: Sort A→Z / Z→A ───────────────────────────────────────────────
+function toggleSort() {
+  _dpSortDir = (_dpSortDir === 'asc') ? 'desc' : 'asc';
+  var btn = document.getElementById('btnSort');
+  if (btn) {
+    btn.classList.toggle('asc', _dpSortDir === 'asc');
+    btn.classList.toggle('desc', _dpSortDir === 'desc');
+    var use = btn.querySelector('use');
+    if (use) use.setAttribute('href', _dpSortDir === 'asc' ? '#i-arrow-up-a-z' : '#i-arrow-down-z-a');
+  }
+  _dpTags.sort(function(a, b) {
+    var na = a.name.toLowerCase(), nb = b.name.toLowerCase();
+    if (na < nb) return _dpSortDir === 'asc' ? -1 : 1;
+    if (na > nb) return _dpSortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  renderList();
+}
+
+// ── Dipanggil Ruby setelah scan ────────────────────────────────────────────
+function initData(data, fromScan) {
+  clearTimeout(_dpScanTimer);
+  busy('btnScan', false);
+
+  if (data && data.error) {
+    if (fromScan) showToast(data.error, 'error');
+    _dpTags = [];
+    _dpCtxName = null;
+    _dpTotalEnts = 0;
+    _dpTagFilters = {};
+    _dpAllExpanded = false;
+    updateToolbar();
+    renderList();
+    autoFitHeight(0);
+    return;
+  }
+
+  _dpTags = (data && data.tags) ? data.tags : [];
+  _dpCtxName = (data && data.ctx_name) ? data.ctx_name : null;
+  _dpTotalEnts = (data && data.total_ents) ? data.total_ents : 0;
+  _dpAllExpanded = false;
+
+  _dpTags.sort(function(a, b) {
+    var na = a.name.toLowerCase(), nb = b.name.toLowerCase();
+    if (na < nb) return _dpSortDir === 'asc' ? -1 : 1;
+    if (na > nb) return _dpSortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  _dpTagFilters = {};
+  _dpTags.forEach(function(t) {
+    _dpTagFilters[t.name] = { edge: true, face: true, group: true, component: true };
+  });
+
+  renderList();
+  updateToolbar();
+  autoFitHeight(0);
+  setTimeout(function () { autoFitHeight(0); }, 60);
+}
+
+// ── Render List ────────────────────────────────────────────────────────────
+function renderList() {
+  var list = document.getElementById('dpList');
+  if (!list) return;
+  if (!_dpTags.length) {
+    list.innerHTML = '<div class="dp-empty">Pilih objek di SketchUp lalu klik <b>Scan Objek</b>.</div>';
+    autoFitHeight(0);
+    return;
+  }
+
+  var q = (document.getElementById('dpSearch') ? document.getElementById('dpSearch').value : '').toLowerCase().trim();
+  var filtering = hasActiveFilters();
+  var showEdge = !filtering || _dpGlobalTypes.edge;
+  var showFace = !filtering || _dpGlobalTypes.face;
+  var showGroup = !filtering || _dpGlobalTypes.group;
+  var showComp = !filtering || _dpGlobalTypes.component;
+
+  var html = '';
+
+  _dpTags.forEach(function(t, idx) {
+    var tf = _dpTagFilters[t.name] || { edge: true, face: true, group: true, component: true };
+    var eCount = t.edges || 0;
+    var fCount = t.faces || 0;
+    var gCount = t.groups || 0;
+    var cCount = t.components || 0;
+
+    var eVis = showEdge && tf.edge;
+    var fVis = showFace && tf.face;
+    var gVis = showGroup && tf.group;
+    var cVis = showComp && tf.component;
+
+    var total = 0;
+    if (eVis) total += eCount;
+    if (fVis) total += fCount;
+    if (gVis) total += gCount;
+    if (cVis) total += cCount;
+
+    var hasChildren = (eCount + fCount + gCount + cCount) > 0;
+    var eyeClass = t.visible ? '' : ' hidden';
+    var eyeIcon = t.visible ? '#i-eye' : '#i-eye-off';
+    var safeTagAttr = esc(t.name).replace(/'/g, "\\'");
+
+    var subEdge = '';
+    if (eCount > 0) {
+      var hidEdge = eVis ? '' : ' hidden-sub';
+      subEdge = '<div class="dp-sub-row' + hidEdge + '" data-parent="' + esc(t.name) + '" data-subtype="edge" ' +
+        'onclick="selectSubtype(\'' + safeTagAttr + '\',\'edge\')" title="Klik untuk seleksi Edge pada tag ini">' +
+        iconEdge() + '<span>edge</span>' +
+        '<span class="sub-count">(' + eCount + ')</span>' +
+      '</div>';
+    }
+    var subFace = '';
+    if (fCount > 0) {
+      var hidFace = fVis ? '' : ' hidden-sub';
+      subFace = '<div class="dp-sub-row' + hidFace + '" data-parent="' + esc(t.name) + '" data-subtype="face" ' +
+        'onclick="selectSubtype(\'' + safeTagAttr + '\',\'face\')" title="Klik untuk seleksi Face pada tag ini">' +
+        iconFace() + '<span>face</span>' +
+        '<span class="sub-count">(' + fCount + ')</span>' +
+      '</div>';
+    }
+    var subGroup = '';
+    if (gCount > 0) {
+      var hidGroup = gVis ? '' : ' hidden-sub';
+      subGroup = '<div class="dp-sub-row' + hidGroup + '" data-parent="' + esc(t.name) + '" data-subtype="group" ' +
+        'onclick="selectSubtype(\'' + safeTagAttr + '\',\'group\')" title="Klik untuk seleksi Group pada tag ini">' +
+        iconGroup() + '<span>group</span>' +
+        '<span class="sub-count">(' + gCount + ')</span>' +
+      '</div>';
+    }
+    var subComp = '';
+    if (cCount > 0) {
+      var hidComp = cVis ? '' : ' hidden-sub';
+      subComp = '<div class="dp-sub-row' + hidComp + '" data-parent="' + esc(t.name) + '" data-subtype="component" ' +
+        'onclick="selectSubtype(\'' + safeTagAttr + '\',\'component\')" title="Klik untuk seleksi Component pada tag ini">' +
+        iconComp() + '<span>component</span>' +
+        '<span class="sub-count">(' + cCount + ')</span>' +
+      '</div>';
+    }
+
+    var typeIconsHtml = '';
+    if (eCount > 0) typeIconsHtml += '<svg aria-hidden="true"><use href="#i-spline"/></svg>';
+    if (fCount > 0) typeIconsHtml += '<svg aria-hidden="true"><use href="#i-pentagon"/></svg>';
+    if (gCount > 0) typeIconsHtml += '<svg aria-hidden="true"><use href="#i-box"/></svg>';
+    if (cCount > 0) typeIconsHtml += '<svg aria-hidden="true"><use href="#i-component"/></svg>';
+    var typeIconsWrap = typeIconsHtml ? '<span class="dp-type-icons">' + typeIconsHtml + '</span>' : '';
+
+    var rawTotal = eCount + fCount + gCount + cCount;
+    var totalBadge = '<span class="dp-total-badge" title="Total: ' + rawTotal + ' (Edge: ' + eCount + ', Face: ' + fCount + ', Group: ' + gCount + ', Comp: ' + cCount + ')">(' + rawTotal + ')</span>';
+
+    var summaryHtml = typeIconsWrap + totalBadge;
+
+    var isFilteredOut = filtering && total === 0;
+    var matchSearch = !q || t.name.toLowerCase().indexOf(q) !== -1;
+    var isHiddenRow = isFilteredOut || !matchSearch;
+
+    html +=
+      '<div class="dp-row' + (isHiddenRow ? ' hidden-row' : '') + '" id="dprow-' + idx + '" data-tag="' + esc(t.name) + '" data-filtered-out="' + (isFilteredOut ? 'true' : 'false') + '">' +
+        '<div class="dp-tag-row">' +
+          '<div class="dp-arrow' + (hasChildren ? '' : ' empty') + '" ' +
+            'onclick="toggleExpand(' + idx + ')" title="Lihat detail">' +
+            '<svg><use href="#i-chevron-right"/></svg>' +
+          '</div>' +
+          '<label class="dp-cb-wrap" title="Pilih tag ' + esc(t.name) + '">' +
+            '<input type="checkbox" class="dp-check" value="' + esc(t.name) + '">' +
+            '<span class="box"><svg><use href="#i-check"/></svg></span>' +
+          '</label>' +
+          '<div class="dp-color" style="background:' + t.color + ';"></div>' +
+          '<span class="dp-tag-name" title="' + esc(t.name) + '">' + esc(t.name) + '</span>' +
+          summaryHtml +
+          '<div class="dp-eye' + eyeClass + '" title="' + (t.visible ? 'Sembunyikan' : 'Tampilkan') + ' tag" ' +
+            'onclick="toggleVis(\'' + safeTagAttr + '\',' + (!t.visible) + ',this)">' +
+            '<svg><use href="' + eyeIcon + '"/></svg>' +
+          '</div>' +
+        '</div>' +
+        '<div class="dp-sub-rows">' +
+          subEdge + subFace + subGroup + subComp +
+        '</div>' +
+      '</div>';
+  });
+
+  list.innerHTML = html;
+
+  list.querySelectorAll('.dp-check').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      syncSelectAllState();
+      updateToolbar();
+    });
+  });
+  syncSelectAllState();
+  updateToolbar();
+  autoFitHeight(0);
+  setTimeout(function () { autoFitHeight(0); }, 60);
+}
+
+// ── Klik Sub-row: Seleksi Subtipe Spesifik di Model ─────────────────────────
+function selectSubtype(tagName, subtype) {
+  if (window.sketchup && typeof sketchup.dp_select_subtype === 'function') {
+    sketchup.dp_select_subtype(tagName, subtype);
+  }
+}
+
+// ── Expand / collapse sub-rows saat tree di klik ───────────────────────────
+function toggleExpand(idx) {
+  var row = document.getElementById('dprow-' + idx);
+  if (!row) return;
+  row.classList.toggle('expanded');
+  autoFitHeight(0);
+  setTimeout(function () { autoFitHeight(0); }, 60);
+}
+
+// ── Eye toggle ─────────────────────────────────────────────────────────────
+function toggleVis(tagName, makeVisible, eyeEl) {
+  if (window.sketchup && typeof sketchup.dp_toggle_vis === 'function') {
+    sketchup.dp_toggle_vis(tagName, String(makeVisible));
+  }
+}
+
+function updateEyeIcon(tagName, isVisible) {
+  var t = _dpTags.find(function(x) { return x.name === tagName; });
+  if (t) t.visible = isVisible;
+
+  var row = getRowByTag(tagName);
+  if (row) {
+    var eyeEl = row.querySelector('.dp-eye');
+    if (eyeEl) {
+      eyeEl.classList.toggle('hidden', !isVisible);
+      eyeEl.querySelector('use').setAttribute('href', isVisible ? '#i-eye' : '#i-eye-off');
+      eyeEl.title = isVisible ? 'Sembunyikan tag' : 'Tampilkan tag';
+      var safeTag = tagName.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      eyeEl.setAttribute('onclick', "toggleVis('" + safeTag + "', " + (!isVisible) + ", this)");
+    }
+  }
+}
+
+// ── Search filter (DOM manipulation tanpa re-render) ───────────────────────
+function filterList() {
+  var q = (document.getElementById('dpSearch') ? document.getElementById('dpSearch').value : '').toLowerCase().trim();
+  var rows = document.querySelectorAll('.dp-row');
+  rows.forEach(function(row) {
+    var tagName = (row.getAttribute('data-tag') || '').toLowerCase();
+    var matchSearch = !q || tagName.indexOf(q) !== -1;
+    var isFilteredOut = row.dataset.filteredOut === 'true';
+    row.classList.toggle('hidden-row', isFilteredOut || !matchSearch);
+  });
+  syncSelectAllState();
+  updateToolbar();
+  autoFitHeight(0);
+}
+
+// ── Scan Objek ─────────────────────────────────────────────────────────────
+function doScan(btn) {
+  busy('btnScan', true);
+  clearTimeout(_dpScanTimer);
+  _dpScanTimer = setTimeout(function() { busy('btnScan', false); }, 5000);
+  try {
+    if (window.sketchup && typeof sketchup.dp_scan === 'function') {
+      sketchup.dp_scan();
+    } else {
+      clearTimeout(_dpScanTimer);
+      busy('btnScan', false);
+      showToast('Fungsi Scan belum siap.', 'error');
+    }
+  } catch(err) {
+    clearTimeout(_dpScanTimer);
+    busy('btnScan', false);
+    showToast('Error: ' + err.message, 'error');
+  }
+}
+
+// ── Seleksi Entitas dari Checkbox ───────────────────────────────────────────
+function doSelect() {
+  var checked = document.querySelectorAll('.dp-check:checked');
+  if (!checked.length) {
+    showToast('Centang minimal 1 tag terlebih dahulu.', 'error');
+    autoFitHeight(0);
+    return;
+  }
+
+  var tags = [];
+  checked.forEach(function(cb) { tags.push(cb.value); });
+
+  var types = [];
+  if (hasActiveFilters()) {
+    if (_dpGlobalTypes.edge) types.push('edge');
+    if (_dpGlobalTypes.face) types.push('face');
+    if (_dpGlobalTypes.group) types.push('group');
+    if (_dpGlobalTypes.component) types.push('component');
+  } else {
+    types = ['edge', 'face', 'group', 'component'];
+  }
+
+  var payload = JSON.stringify({ tags: tags, types: types });
+  try {
+    if (window.sketchup && typeof sketchup.dp_select === 'function') {
+      sketchup.dp_select(payload);
+    } else {
+      showToast('Fungsi Seleksi belum siap.', 'error');
+    }
+  } catch(err) {
+    showToast('Error: ' + err.message, 'error');
+  }
+}
+
+// ── Inisialisasi Otomatis Deep Properties ───────────────────────────────────
+function initDeepProperties() {
+  if (!document.getElementById('dpList')) return;
+  try {
+    if (window.sketchup && typeof sketchup.dp_ready === 'function') {
+      sketchup.dp_ready();
+    } else {
+      var tries = 0;
+      var iv = setInterval(function() {
+        tries++;
+        if (window.sketchup && typeof sketchup.dp_ready === 'function') {
+          clearInterval(iv);
+          sketchup.dp_ready();
+        } else if (tries > 40) {
+          clearInterval(iv);
+        }
+      }, 60);
+    }
+  } catch(e) {}
+  autoFitHeight(0);
+  setTimeout(function () { autoFitHeight(0); }, 80);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initDeepProperties);
+} else {
+  initDeepProperties();
+}
+
 
 

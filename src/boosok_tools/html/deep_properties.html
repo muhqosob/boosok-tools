@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Deep Properties</title>
+  <link rel="stylesheet" href="../css/ui.css">
+</head>
+<body oncontextmenu="return false;">
+  <script src="../js/ui.js"></script>
+
+  <header class="head">
+    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()">
+      <svg><use href="#i-arrow-left"/></svg>
+    </button>
+    <div class="mark"><svg><use href="#i-layers"/></svg></div>
+    <div class="txt">
+      <h1>Deep Properties</h1>
+      <p>Scan & kelola tag secara mendalam</p>
+    </div>
+    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema"></button>
+  </header>
+
+  <section class="step active" id="step1">
+    <!-- Search + global filter (Edge, Face, Group, Component) -->
+    <div class="dp-bar">
+      <div class="with-ic">
+        <svg class="lead"><use href="#i-search"/></svg>
+        <input class="input" id="dpSearch" placeholder="Cari tag…" autocomplete="off" spellcheck="false" oninput="filterList()">
+      </div>
+
+      <!-- Tombol icon hapus filter jika dipilih filter lebih dari 1 -->
+      <button class="filter-clear-btn" id="btnClearFilter" title="Hapus filter" onclick="resetFilters()" type="button">
+        <svg><use href="#i-x"/></svg>
+      </button>
+
+      <div class="filter-group" id="globalFilters">
+        <button class="filter-btn" data-type="edge"      title="Filter Edge"      onclick="toggleGlobalFilter(this)" type="button">
+          <svg><use href="#i-spline"/></svg>
+        </button>
+        <button class="filter-btn" data-type="face"      title="Filter Face"      onclick="toggleGlobalFilter(this)" type="button">
+          <svg><use href="#i-pentagon"/></svg>
+        </button>
+        <button class="filter-btn" data-type="group"     title="Filter Group"     onclick="toggleGlobalFilter(this)" type="button">
+          <svg><use href="#i-box"/></svg>
+        </button>
+        <button class="filter-btn" data-type="component" title="Filter Component" onclick="toggleGlobalFilter(this)" type="button">
+          <svg><use href="#i-component"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Container terpadu: Toolbar header menyatu langsung dengan listbox tanpa celah terputus -->
+    <div class="dp-box-wrap">
+      <!-- Toolbar di atas listbox -->
+      <div class="dp-toolbar" id="dpToolbar">
+        <!-- Expand/Collapse All -->
+        <button class="tb-icon-btn" id="btnExpandAll" type="button" title="Expand / Collapse semua" onclick="toggleExpandAll()">
+          <svg><use href="#i-chevrons-down-up"/></svg>
+        </button>
+
+        <div class="tb-sep"></div>
+
+        <!-- Select All checkbox -->
+        <label class="tb-cb-wrap" title="Pilih semua / batal pilih semua">
+          <input type="checkbox" id="cbSelectAll" onchange="toggleSelectAll(this)">
+          <span class="box"><svg><use href="#i-check"/></svg></span>
+        </label>
+
+        <div class="tb-sep"></div>
+
+        <!-- Info: jumlah tag & entitas -->
+        <div class="tb-info">
+          <span class="tb-tag-count" id="tbTagCount">0/0 tag</span>
+          <span style="color:var(--line-strong);flex-shrink:0">&middot;</span>
+          <span class="tb-checked-total" id="tbCheckedTotal">0/0</span>
+        </div>
+
+        <!-- Sort A→Z / Z→A -->
+        <button class="tb-sort-btn asc" id="btnSort" type="button" onclick="toggleSort()">
+          <svg><use href="#i-arrow-up-a-z"/></svg>
+          <span class="tb-sort-label"></span>
+        </button>
+      </div>
+
+      <!-- Tag listbox -->
+      <div class="list dp-list" id="dpList">
+        <div class="dp-empty">Pilih objek di SketchUp lalu klik <b>Scan Objek</b>.</div>
+      </div>
+    </div>
+
+    <!-- Footer buttons -->
+    <div class="actions row">
+      <button class="btn ghost sm" id="btnScan" type="button" onclick="doScan(this)">
+        <svg><use href="#i-refresh-cw"/></svg><span>Scan Objek</span>
+      </button>
+      <button class="btn primary sm" type="button" onclick="doSelect()">
+        <svg><use href="#i-mouse-pointer-click"/></svg><span>Seleksi Entitas</span>
+      </button>
+    </div>
+  </section>
+</body>
+</html>

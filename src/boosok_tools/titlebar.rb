@@ -2,58 +2,60 @@ require 'sketchup'
 
 module BoosokTools
   module TitleBar
-    @ready = false
-    @init_error = nil
+    @ready = false unless defined?(@ready)
+    @init_error = nil unless defined?(@init_error)
 
-    begin
-      require 'fiddle'
+    unless defined?(User32)
+      begin
+        require 'fiddle'
 
-      User32 = Fiddle.dlopen('user32.dll')
-      Dwmapi = Fiddle.dlopen('dwmapi.dll')
+        User32 = Fiddle.dlopen('user32.dll')
+        Dwmapi = Fiddle.dlopen('dwmapi.dll')
 
-      FindWindowA = Fiddle::Function.new(
-        User32['FindWindowA'],
-        [Fiddle::TYPE_VOIDP, Fiddle::TYPE_VOIDP],
-        Fiddle::TYPE_INTPTR_T
-      )
+        FindWindowA = Fiddle::Function.new(
+          User32['FindWindowA'],
+          [Fiddle::TYPE_VOIDP, Fiddle::TYPE_VOIDP],
+          Fiddle::TYPE_INTPTR_T
+        )
 
-      GetForegroundWindow = Fiddle::Function.new(
-        User32['GetForegroundWindow'],
-        [],
-        Fiddle::TYPE_INTPTR_T
-      )
+        GetForegroundWindow = Fiddle::Function.new(
+          User32['GetForegroundWindow'],
+          [],
+          Fiddle::TYPE_INTPTR_T
+        )
 
-      SetWindowPos = Fiddle::Function.new(
-        User32['SetWindowPos'],
-        [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_INTPTR_T,
-         Fiddle::TYPE_INT, Fiddle::TYPE_INT, Fiddle::TYPE_INT, Fiddle::TYPE_INT,
-         Fiddle::TYPE_INT],
-        Fiddle::TYPE_INT
-      )
+        SetWindowPos = Fiddle::Function.new(
+          User32['SetWindowPos'],
+          [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_INTPTR_T,
+           Fiddle::TYPE_INT, Fiddle::TYPE_INT, Fiddle::TYPE_INT, Fiddle::TYPE_INT,
+           Fiddle::TYPE_INT],
+          Fiddle::TYPE_INT
+        )
 
-      DwmSetWindowAttribute = Fiddle::Function.new(
-        Dwmapi['DwmSetWindowAttribute'],
-        [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_INT, Fiddle::TYPE_VOIDP, Fiddle::TYPE_INT],
-        Fiddle::TYPE_INT
-      )
+        DwmSetWindowAttribute = Fiddle::Function.new(
+          Dwmapi['DwmSetWindowAttribute'],
+          [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_INT, Fiddle::TYPE_VOIDP, Fiddle::TYPE_INT],
+          Fiddle::TYPE_INT
+        )
 
-      # SendMessageA(hwnd, msg, wParam, lParam)
-      SendMessageA = Fiddle::Function.new(
-        User32['SendMessageA'],
-        [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_INT, Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_INTPTR_T],
-        Fiddle::TYPE_INTPTR_T
-      )
+        # SendMessageA(hwnd, msg, wParam, lParam)
+        SendMessageA = Fiddle::Function.new(
+          User32['SendMessageA'],
+          [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_INT, Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_INTPTR_T],
+          Fiddle::TYPE_INTPTR_T
+        )
 
-      GetWindowRect = Fiddle::Function.new(
-        User32['GetWindowRect'],
-        [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_VOIDP],
-        Fiddle::TYPE_INT
-      )
+        GetWindowRect = Fiddle::Function.new(
+          User32['GetWindowRect'],
+          [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_VOIDP],
+          Fiddle::TYPE_INT
+        )
 
-      @ready = true
-    rescue => e
-      @ready = false
-      @init_error = e.message
+        @ready = true
+      rescue => e
+        @ready = false
+        @init_error = e.message
+      end
     end
 
     def self.log(msg)
