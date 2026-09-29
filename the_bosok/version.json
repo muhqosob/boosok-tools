@@ -1,5 +1,5 @@
 {
   "version": "1.5.2",
   "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.5.2/boosok_tools_v1.5.2.rbz",
-  "changelog": "Fix: perbaikan kalkulasi transformasi highlight nested level 1 & 2 pada select tool sehingga group, component, dan face tampil presisi."
+  "changelog": "chore(release): bump v1.5.2 - fix nested level 1 & 2 highlight on 5D select tool"
 }
