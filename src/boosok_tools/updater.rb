@@ -3,7 +3,7 @@ require 'json'
 require 'tmpdir'
 load File.join(__dir__, 'titlebar.rb')
 
-module MyCustomPlugins
+module BoosokTools
   # Update di dalam SketchUp: cek -> download .rbz -> install -> hot reload langsung aktif.
   # Satu state di Ruby, dialog cuma render state itu (render(state) di update.html).
   #
@@ -25,7 +25,9 @@ module MyCustomPlugins
         data = JSON.parse(body)
         if Gem::Version.new(data["version"]) > Gem::Version.new(PLUGIN_VERSION)
           set(status: 'available', latest: data["version"],
-              changelog: data["changelog"].to_s, download_url: data["download_url"])
+              changelog: data["changelog"].to_s,
+              download_url: data["download_url"],
+              expected_sha256: data["sha256"].to_s)
           show_dialog
         else
           set(status: 'latest')
@@ -42,8 +44,23 @@ module MyCustomPlugins
       return unless @state[:status] == 'available'
 
       set(status: 'downloading', progress: 0)
+      expected_sha256 = @state[:expected_sha256].to_s
       fetch(@state[:download_url], DOWNLOAD_TIMEOUT, true) do |body|
         set(status: 'installing', progress: nil)
+        # Guard: tolak file kosong atau partial download
+        if body.nil? || body.empty?
+          fail_with("Download gagal: file kosong.")
+          next
+        end
+        # Verifikasi integritas SHA256 jika checksum tersedia di version.json
+        unless expected_sha256.empty?
+          require 'digest'
+          actual_sha256 = Digest::SHA256.hexdigest(body)
+          unless actual_sha256 == expected_sha256
+            fail_with("Verifikasi gagal: checksum tidak cocok. File mungkin rusak atau dimanipulasi.")
+            next
+          end
+        end
         path = File.join(Dir.tmpdir, "boosok_tools_v#{@state[:latest]}.rbz")
         File.binwrite(path, body)
         UI.start_timer(0.1, false) { install(path) }
@@ -62,7 +79,8 @@ module MyCustomPlugins
         if Gem::Version.new(data['version']) > Gem::Version.new(PLUGIN_VERSION)
           st = { status: 'available', current: PLUGIN_VERSION,
                  latest: data['version'], changelog: data['changelog'].to_s,
-                 download_url: data['download_url'] }
+                 download_url: data['download_url'],
+                 expected_sha256: data['sha256'].to_s }
           @state = @state.merge(st.transform_keys(&:to_sym))
           push_to_hub(st)
         else
@@ -86,9 +104,25 @@ module MyCustomPlugins
 
       @state = @state.merge(status: 'downloading', progress: 0)
       push_to_hub({ status: 'downloading', current: PLUGIN_VERSION, progress: 0 })
+      expected_sha256 = @state[:expected_sha256].to_s
 
       fetch(@state[:download_url], DOWNLOAD_TIMEOUT, false) do |body|
         @state = @state.merge(status: 'installing', progress: nil)
+        # Guard: tolak file kosong atau partial download
+        if body.nil? || body.empty?
+          push_to_hub({ status: 'error', current: PLUGIN_VERSION, error: "Download gagal: file kosong." })
+          next
+        end
+        # Verifikasi integritas SHA256 jika checksum tersedia di version.json
+        unless expected_sha256.empty?
+          require 'digest'
+          actual_sha256 = Digest::SHA256.hexdigest(body)
+          unless actual_sha256 == expected_sha256
+            push_to_hub({ status: 'error', current: PLUGIN_VERSION,
+                          error: "Verifikasi gagal: checksum tidak cocok. File mungkin rusak atau dimanipulasi." })
+            next
+          end
+        end
         push_to_hub({ status: 'installing', current: PLUGIN_VERSION })
         path = File.join(Dir.tmpdir, "boosok_tools_v#{@state[:latest]}.rbz")
         File.binwrite(path, body)
@@ -96,7 +130,7 @@ module MyCustomPlugins
           install_inline(path)
         end
       end
-    rescue => e
+    rescue StandardError => e
       push_to_hub({ status: 'error', current: PLUGIN_VERSION, error: e.message })
     end
 
@@ -109,7 +143,7 @@ module MyCustomPlugins
       reload_plugin
       @state = @state.merge(status: 'done')
       push_to_hub({ status: 'done', current: PLUGIN_VERSION })
-    rescue Exception => e
+    rescue StandardError => e
       push_to_hub({ status: 'error', current: PLUGIN_VERSION, error: "Gagal memasang: #{e.message}" })
     ensure
       File.delete(path) rescue nil
@@ -142,7 +176,7 @@ module MyCustomPlugins
       reload_plugin
 
       set(status: 'done')
-    rescue Exception => e # install_from_archive bisa raise Interrupt kalau user batal
+    rescue StandardError => e # StandardError: cukup untuk handle kegagalan install biasa
       fail_with("Gagal memasang: #{e.message}")
     ensure
       File.delete(path) rescue nil
@@ -162,6 +196,7 @@ module MyCustomPlugins
         ruby_files = [
           'titlebar.rb',
           'bootstrap.rb',
+          'the_custom_select.rb',
           'main.rb',
           'the_replacer.rb',
           'the_cleangroup.rb',
@@ -171,6 +206,14 @@ module MyCustomPlugins
           'updater.rb',
           'hub.rb'
         ]
+
+        # Muat ulang semua handler 5D Select Tool
+        custom_select_dir = File.join(base_dir, 'custom_select')
+        if File.directory?(custom_select_dir)
+          Dir[File.join(custom_select_dir, '*.rb')].sort.each do |f|
+            load f
+          end
+        end
 
         ruby_files.each do |f|
           file_path = File.join(base_dir, f)
@@ -282,3 +325,6 @@ module MyCustomPlugins
     end
   end
 end
+
+# Backward-compatibility alias: kode lama yang pakai MyCustomPlugins::Updater tetap jalan
+MyCustomPlugins = BoosokTools unless defined?(MyCustomPlugins)

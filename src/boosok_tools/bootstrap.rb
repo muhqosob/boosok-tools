@@ -1,7 +1,7 @@
 require 'sketchup'
 require 'json'
 
-module MyCustomPlugins
+module BoosokTools
   unless file_loaded?(__FILE__)
     load File.join(__dir__, 'titlebar.rb')
     require_relative 'updater'

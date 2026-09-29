@@ -2,7 +2,7 @@ require 'sketchup'
 require 'extensions'
 require 'json'
 
-module MyCustomPlugins
+module BoosokTools
   # Naikkan angka ini lalu push ke main: GitHub Actions otomatis bikin release + update version.json
   PLUGIN_VERSION = "1.5.2"
 
@@ -29,3 +29,6 @@ module MyCustomPlugins
     file_loaded(__FILE__)
   end
 end
+
+# Backward-compatibility: versi lama yang di-install user masih pakai MyCustomPlugins
+MyCustomPlugins = BoosokTools unless defined?(MyCustomPlugins)
