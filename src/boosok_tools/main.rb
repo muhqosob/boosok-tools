@@ -332,4 +332,3 @@ module TheSelectorPlugin
       dialog.execute_script("showToast(#{("Gagal: " + e.message).to_json});")
     end
   end
-end
