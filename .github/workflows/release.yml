@@ -62,15 +62,7 @@ jobs:
           # Path ini dibaca semua versi yang sudah terpasang, jangan dipindah.
           # sha256 diinclude untuk verifikasi integritas file di updater.rb.
           URL="https://github.com/$GITHUB_REPOSITORY/releases/download/v$VER/$FILE"
-          python3 -c '
-import json, sys
-json.dump({
-  "version": sys.argv[1],
-  "download_url": sys.argv[2],
-  "changelog": sys.argv[3],
-  "sha256": sys.argv[4]
-}, open("the_bosok/version.json", "w"), indent=2, ensure_ascii=False)
-' "$VER" "$URL" "$CHANGELOG" "$SHA256"
+          python3 -c 'import json, sys; json.dump({"version": sys.argv[1], "download_url": sys.argv[2], "changelog": sys.argv[3], "sha256": sys.argv[4]}, open("the_bosok/version.json", "w"), indent=2, ensure_ascii=False)' "$VER" "$URL" "$CHANGELOG" "$SHA256"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
