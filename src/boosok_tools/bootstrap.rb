@@ -6,6 +6,7 @@ module MyCustomPlugins
     load File.join(__dir__, 'titlebar.rb')
     require_relative 'updater'
     require_relative 'hub'
+    require_relative 'the_custom_select'
 
     # Satu item saja; semua tool + cek update ada di dalam launcher
     UI.menu("Extensions").add_item("Boosok Tools") {

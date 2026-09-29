@@ -1,11 +1,2 @@
-module CustomTools::SelectTool5D
-  # Dialog UI HTML sudah ditiadakan sesuai permintaan user,
-  # Tampilan digantikan sepenuhnya oleh in-viewport native overlay pada DrawHandler.
-  class UiInfoHandler
-    def initialize(tool); end
-    def show; end
-    def close; end
-    def update_position(x, y); end
-    def update_content; end
-  end
-end
+# Deprecated path: Telah dipindahkan ke src/boosok_tools/custom_select/ui_info_handler.rb
+require_relative '../../custom_select/ui_info_handler'

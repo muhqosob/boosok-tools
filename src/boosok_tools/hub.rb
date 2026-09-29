@@ -17,8 +17,9 @@ module BoosokTools
       'clean'    => { file: 'the_cleangroup.rb',         page: 'cleangroup.html',      title: 'Group Cleaner' },
       'reset'    => { file: 'the_reset.rb',              page: 'reset.html',           title: 'Reset Scale' },
       'scene'    => { file: 'the_hideonscenemanager.rb', page: 'hidescene.html',       title: 'Hide on Scene' },
-      'untag'    => { file: 'untagnpaint.rb',            page: 'untagnpaint.html',     title: 'Untag & Unpaint' },
-      'deep'     => { file: 'deep_properties.rb',        page: 'deep_properties.html', title: 'Deep Properties' }
+      'untag'         => { file: 'untagnpaint.rb',            page: 'untagnpaint.html',     title: 'Untag & Unpaint' },
+      'deep'          => { file: 'deep_properties.rb',        page: 'deep_properties.html', title: 'Deep Properties' },
+      'custom_select' => { file: 'the_custom_select.rb',      page: nil,                    title: '5D Select Tool' }
     }.freeze unless defined?(TOOL_PAGES)
 
     @current_tool ||= 'hub'
@@ -97,6 +98,14 @@ module BoosokTools
       cfg = TOOL_PAGES[id.to_s]
       return unless cfg
 
+      if id.to_s == 'custom_select'
+        load_tool_file(id.to_s)
+        BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
+        dlg = BoosokTools.dialog
+        dlg.close rescue nil if dlg && dlg.visible?
+        return
+      end
+
       dlg = BoosokTools.dialog
       if dlg && dlg.visible?
         open_tool(id.to_s)
@@ -112,6 +121,13 @@ module BoosokTools
 
       cfg = TOOL_PAGES[id.to_s]
       return toast("Tool \"#{id}\" tidak dikenal.") unless cfg
+
+      if id.to_s == 'custom_select'
+        load_tool_file(id.to_s)
+        BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
+        dlg.close rescue nil
+        return
+      end
 
       if @current_tool == 'scene' && id.to_s != 'scene'
         HideOnSceneManager.detach_all_observers rescue nil if defined?(HideOnSceneManager)

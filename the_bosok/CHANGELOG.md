@@ -5,6 +5,18 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.4.0] — 2026-09-30
+
+### ✨ Baru & Perbaikan
+- **5D Select Tool**:
+  - **Fitur Baru (Modular In-Viewport Selection)**: Tool seleksi hirarki viewport inovatif yang memungkinkan inspeksi dan seleksi sub-komponen/group secara mendalam tanpa membuka container induk.
+  - **Presistensi Level Kedalaman (Nested Level 1 Persistence)**: Level kedalaman yang dipilih user (misalnya Nested Level 1 via CTRL + Scroll Wheel) kini dipertahankan secara konsisten saat mouse digerakkan atau berpindah antar objek geometri (tidak lagi reset ke Level 0 setiap kali pointer berpindah).
+  - **Handling Boundary Hirarki Aman (`effective_depth`)**: Akses level kedalaman secara otomatis disesuaikan (*clamped*) jika objek yang disorot memiliki tingkat kedalaman lebih sedikit, dan langsung kembali ke level target user begitu kursor menyorot objek bertingkat lagi.
+  - **Shortcut Reset Cepat (ESC)**: Menekan tombol `ESC` saat tool aktif akan mereset level kedalaman kembali ke Level 0 (outermost container).
+  - **Integrasi Penuh Boosok Tools**: Terintegrasi langsung dengan menu launcher Hub Boosok Tools dan siap diakses dari viewport maupun toolbar.
+
+---
+
 ## [1.3.0] — 2026-09-29
 
 ### ✨ Baru & Perbaikan
