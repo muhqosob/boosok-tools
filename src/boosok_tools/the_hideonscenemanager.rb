@@ -17,6 +17,32 @@ module HideOnSceneManager
     end
   end
 
+  class LayersObserver < Sketchup::LayersObserver
+    def onLayerAdded(*args)
+      HideOnSceneManager.schedule_sync rescue nil
+    end
+
+    def onLayerRemoved(*args)
+      HideOnSceneManager.schedule_sync rescue nil
+    end
+
+    def onLayerChanged(*args)
+      HideOnSceneManager.schedule_sync rescue nil
+    end
+
+    def onLayerFolderAdded(*args)
+      HideOnSceneManager.schedule_sync rescue nil
+    end
+
+    def onLayerFolderRemoved(*args)
+      HideOnSceneManager.schedule_sync rescue nil
+    end
+
+    def onLayerFolderChanged(*args)
+      HideOnSceneManager.schedule_sync rescue nil
+    end
+  end
+
   class ModelObserver < Sketchup::ModelObserver
     def onTransactionCommit(*args)
       HideOnSceneManager.schedule_sync rescue nil
@@ -45,8 +71,38 @@ module HideOnSceneManager
     end
   end
 
+  def self.start_monitor_timer
+    stop_monitor_timer
+    @poll_timer = UI.start_timer(0.4, true) do
+      begin
+        dlg = @dialog || (defined?(BoosokTools) && BoosokTools.dialog)
+        next unless dlg && dlg.visible?
+        next if defined?(BoosokTools::Hub) && BoosokTools::Hub.current_tool != 'scene'
+
+        model = Sketchup.active_model
+        next unless model && model.valid?
+
+        current_scenes = model.pages.map(&:name)
+        current_tags   = model.layers.map(&:name)
+
+        if current_scenes != @cached_scenes || current_tags != @cached_tags
+          sync_scenes_and_tags
+        end
+      rescue => e
+      end
+    end
+  end
+
+  def self.stop_monitor_timer
+    if @poll_timer
+      UI.stop_timer(@poll_timer) rescue nil
+      @poll_timer = nil
+    end
+  end
+
   def self.schedule_sync
-    return unless @dialog && @dialog.visible?
+    dlg = @dialog || (defined?(BoosokTools) && BoosokTools.dialog)
+    return unless dlg && dlg.visible?
 
     UI.stop_timer(@update_timer) if @update_timer
     @update_timer = UI.start_timer(0.08, false) do
@@ -56,17 +112,20 @@ module HideOnSceneManager
   end
 
   def self.sync_scenes_and_tags
-    return unless @dialog && @dialog.visible?
+    dlg = @dialog || (defined?(BoosokTools) && BoosokTools.dialog)
+    return unless dlg && dlg.visible?
+    return if defined?(BoosokTools::Hub) && BoosokTools::Hub.current_tool != 'scene'
+
     model = Sketchup.active_model
     return unless model && model.valid?
 
     current_scenes = model.pages.map(&:name)
-    current_tags = model.layers.map(&:name)
+    current_tags   = model.layers.map(&:name)
 
     if current_scenes != @cached_scenes
       @cached_scenes = current_scenes
       begin
-        @dialog.execute_script("updateScenes(#{@cached_scenes.to_json});")
+        dlg.execute_script("if (typeof updateScenes === 'function') updateScenes(#{@cached_scenes.to_json});")
       rescue => e
       end
     end
@@ -74,7 +133,7 @@ module HideOnSceneManager
     if current_tags != @cached_tags
       @cached_tags = current_tags
       begin
-        @dialog.execute_script("updateTags(#{@cached_tags.to_json});")
+        dlg.execute_script("if (typeof updateTags === 'function') updateTags(#{@cached_tags.to_json});")
       rescue => e
       end
     end
@@ -85,11 +144,17 @@ module HideOnSceneManager
     return unless model && model.valid?
     @observed_model = model
 
-    @pages_observer ||= PagesObserver.new
-    @model_observer ||= ModelObserver.new
+    @pages_observer  ||= PagesObserver.new
+    @layers_observer ||= LayersObserver.new
+    @model_observer  ||= ModelObserver.new
 
     begin
       model.pages.add_observer(@pages_observer)
+    rescue => e
+    end
+
+    begin
+      model.layers.add_observer(@layers_observer)
     rescue => e
     end
 
@@ -98,6 +163,7 @@ module HideOnSceneManager
     rescue => e
     end
 
+    start_monitor_timer
     schedule_sync
   end
 
@@ -105,6 +171,10 @@ module HideOnSceneManager
     if @observed_model && @observed_model.valid?
       begin
         @observed_model.pages.remove_observer(@pages_observer) if @pages_observer
+      rescue => e
+      end
+      begin
+        @observed_model.layers.remove_observer(@layers_observer) if @layers_observer
       rescue => e
       end
       begin
@@ -119,6 +189,7 @@ module HideOnSceneManager
     UI.stop_timer(@update_timer) if @update_timer
     @update_timer = nil
 
+    stop_monitor_timer
     detach_model_observers
 
     if @app_observer
@@ -139,7 +210,7 @@ module HideOnSceneManager
     return unless dlg
     current_model = Sketchup.active_model
     @cached_scenes = current_model ? current_model.pages.map(&:name) : []
-    @cached_tags = current_model ? current_model.layers.map(&:name) : []
+    @cached_tags   = current_model ? current_model.layers.map(&:name) : []
     data = { scenes: @cached_scenes, tags: @cached_tags }
     dlg.execute_script("if (typeof init === 'function') init(#{data.to_json});")
   end
@@ -204,10 +275,25 @@ module HideOnSceneManager
 
   def self.attach_callbacks(dialog)
     @dialog = dialog
-    detach_all_observers
 
     model = Sketchup.active_model
-    @cached_scenes = model ? model.pages.map(&:name) : []
+    @app_observer ||= AppObserver.new
+    begin
+      Sketchup.add_observer(@app_observer)
+    rescue => e
+    end
+
+    # Selalu pastikan observer model & timer monitoring aktif saat tool scene dibuka
+    attach_to_model(model) if model
+
+    # Skip re-registrasi dialog action callbacks jika dialog instance sama
+    if @callbacks_registered && @dialog_registered_id == dialog.object_id
+      send_init_data(dialog)
+      return
+    end
+
+    @dialog_registered_id = dialog.object_id
+    @callbacks_registered = true
 
     dialog.add_action_callback("scene_ready") do |_action_context|
       send_init_data(dialog)
@@ -220,14 +306,6 @@ module HideOnSceneManager
         BoosokTools::Hub.push(BoosokTools::Hub.state)
       end
     end
-
-    @app_observer ||= AppObserver.new
-    begin
-      Sketchup.add_observer(@app_observer)
-    rescue => e
-    end
-
-    attach_to_model(model) if model
 
     # --- CALLBACK 1: PROSES ISOLATE SCENE AKTIF (LANGSUNG REFRESH VIEWPORT) ---
     dialog.add_action_callback("prosesIsolateActive") do |action_context|

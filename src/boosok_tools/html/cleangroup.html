@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Clean Group</title>
+  <title>Group Cleaner</title>
   <link rel="stylesheet" href="../css/ui.css">
 </head>
 <body oncontextmenu="return false;">
@@ -12,7 +12,7 @@
     <button class="back-btn" type="button" title="Kembali ke The Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()"><svg><use href="#i-arrow-left"/></svg></button>
     <div class="mark"><svg><use href="#i-sparkles"/></svg></div>
     <div class="txt">
-      <h1>Clean Group</h1>
+      <h1>Group Cleaner</h1>
       <p>Component jadi group murni</p>
     </div>
     <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema"></button>
@@ -66,7 +66,7 @@
           sketchup.proses_clean_group();
         } else {
           resetExecButton();
-          showToast('Fungsi Clean Group belum siap. Silakan coba lagi.', 'error');
+          showToast('Fungsi Group Cleaner belum siap. Silakan coba lagi.', 'error');
         }
       } catch (err) {
         resetExecButton();

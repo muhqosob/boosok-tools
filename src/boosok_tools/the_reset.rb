@@ -3,6 +3,8 @@ require 'json'
 load File.join(__dir__, 'titlebar.rb')
 
 module TheResetScale
+  $reset_dlg ||= nil
+
   def self.run
     require_relative 'hub' unless defined?(BoosokTools::Hub)
     BoosokTools::Hub.open_or_show('reset')
@@ -10,6 +12,10 @@ module TheResetScale
 
   def self.attach_callbacks(dialog)
     return unless dialog
+    if $reset_dlg.equal?(dialog)
+      return
+    end
+    $reset_dlg = dialog
 
     dialog.add_action_callback("reset") do |_action_context, mode, recursive|
       mode_str = mode.to_s.empty? ? "preserve" : mode.to_s

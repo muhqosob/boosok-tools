@@ -75,6 +75,8 @@ module ConvertToCleanGroup
 
   # --- UI & DIALOG ---
 
+  $cleangroup_dlg ||= nil
+
   def self.run
     require_relative 'hub' unless defined?(BoosokTools::Hub)
     BoosokTools::Hub.open_or_show('clean')
@@ -82,6 +84,10 @@ module ConvertToCleanGroup
 
   def self.attach_callbacks(dialog)
     return unless dialog
+    if $cleangroup_dlg.equal?(dialog)
+      return
+    end
+    $cleangroup_dlg = dialog
 
     # --- CALLBACK: MULAI KEMBALI ---
     restart_cb = lambda do |_action_context|
@@ -115,7 +121,7 @@ module ConvertToCleanGroup
     item = sel[0]
     main_layer = item.layer
 
-    model.start_operation("Convert to Clean Group", true)
+    model.start_operation("Group Cleaner", true)
     begin
       # 1. Jadikan unik agar instans lain aman
       item = item.make_unique

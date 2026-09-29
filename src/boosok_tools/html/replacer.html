@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>The Replacer</title>
+  <title>Group Replacer</title>
   <link rel="stylesheet" href="../css/ui.css">
 </head>
 <body oncontextmenu="return false;">
@@ -12,7 +12,7 @@
     <button class="back-btn" type="button" title="Kembali ke The Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()"><svg><use href="#i-arrow-left"/></svg></button>
     <div class="mark"><svg><use href="#i-replace"/></svg></div>
     <div class="txt">
-      <h1>The Replacer</h1>
+      <h1>Group Replacer</h1>
       <p>Ganti objek, ukuran ikut yang lama</p>
     </div>
     <span class="pill" id="cur">1 / 2</span>
@@ -86,7 +86,7 @@
         if (window.sketchup && typeof sketchup.check_old_items === 'function') {
           sketchup.check_old_items();
         } else {
-          showToast('Fungsi Replacer belum siap.', 'error');
+          showToast('Fungsi Group Replacer belum siap.', 'error');
         }
       } catch (err) {
         showToast('Error: ' + err.message, 'error');
@@ -100,7 +100,7 @@
           sketchup.proses_replace();
         } else {
           resetExecButton();
-          showToast('Fungsi Replacer belum siap.', 'error');
+          showToast('Fungsi Group Replacer belum siap.', 'error');
         }
       } catch (err) {
         resetExecButton();

@@ -5,6 +5,30 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.2.5] — 2026-09-29
+
+### ✨ Baru
+- **Penyederhanaan & Perubahan Nama Tool**:
+  - `The Selector` kini menjadi **Selector**
+  - `The Replacer` kini menjadi **Group Replacer**
+  - `Clean Group` kini menjadi **Group Cleaner**
+- **Modal Notifikasi Baru & Optimal**:
+  - Menggantikan toast dengan dialog modal mengambang (*floating alert*) yang dilengkapi tombol OK.
+  - Lebar notifikasi disesuaikan ke ukuran optimal **280px** (hanya ~73% dari lebar jendela), tidak lagi menutupi seluruh lebar dialog.
+  - Dukungan tombol keyboard **Enter** dan **Escape** untuk menutup notifikasi dengan cepat.
+
+### 🔧 Perbaikan
+- **Group Replacer**:
+  - Posisi titik axes (origin) tidak lagi bergeser saat penggantian objek.
+  - Penskalaan dimensi objek baru (LenX, LenY, LenZ) mengikuti objek lama secara presisi dengan transformasi skala lokal.
+  - Seleksi objek lama tetap tersimpan aman saat beralih memilih objek baru berkat sistem *sticky cache*.
+- **Hide on Scene**:
+  - Penambahan `LayersObserver` agar penambahan, pengurangan, dan perubahan nama Tag langsung sinkron otomatis.
+  - Sinkronisasi data scene dan tag otomatis berjalan setiap kali tool dibuka kembali dari Hub.
+  - Background polling (0.4s) mendeteksi perubahan dari Default Tray SketchUp secara real-time.
+
+---
+
 ## [1.2.4] — 2026-09-28
 
 ### ✨ Baru / Perbaikan

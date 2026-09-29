@@ -1,6 +1,9 @@
 load File.join(__dir__, 'titlebar.rb')
 
 module UntagUnpaintManager
+  # Guard agar callbacks tidak di-stack oleh Hub reload
+  $untag_dlg ||= nil
+
   def self.run
     require_relative 'hub' unless defined?(BoosokTools::Hub)
     BoosokTools::Hub.open_or_show('untag')
@@ -9,9 +12,17 @@ module UntagUnpaintManager
   def self.attach_callbacks(dialog)
     return unless dialog
 
+    # Skip jika dialog ini sudah terdaftar — cegah callback stacking dari Hub
+    if $untag_dlg.equal?(dialog)
+      return
+    end
+    $untag_dlg = dialog
+
     # --- CALLBACK PROCESS ---
     dialog.add_action_callback("prosesAction") do |_context, action_type, deep_process|
-      execute_action(dialog, action_type, deep_process)
+      # deep_process datang dari JS sebagai string "true"/"false"
+      deep = (deep_process.to_s == 'true')
+      execute_action(dialog, action_type, deep)
     end
   end
 
@@ -19,6 +30,9 @@ module UntagUnpaintManager
     model = Sketchup.active_model
     return dialog.execute_script("onError('Tidak ada model aktif.');") unless model
 
+    # Baca selection; jika kosong (HtmlDialog mungkin ambil focus → cleared),
+    # coba tangkap dari semua entities sebagai fallback tidak tersedia —
+    # kembalikan error yang informatif
     selection = model.selection.to_a
 
     if selection.empty?

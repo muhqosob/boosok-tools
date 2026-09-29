@@ -80,48 +80,57 @@ function busy(btn, on) {
   }
 }
 
-var toastTimer;
-var toastFitTimer;
+// Notifikasi modal dengan tombol OK — menggantikan toast inline.
 // type: 'error' (default) | 'success'
-function showToast(msg, type) {
-  var t = document.getElementById('toast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'toast';
-    t.setAttribute('role', 'status');
-    // Sisipkan sebagai elemen TERAKHIR di body agar muncul di bawah tombol
-    document.body.appendChild(t);
-  }
+function showNotif(msg, type) {
   type = type || 'error';
-  t.innerHTML = icon(type === 'success' ? 'circle-check' : 'circle-alert') + '<span></span>';
-  t.lastChild.innerHTML = msg; // pesan dari Ruby boleh berisi <b>
-  t.className = type;
-  // Paksa browser hitung layout dulu (flush), lalu tambah class show
-  void t.offsetWidth;
-  t.className = type + ' show';
-  t.onclick = function () {
-    clearTimeout(toastTimer);
-    clearTimeout(toastFitTimer);
-    t.classList.remove('show');
-    // Tunggu transisi selesai lalu fit ulang (dialog mengecil)
-    toastFitTimer = setTimeout(function () {
-      if (typeof autoFitHeight === 'function') autoFitHeight(0);
-    }, 320);
-  };
-  clearTimeout(toastTimer);
-  clearTimeout(toastFitTimer);
-  // Auto-fit setelah toast selesai muncul (transiton ~280ms)
-  toastFitTimer = setTimeout(function () {
-    if (typeof autoFitHeight === 'function') autoFitHeight(0);
-  }, 320);
-  toastTimer = setTimeout(function () {
-    t.className = type;
-    // Auto-fit setelah toast menghilang
-    setTimeout(function () {
-      if (typeof autoFitHeight === 'function') autoFitHeight(0);
-    }, 320);
-  }, 3000);
+
+  var overlay = document.getElementById('notif-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    overlay.id = 'notif-overlay';
+    overlay.innerHTML =
+      '<div class="sheet" id="notif-sheet">' +
+        '<div class="notif-body">' +
+          '<svg class="notif-icon" id="notif-icon" aria-hidden="true">' +
+            '<use id="notif-icon-href" href="#i-circle-alert"/>' +
+          '</svg>' +
+          '<span class="notif-msg" id="notif-msg"></span>' +
+        '</div>' +
+        '<button class="btn primary" id="notif-ok">OK</button>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    document.getElementById('notif-ok').addEventListener('click', function () {
+      overlay.classList.remove('open');
+    });
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) overlay.classList.remove('open');
+    });
+  }
+
+  var iconHref = document.getElementById('notif-icon-href');
+  var iconEl   = document.getElementById('notif-icon');
+  var msgEl    = document.getElementById('notif-msg');
+
+  iconHref.setAttribute('href', type === 'success' ? '#i-circle-check' : '#i-circle-alert');
+  iconEl.className = 'notif-icon ' + type;
+  msgEl.innerHTML = msg;
+
+  overlay.classList.add('open');
+  var okBtn = document.getElementById('notif-ok');
+  if (okBtn) {
+    setTimeout(function () { okBtn.focus(); }, 30);
+  }
 }
+
+function hideNotif() {
+  var ol = document.getElementById('notif-overlay');
+  if (ol) ol.classList.remove('open');
+}
+
+// Alias agar semua panggilan showToast() dari Ruby tetap berfungsi
+var showToast = showNotif;
 
 // Nonaktifkan klik kanan agar tidak membuka context menu / inspect element / devtools
 window.addEventListener('contextmenu', function (e) {
@@ -134,8 +143,17 @@ document.addEventListener('contextmenu', function (e) {
   return false;
 }, true);
 
-// Cegah shortcut keyboard devtools (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U)
+// Cegah shortcut keyboard devtools & dukung Escape/Enter untuk tutup modal notifikasi
 window.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' || e.key === 'Enter') {
+    var notifOl = document.getElementById('notif-overlay');
+    if (notifOl && notifOl.classList.contains('open')) {
+      notifOl.classList.remove('open');
+      e.preventDefault();
+      return false;
+    }
+  }
+
   if (e.key === 'F12' ||
       (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].indexOf(e.key) !== -1) ||
       (e.ctrlKey && (e.key === 'u' || e.key === 'U'))) {

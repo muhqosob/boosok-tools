@@ -12,9 +12,9 @@ module BoosokTools
     DEFAULT_HEIGHT = 480
 
     TOOL_PAGES = {
-      'selector' => { file: 'main.rb',                   page: 'selector.html',   title: 'The Selector' },
-      'replacer' => { file: 'the_replacer.rb',           page: 'replacer.html',   title: 'The Replacer' },
-      'clean'    => { file: 'the_cleangroup.rb',         page: 'cleangroup.html', title: 'Clean Group' },
+      'selector' => { file: 'main.rb',                   page: 'selector.html',   title: 'Selector' },
+      'replacer' => { file: 'the_replacer.rb',           page: 'replacer.html',   title: 'Group Replacer' },
+      'clean'    => { file: 'the_cleangroup.rb',         page: 'cleangroup.html', title: 'Group Cleaner' },
       'reset'    => { file: 'the_reset.rb',              page: 'reset.html',      title: 'Reset Scale' },
       'scene'    => { file: 'the_hideonscenemanager.rb', page: 'hidescene.html',  title: 'Hide on Scene' },
       'untag'    => { file: 'untagnpaint.rb',            page: 'untagnpaint.html',title: 'Untag & Unpaint' }
