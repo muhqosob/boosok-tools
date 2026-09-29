@@ -215,6 +215,23 @@ module HideOnSceneManager
     dlg.execute_script("if (typeof init === 'function') init(#{data.to_json});")
   end
 
+  def self.is_component_or_dc?(ent)
+    return false unless ent
+
+    # 1. Seluruh ComponentInstance adalah component (termasuk Dynamic Component)
+    return true if ent.is_a?(Sketchup::ComponentInstance)
+
+    # 2. Cek apakah Group merupakan Dynamic Component
+    if ent.is_a?(Sketchup::Group)
+      return true if ent.attribute_dictionary('dynamic_attributes')
+
+      defn = ent.respond_to?(:definition) ? ent.definition : (ent.entities.parent rescue nil)
+      return true if defn && defn.attribute_dictionary('dynamic_attributes')
+    end
+
+    false
+  end
+
   def self.execute_end_isolate(dialog = nil)
     dlg = dialog || @dialog || (defined?(BoosokTools) && BoosokTools.dialog)
     model = Sketchup.active_model
@@ -232,31 +249,28 @@ module HideOnSceneManager
         page.use_hidden = true if page.respond_to?(:use_hidden=)
       end
 
-      # 1. Tampilkan semua objek pada tingkat root dan rekursif masuk ke dalam grup & komponen
+      # 1. Tampilkan semua objek pada tingkat root dan rekursif masuk ke dalam grup biasa.
+      # Skip penelusuran ke dalam jika objek merupakan component / dynamic component,
+      # agar sub-group/bagian internal di dalam component tidak dibuka secara paksa.
       unhide_recursive = lambda do |entities|
         entities.each do |ent|
           next unless ent.is_a?(Sketchup::Drawingelement)
+
           page.set_drawingelement_visibility(ent, true) if page
           ent.hidden = false if ent.hidden?
+
+          # Jika objek adalah Component atau Dynamic Component,
+          # skip kedalamannya (jangan buka group dalam group di dalamnya)
+          next if is_component_or_dc?(ent)
+
+          # Jika grup biasa, telusuri kedalaman grup di dalamnya
           if ent.is_a?(Sketchup::Group)
             unhide_recursive.call(ent.entities)
-          elsif ent.is_a?(Sketchup::ComponentInstance)
-            unhide_recursive.call(ent.definition.entities)
           end
         end
       end
 
       unhide_recursive.call(model.entities)
-
-      # 2. Tampilkan semua entitas yang tersembunyi di seluruh definition
-      model.definitions.each do |defn|
-        next if defn.image?
-        defn.entities.each do |ent|
-          next unless ent.is_a?(Sketchup::Drawingelement)
-          page.set_drawingelement_visibility(ent, true) if page
-          ent.hidden = false if ent.hidden?
-        end
-      end
 
       model.commit_operation
       if dlg
