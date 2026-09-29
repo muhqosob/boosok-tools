@@ -215,7 +215,12 @@ module BoosokTools
       end
 
       dlg.add_action_callback("updates") do |_ctx|
-        MyCustomPlugins::Updater.check(true)
+        # Push state update inline ke hub (bukan buka dialog baru)
+        MyCustomPlugins::Updater.check_inline(dlg)
+      end
+
+      dlg.add_action_callback("update_download") do |_ctx|
+        MyCustomPlugins::Updater.download_inline(dlg)
       end
     end
 

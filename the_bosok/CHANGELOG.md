@@ -5,6 +5,22 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.5.0] — 2026-09-30
+
+### 🔧 Perbaikan
+- **5D Select Tool — Fix NameError saat aktivasi dari Hub**:
+  - `CoreTool.new` gagal dengan `NameError: uninitialized constant` karena Ruby tidak bisa resolve nama tanpa namespace penuh saat file di-`load` secara dinamis.
+  - Diperbaiki ke `BoosokTools::SelectTool5D::CoreTool.new` sehingga tool kini bisa diaktifkan langsung dari tile Hub tanpa error.
+
+### ✨ Baru
+- **Redesain Hub — Grid 4 Kolom & Scalable**:
+  - Grid tool berubah dari 2 kolom menjadi **4 kolom** dengan tile kompak (ikon + label); cocok untuk menampung lebih banyak tool di masa depan.
+  - Area grid kini **scrollable** — semakin banyak tool, cukup scroll ke bawah.
+  - **Search bar** di bagian atas untuk mencari tool secara instan (filter client-side, tanpa request ke server).
+  - **Recent Tool** — tool terakhir yang dipakai tersimpan di `localStorage` dan ditampilkan sebagai shortcut "Terakhir dipakai" di atas grid.
+
+---
+
 ## [1.4.0] — 2026-09-30
 
 ### ✨ Baru & Perbaikan

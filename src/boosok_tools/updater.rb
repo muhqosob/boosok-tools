@@ -46,9 +46,89 @@ module MyCustomPlugins
         set(status: 'installing', progress: nil)
         path = File.join(Dir.tmpdir, "boosok_tools_v#{@state[:latest]}.rbz")
         File.binwrite(path, body)
-        # Kasih UI satu frame buat render "Memasang..." sebelum install nge-block
         UI.start_timer(0.1, false) { install(path) }
       end
+    end
+
+    # ── Inline variants: push ke hub dialog, bukan buka window terpisah ──
+
+    def self.check_inline(hub_dlg)
+      @hub_dlg = hub_dlg
+      return if busy?
+
+      push_to_hub({ status: 'checking', current: PLUGIN_VERSION })
+      on_version = lambda do |body|
+        data = JSON.parse(body)
+        if Gem::Version.new(data['version']) > Gem::Version.new(PLUGIN_VERSION)
+          st = { status: 'available', current: PLUGIN_VERSION,
+                 latest: data['version'], changelog: data['changelog'].to_s,
+                 download_url: data['download_url'] }
+          @state = @state.merge(st.transform_keys(&:to_sym))
+          push_to_hub(st)
+        else
+          push_to_hub({ status: 'latest', current: PLUGIN_VERSION })
+          @state = @state.merge(status: 'latest')
+        end
+      end
+      fetch(VERSION_API_URL, CHECK_TIMEOUT, false,
+            headers: { 'Accept' => 'application/vnd.github.raw' },
+            on_fail: ->(e) {
+              fetch(VERSION_URL, CHECK_TIMEOUT, false, &on_version)
+            },
+            &on_version)
+    rescue => e
+      push_to_hub({ status: 'error', current: PLUGIN_VERSION, error: e.message })
+    end
+
+    def self.download_inline(hub_dlg)
+      @hub_dlg = hub_dlg
+      return unless @state[:status] == 'available'
+
+      @state = @state.merge(status: 'downloading', progress: 0)
+      push_to_hub({ status: 'downloading', current: PLUGIN_VERSION, progress: 0 })
+
+      fetch(@state[:download_url], DOWNLOAD_TIMEOUT, false) do |body|
+        @state = @state.merge(status: 'installing', progress: nil)
+        push_to_hub({ status: 'installing', current: PLUGIN_VERSION })
+        path = File.join(Dir.tmpdir, "boosok_tools_v#{@state[:latest]}.rbz")
+        File.binwrite(path, body)
+        UI.start_timer(0.1, false) do
+          install_inline(path)
+        end
+      end
+    rescue => e
+      push_to_hub({ status: 'error', current: PLUGIN_VERSION, error: e.message })
+    end
+
+    def self.install_inline(path)
+      begin
+        Sketchup.install_from_archive(path, false)
+      rescue ArgumentError
+        Sketchup.install_from_archive(path)
+      end
+      reload_plugin
+      @state = @state.merge(status: 'done')
+      push_to_hub({ status: 'done', current: PLUGIN_VERSION })
+    rescue Exception => e
+      push_to_hub({ status: 'error', current: PLUGIN_VERSION, error: "Gagal memasang: #{e.message}" })
+    ensure
+      File.delete(path) rescue nil
+    end
+
+    def self.push_to_hub(st)
+      dlg = @hub_dlg || (defined?(BoosokTools::Hub) ? BoosokTools.dialog : nil)
+      return unless dlg && dlg.visible?
+      # Inject progress callback untuk download
+      if st[:status] == 'downloading' && @request&.respond_to?(:set_download_progress_callback)
+        @request.set_download_progress_callback do |cur, total|
+          next unless total.to_i > 0
+          pct = (cur * 100 / total).to_i
+          push_to_hub({ status: 'downloading', current: PLUGIN_VERSION, progress: pct })
+        end
+      end
+      dlg.execute_script("if(typeof renderUpdate==='function')renderUpdate(#{st.to_json});")
+    rescue => e
+      puts "[Boosok Tools] push_to_hub error: #{e.message}"
     end
 
     def self.install(path)

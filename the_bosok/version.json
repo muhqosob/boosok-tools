@@ -1,5 +1,5 @@
 {
-  "version": "1.4.0",
-  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.4.0/boosok_tools_v1.4.0.rbz",
-  "changelog": "- Fitur Baru : \"5D Select Tool\" (Modular In-Viewport Selection)\n- Perbaikan: Presistensi level nested (Level 1) saat pointer bergerak\n- Integrasi penuh dengan Boosok Tools Hub & Launcher"
+  "version": "1.5.0",
+  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.5.0/boosok_tools_v1.5.0.rbz",
+  "changelog": "- Fix: 5D Select Tool tidak bisa diaktifkan dari Hub (NameError CoreTool)\n- Desain ulang Hub: grid 4 kolom, search bar, Recent Tool (localStorage)\n- Hub grid kini scrollable untuk mendukung banyak tool di masa depan"
 }

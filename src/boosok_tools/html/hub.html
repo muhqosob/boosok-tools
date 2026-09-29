@@ -10,39 +10,198 @@
     }
   </script>
   <style>
-    #app { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
-    .grid {
+    /* ── Layout ── */
+    body { padding: 14px 14px 12px; gap: 10px; }
+    #app  { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+
+    /* ── Search bar ── */
+    .search-wrap { position: relative; flex-shrink: 0; }
+    .search-wrap svg.lead {
+      position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+      width: 14px; height: 14px; color: var(--muted); pointer-events: none;
+    }
+    #searchInput {
+      width: 100%; height: 30px; padding: 0 28px 0 30px;
+      border-radius: 8px; border: 1px solid var(--line);
+      background: var(--surface); color: var(--ink);
+      font: inherit; font-size: 12px; outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    #searchInput::placeholder { color: var(--muted); }
+    #searchInput:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(24,24,27,.07); }
+    #searchClear {
+      position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; border-radius: 50%; display: none;
+      align-items: center; justify-content: center; cursor: pointer;
+      color: var(--muted); transition: color .15s;
+    }
+    #searchClear:hover { color: var(--ink); }
+    #searchClear.vis { display: flex; }
+    #searchClear svg { width: 12px; height: 12px; stroke-width: 2.5; }
+
+    /* ── Recent strip ── */
+    #recentSection { flex-shrink: 0; }
+    .sec-label {
+      font-size: 10px; font-weight: 600; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted); margin: 0 1px 4px;
+    }
+    #recentCard {
+      display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: 9px; cursor: pointer;
+      transition: border-color .15s, box-shadow .15s, transform .08s;
+    }
+    #recentCard:hover { border-color: var(--line-strong); box-shadow: 0 2px 8px -4px rgba(0,0,0,.12); }
+    #recentCard:active { transform: scale(.98); }
+    .rc-ic {
+      width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+      display: grid; place-items: center;
+      background: var(--ink); color: #fff;
+    }
+    [data-theme="dark"] .rc-ic { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--line-strong); }
+    .rc-ic svg { width: 16px; height: 16px; }
+    .rc-txt { flex: 1; min-width: 0; }
+    .rc-txt .t { font-weight: 600; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rc-txt .s { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rc-badge {
+      font-size: 10px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+      color: var(--muted); padding: 2px 6px; border-radius: 5px;
+      background: var(--bg); border: 1px solid var(--line); white-space: nowrap;
+    }
+
+    /* ── 4-column grid ── */
+    .all-label { flex-shrink: 0; }
+    .grid-wrap {
+      flex: 1; min-height: 0; overflow-y: auto;
+      padding: 2px 1px 2px 1px;
+    }
+    .grid-wrap::-webkit-scrollbar { width: 6px; }
+    .grid-wrap::-webkit-scrollbar-track { background: transparent; }
+    .grid-wrap::-webkit-scrollbar-thumb {
+      background: var(--line-strong); border-radius: 6px; border: 1px solid var(--bg);
+    }
+    .grid-wrap::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+    [data-theme="dark"] .grid-wrap::-webkit-scrollbar-thumb { background: #3f3f46; border-color: var(--bg); }
+
+    .grid4 {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      padding: 2px 4px 2px 1px;
-      overflow-y: auto;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
     }
-    .grid::-webkit-scrollbar {
-      width: 8px;
+    .tile4 {
+      cursor: pointer; display: flex; flex-direction: column; align-items: center;
+      gap: 5px; padding: 9px 6px 8px; text-align: center;
+      background: var(--surface); border: 1px solid var(--line); border-radius: 9px;
+      transition: border-color .15s, transform .08s, box-shadow .15s, opacity .15s;
     }
-    .grid::-webkit-scrollbar-track {
-      background: transparent;
+    .tile4:hover { border-color: var(--line-strong); box-shadow: 0 2px 8px -4px rgba(0,0,0,.12); }
+    .tile4:active { transform: scale(.97); }
+    .tile4 .ic4 {
+      width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center;
+      background: var(--accent-soft); color: var(--accent); border: 1px solid var(--line);
     }
-    .grid::-webkit-scrollbar-thumb {
-      background: var(--line-strong);
-      border-radius: 8px;
-      border: 2px solid var(--bg);
+    .tile4 .ic4 svg { width: 16px; height: 16px; }
+    .tile4 .t4 { font-weight: 600; font-size: 10.5px; line-height: 1.3; color: var(--ink); word-break: break-word; }
+    .tile4.off { opacity: .5; pointer-events: none; }
+    .tile4.opening .ic4 svg { animation: spin .8s linear infinite; }
+
+    /* Search empty */
+    #noResult {
+      display: none; padding: 24px 0; text-align: center; color: var(--muted); font-size: 12px;
     }
-    .grid::-webkit-scrollbar-thumb:hover {
-      background: var(--muted);
-    }
-    [data-theme="dark"] .grid::-webkit-scrollbar-thumb {
-      background: #3f3f46;
-      border-color: var(--bg);
-    }
-    .tile.off .s { color: var(--err); }
-    .tile.opening .ic svg { animation: spin .8s linear infinite; }
+    #noResult svg { width: 28px; height: 28px; margin-bottom: 6px; opacity: .35; display: block; margin-inline: auto; }
+
+    /* ── Footer ── */
     .foot { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 
-    /* Loader (asal: Uiverse.io by dexter-st), dibuat "slow luxury": pelan, tipis, lega. Warna ikut tema */
-    :root { --glow: rgba(24, 24, 27, .25); --lux: cubic-bezier(.22, 1, .36, 1); --cycle: 5s; }
-    [data-theme="dark"] { --glow: rgba(255, 255, 255, .55); }
+    /* ─────────────────────────────────────────────────
+       Inline Update Panel
+    ───────────────────────────────────────────────── */
+    #updatePanel {
+      position: fixed; inset: 0; z-index: 80;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 10px;
+      /* backdrop */
+      background: rgba(0, 0, 0, 0);
+      pointer-events: none;
+      transition: background .25s ease;
+    }
+    #updatePanel.open {
+      background: rgba(0, 0, 0, 0.28);
+      pointer-events: auto;
+    }
+    [data-theme="dark"] #updatePanel.open { background: rgba(0, 0, 0, 0.5); }
+
+    #updateSheet {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 14px 12px;
+      display: flex; flex-direction: column; gap: 10px;
+      box-shadow: 0 -4px 24px -8px rgba(0,0,0,.22);
+      transform: translateY(110%);
+      transition: transform .32s cubic-bezier(.22,1,.36,1);
+    }
+    #updatePanel.open #updateSheet {
+      transform: translateY(0);
+    }
+
+    /* sheet header */
+    .upd-head { display: flex; align-items: center; gap: 9px; }
+    .upd-ic {
+      width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+      display: grid; place-items: center;
+      background: var(--accent-soft); color: var(--accent); border: 1px solid var(--line);
+    }
+    .upd-ic svg { width: 16px; height: 16px; }
+    .upd-title { flex: 1; font-size: 13px; font-weight: 600; }
+    .upd-close {
+      width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center;
+      color: var(--muted); cursor: pointer; transition: background .15s, color .15s;
+    }
+    .upd-close:hover { background: var(--line); color: var(--ink); }
+    .upd-close svg { width: 14px; height: 14px; stroke-width: 2.5; }
+
+    /* version pill row */
+    .upd-versions { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .upd-pill {
+      display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px;
+      background: var(--surface); border: 1px solid var(--line);
+      font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap;
+    }
+    .upd-pill.new { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+    .upd-arrow { color: var(--muted); }
+    .upd-arrow svg { width: 13px; height: 13px; }
+
+    /* progress bar */
+    .upd-progress {
+      height: 4px; border-radius: 99px; background: var(--line); overflow: hidden; flex-shrink: 0;
+    }
+    .upd-bar {
+      height: 100%; border-radius: 99px;
+      background: var(--ink); width: 0%;
+      transition: width .3s ease;
+    }
+    [data-theme="dark"] .upd-bar { background: #fff; }
+
+    /* changelog text */
+    .upd-log {
+      font-size: 11.5px; color: var(--muted); line-height: 1.6;
+      max-height: 80px; overflow-y: auto; border-radius: 7px;
+      background: var(--surface); border: 1px solid var(--line);
+      padding: 8px 10px; user-select: text;
+    }
+    .upd-log::-webkit-scrollbar { width: 4px; }
+    .upd-log::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+
+    /* status message */
+    .upd-msg { font-size: 12px; color: var(--muted); text-align: center; }
+    .upd-msg.ok { color: var(--ok); font-weight: 600; }
+    .upd-msg.err { color: var(--err); font-weight: 500; }
+
+    /* ── Boot loader ── */
+    :root { --glow: rgba(24,24,27,.25); --lux: cubic-bezier(.22,1,.36,1); --cycle: 5s; }
+    [data-theme="dark"] { --glow: rgba(255,255,255,.55); }
     #boot {
       position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
       background: var(--bg); transition: opacity .9s var(--lux), filter .9s var(--lux), transform .9s var(--lux);
@@ -78,19 +237,14 @@
       display: inline-block; white-space: pre; z-index: 2;
       animation: loader-letter-anim var(--cycle) infinite var(--lux) both;
     }
-    /* Muncul dari blur, bertahan sebentar, lalu tenang di opacity rendah (kata tetap terbaca samar) */
     @keyframes loader-letter-anim {
       0%   { opacity: 0; filter: blur(6px); transform: translateY(4px); }
       10%  { opacity: 1; filter: blur(0); transform: none; text-shadow: 0 0 10px var(--glow); }
       30%  { opacity: .3; text-shadow: none; }
       100% { opacity: .15; }
     }
-    /* Garis tipis melebar pelan selama loader: sekaligus penanda progres */
     .hairline { width: 180px; height: 1px; background: var(--line); overflow: hidden; }
-    .hairline > div {
-      height: 100%; background: var(--ink); opacity: .6;
-      transform: scaleX(0); transform-origin: left; animation: hair var(--boot, 3s) var(--lux) forwards;
-    }
+    .hairline > div { height: 100%; background: var(--ink); opacity: .6; transform: scaleX(0); transform-origin: left; animation: hair var(--boot, 3s) var(--lux) forwards; }
     @keyframes hair { to { transform: scaleX(1); } }
     .lux small { font-size: 10.5px; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); opacity: .8; }
   </style>
@@ -110,45 +264,93 @@
     <div class="mark"><svg><use href="#i-package"/></svg></div>
     <div class="txt">
       <h1>Boosok Tools</h1>
-      <p>Pilih tool yang mau dipakai</p>
+      <p id="hubSub">Pilih tool yang mau dipakai</p>
     </div>
     <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema"></button>
   </header>
 
   <main id="app" aria-live="polite"></main>
 
+  <!-- ════════════════════════════════════════════
+       Inline Update Panel (slide-up sheet)
+       Dipasang di luar #app agar tidak ikut di-redraw
+  ═══════════════════════════════════════════════ -->
+  <div id="updatePanel" role="dialog" aria-modal="true" aria-label="Pembaruan Boosok Tools">
+    <!-- backdrop click = close -->
+    <div style="position:absolute;inset:0;" onclick="closeUpdate()"></div>
+    <div id="updateSheet">
+
+      <!-- header row -->
+      <div class="upd-head">
+        <div class="upd-ic" id="updIc">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>
+        </div>
+        <span class="upd-title" id="updTitle">Memeriksa pembaruan…</span>
+        <button class="upd-close" onclick="closeUpdate()" title="Tutup">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- version pills -->
+      <div class="upd-versions" id="updVersions" style="display:none">
+        <span class="upd-pill" id="updCurrent"></span>
+        <span class="upd-arrow"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        <span class="upd-pill new" id="updLatest"></span>
+      </div>
+
+      <!-- progress bar (saat download) -->
+      <div class="upd-progress" id="updProgress" style="display:none">
+        <div class="upd-bar" id="updBar"></div>
+      </div>
+
+      <!-- changelog -->
+      <div class="upd-log" id="updLog" style="display:none"></div>
+
+      <!-- status message -->
+      <div class="upd-msg" id="updMsg"></div>
+
+      <!-- action buttons -->
+      <div class="actions row" id="updActions" style="display:none"></div>
+
+    </div>
+  </div>
+
   <script>
+    /* ═══════════════════════════════════════════════
+       Constants & Hub State
+    ═══════════════════════════════════════════════ */
     var isAlreadyBooted = sessionStorage.getItem('boosok_hub_booted') === '1';
-    var LETTER_STEP = 0.12;    // detik antar huruf
-    var CYCLE = 5;             // detik, harus sama dengan --cycle di CSS
-    var BOOT_TIMEOUT_MS = 10000;
-    var WORD = 'Boosok Tools';
-    // Loader baru hilang setelah huruf terakhir selesai muncul dan tenang (30% siklus)
+    var LETTER_STEP = 0.12, CYCLE = 5, BOOT_TIMEOUT_MS = 10000, WORD = 'Boosok Tools';
     var MIN_BOOT_MS = Math.round((0.1 + (WORD.length - 1) * LETTER_STEP + CYCLE * 0.3) * 1000);
     document.documentElement.style.setProperty('--boot', MIN_BOOT_MS + 'ms');
 
-    // needs: data model yang wajib ada, kalau 0 tile nonaktif dengan alasan
-    var TOOLS = [
-      { id: 'selector',      icon: 'mouse-pointer-click',         t: 'Selector',         s: 'Seleksi by tag, nama, atribut',   needs: 'objects' },
-      { id: 'custom_select', icon: 'square-dashed-mouse-pointer', t: '5D Select Tool',   s: 'Seleksi multi-level viewport',    needs: 'objects' },
-      { id: 'replacer',      icon: 'replace',                     t: 'Group Replacer',   s: 'Ganti objek sekaligus',           needs: 'objects' },
-      { id: 'clean',         icon: 'sparkles',                    t: 'Group Cleaner',    s: 'Component jadi group murni',      needs: 'objects' },
-      { id: 'reset',         icon: 'scale-3d',                    t: 'Reset Scale',      s: 'Kembalikan skala group',          needs: 'objects' },
-      { id: 'scene',         icon: 'eye-off',                     t: 'Hide on Scene',    s: 'Atur visibilitas per scene',      needs: 'scenes' },
-      { id: 'untag',         icon: 'paint-bucket',                t: 'Untag & Unpaint',  s: 'Hapus tag & material',            needs: 'objects' },
-      { id: 'deep',          icon: 'layers',                      t: 'Deep Properties',  s: 'Analisis tag & entitas mendalam', needs: 'objects' }
-    ];
-    var EMPTY_REASON = { objects: 'Belum ada group / component', scenes: 'Belum ada scene' };
+    var LS_RECENT = 'boosok_recent_tool';
 
-    // status: booting | ready | error | opening
+    var TOOLS = [
+      { id: 'selector',      icon: 'mouse-pointer-click',         t: 'Selector',    s: 'Seleksi by tag, nama, atribut',   needs: 'objects' },
+      { id: 'custom_select', icon: 'square-dashed-mouse-pointer', t: '5D Select',   s: 'Seleksi multi-level viewport',    needs: 'objects' },
+      { id: 'replacer',      icon: 'replace',                     t: 'Replacer',    s: 'Ganti objek sekaligus',           needs: 'objects' },
+      { id: 'clean',         icon: 'sparkles',                    t: 'Cleaner',     s: 'Component jadi group murni',      needs: 'objects' },
+      { id: 'reset',         icon: 'scale-3d',                    t: 'Reset Scale', s: 'Kembalikan skala group',          needs: 'objects' },
+      { id: 'scene',         icon: 'eye-off',                     t: 'Hide Scene',  s: 'Atur visibilitas per scene',      needs: 'scenes'  },
+      { id: 'untag',         icon: 'paint-bucket',                t: 'Untag',       s: 'Hapus tag & material',            needs: 'objects' },
+      { id: 'deep',          icon: 'layers',                      t: 'Deep Props',  s: 'Analisis tag & entitas mendalam', needs: 'objects' }
+    ];
+    var TOOL_MAP = {};
+    TOOLS.forEach(function(t){ TOOL_MAP[t.id] = t; });
+
     var S = { status: isAlreadyBooted ? 'ready' : 'booting', data: null, lastKey: null };
     var bootStart = Date.now(), pending = null, bootTimer;
+    var searchQuery = '';
 
+    /* ═══════════════════════════════════════════════
+       Boot Loader
+    ═══════════════════════════════════════════════ */
     (function buildLoader() {
       if (isAlreadyBooted) return;
       var box = document.getElementById('loaderText');
       if (!box) return;
-      WORD.split('').forEach(function (ch, i) {
+      WORD.split('').forEach(function(ch, i) {
         var span = document.createElement('span');
         span.className = 'loader-letter';
         span.textContent = ch;
@@ -157,55 +359,60 @@
       });
     })();
 
+    /* ═══════════════════════════════════════════════
+       Recent Tool (localStorage)
+    ═══════════════════════════════════════════════ */
+    function getRecent() {
+      try { return JSON.parse(localStorage.getItem(LS_RECENT)) || []; } catch(e) { return []; }
+    }
+    function saveRecent(id) {
+      try {
+        var arr = getRecent().filter(function(x){ return x !== id; });
+        arr.unshift(id);
+        localStorage.setItem(LS_RECENT, JSON.stringify(arr.slice(0, 5)));
+      } catch(e) {}
+    }
+    function getLastUsed() {
+      var arr = getRecent();
+      return arr.length ? arr[0] : null;
+    }
+
+    /* ═══════════════════════════════════════════════
+       Hub Render
+    ═══════════════════════════════════════════════ */
     function requestState() {
       clearTimeout(bootTimer);
-      bootTimer = setTimeout(function () {
+      bootTimer = setTimeout(function() {
         render({ status: 'error', error: 'SketchUp tidak merespon. Tutup jendela ini lalu buka lagi dari menu Extensions.' });
       }, BOOT_TIMEOUT_MS);
-
       function tryReady() {
         if (window.sketchup) {
-          if (typeof sketchup.hub_ready === 'function') {
-            sketchup.hub_ready();
-            return true;
-          } else if (typeof sketchup.ready === 'function') {
-            sketchup.ready();
-            return true;
-          }
+          if (typeof sketchup.hub_ready === 'function') { sketchup.hub_ready(); return true; }
+          else if (typeof sketchup.ready === 'function') { sketchup.ready(); return true; }
         }
         return false;
       }
-
       if (!tryReady()) {
         var retries = 0;
-        var readyInterval = setInterval(function () {
-          retries++;
-          if (tryReady() || retries > 30) {
-            clearInterval(readyInterval);
-          }
-        }, 50);
+        var ri = setInterval(function() { retries++; if (tryReady() || retries > 30) clearInterval(ri); }, 50);
       }
     }
 
-    // Dipanggil dari Ruby. Selama loader belum kelar, tahan dulu.
     function render(st) {
       clearTimeout(bootTimer);
       if (st.has_booted || sessionStorage.getItem('boosok_hub_booted') === '1') {
         sessionStorage.setItem('boosok_hub_booted', '1');
         var bootEl = document.getElementById('boot');
-        if (bootEl) {
-          bootEl.style.display = 'none';
-          bootEl.classList.add('done');
-        }
+        if (bootEl) { bootEl.style.display = 'none'; bootEl.classList.add('done'); }
         S.status = 'ready';
       } else if (S.status === 'booting') {
         pending = st;
         setTimeout(finishBoot, Math.max(0, MIN_BOOT_MS - (Date.now() - bootStart)));
         return;
       }
-      if (st.theme && !getStoredTheme()) applyTheme(st.theme); // tema terakhir yang tersimpan di SketchUp
+      if (st.theme && !getStoredTheme()) applyTheme(st.theme);
       var key = JSON.stringify(st);
-      if (key === S.lastKey) return; // refresh saat fokus: jangan animasi ulang kalau tidak berubah
+      if (key === S.lastKey) return;
       S.lastKey = key;
       S.status = st.status;
       S.data = st;
@@ -226,6 +433,7 @@
     function draw() {
       var app = document.getElementById('app');
       app.classList.remove('enter'); void app.offsetWidth; app.classList.add('enter');
+
       if (S.status === 'error') {
         app.innerHTML =
           '<div class="hero"><div class="badge err">' + icon('triangle-alert') + '</div>' +
@@ -234,13 +442,13 @@
           '<div class="spacer"></div>' +
           '<div class="actions"><button class="btn primary" onclick="retry(this)">' +
           icon('refresh-cw') + '<span>Coba lagi</span></button></div>';
-      autoFitHeight(0);
-        return;
+        autoFitHeight(0); return;
       }
 
       var stats = S.data.stats;
       var foot = '<div class="foot"><span class="pill">v' + esc(S.data.version) + '</span>' +
-        '<button class="btn link" onclick="sketchup.updates()">' + icon('download') + '<span>Cek update</span></button></div>';
+        '<button class="btn link" id="updBtn" onclick="openUpdate(this)">' +
+        icon('download') + '<span>Cek update</span></button></div>';
 
       if (!stats.objects && !stats.scenes) {
         app.innerHTML =
@@ -249,87 +457,310 @@
           '<div class="spacer"></div>' +
           '<div class="actions"><button class="btn ghost" onclick="retry(this)">' +
           icon('refresh-cw') + '<span>Muat ulang</span></button></div>' + foot;
-      autoFitHeight(0);
-        return;
+        autoFitHeight(0); return;
       }
 
-      app.innerHTML = '<div class="grid">' + TOOLS.map(function (t) {
-        var off = !stats[t.needs];
-        return '<button class="tile' + (off ? ' off' : '') + '" data-id="' + t.id + '"' + (off ? ' disabled' : '') +
-          ' onclick="openTool(\'' + t.id + '\')">' +
-          '<div class="ic">' + icon(t.icon) + '</div><div class="t">' + esc(t.t) + '</div>' +
-          '<div class="s">' + esc(off ? EMPTY_REASON[t.needs] : t.s) + '</div></button>';
-      }).join('') + '</div>' +
-        '<div class="note">' + icon('info') + '<span><b>' + stats.selected + '</b> terseleksi · <b>' +
-        stats.objects + '</b> group/component · <b>' + stats.scenes + '</b> scene</span></div>' +
-        '<div style="height: 6px;"></div>' + foot;
+      var lastId   = getLastUsed();
+      var lastTool = lastId ? TOOL_MAP[lastId] : null;
 
-      function clampGrid() {
-        var gridEl = app.querySelector('.grid');
-        if (gridEl) {
-          var tiles = gridEl.querySelectorAll('.tile');
-          if (tiles.length > 8 && tiles[7]) {
-            var top0 = tiles[0].offsetTop;
-            var bottom7 = tiles[7].offsetTop + tiles[7].offsetHeight;
-            var exactH = bottom7 - top0 + 2;
-            gridEl.style.maxHeight = exactH + 'px';
-            gridEl.style.overflowY = 'auto';
-          } else {
-            gridEl.style.maxHeight = '';
-            gridEl.style.overflowY = '';
-          }
-        }
+      var recentHtml = '';
+      if (lastTool) {
+        var isOff = !stats[lastTool.needs];
+        recentHtml =
+          '<div id="recentSection">' +
+          '<div class="sec-label">Terakhir dipakai</div>' +
+          '<div id="recentCard" role="button" tabindex="0"' +
+          (isOff ? ' style="opacity:.5;pointer-events:none;"' : ' onclick="openTool(\'' + lastTool.id + '\')"') + '>' +
+          '<div class="rc-ic">' + icon(lastTool.icon) + '</div>' +
+          '<div class="rc-txt"><div class="t">' + esc(lastTool.t) + '</div><div class="s">' + esc(lastTool.s) + '</div></div>' +
+          '<span class="rc-badge">Buka lagi</span>' +
+          '</div></div>';
       }
 
-      clampGrid();
+      var searchHtml =
+        '<div class="search-wrap">' +
+        '<svg class="lead" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+        '<input id="searchInput" type="text" placeholder="Cari tool..." autocomplete="off" value="' + esc(searchQuery) + '" oninput="onSearch(this.value)">' +
+        '<button id="searchClear" class="' + (searchQuery ? 'vis' : '') + '" onclick="clearSearch()" title="Hapus pencarian">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+        '</button></div>';
+
+      var gridHtml = '<div class="grid-wrap" id="gridWrap">' + buildGrid(stats) +
+        '<div id="noResult">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>' +
+        'Tidak ada tool yang cocok</div></div>';
+
+      var statsNote =
+        '<div class="note">' + icon('info') +
+        '<span><b>' + stats.selected + '</b> terseleksi · <b>' + stats.objects +
+        '</b> group/comp · <b>' + stats.scenes + '</b> scene</span></div>';
+
+      app.innerHTML = searchHtml + recentHtml +
+        '<div class="sec-label all-label">Semua tools</div>' +
+        gridHtml + statsNote + foot;
+
+      if (searchQuery) {
+        var si = document.getElementById('searchInput');
+        if (si) { si.focus(); si.setSelectionRange(9999,9999); filterGrid(searchQuery); }
+      }
+
       autoFitHeight(0);
-      setTimeout(function () {
-        clampGrid();
-        autoFitHeight(0);
-      }, 50);
+      setTimeout(function(){ autoFitHeight(0); }, 50);
     }
 
+    function buildGrid(stats) {
+      return '<div class="grid4" id="grid4">' + TOOLS.map(function(t) {
+        var off = !stats[t.needs];
+        return '<button class="tile4' + (off ? ' off' : '') + '" data-id="' + t.id +
+          '" data-label="' + t.t.toLowerCase() + '"' +
+          (off ? ' disabled' : ' onclick="openTool(\'' + t.id + '\')"') + '>' +
+          '<div class="ic4">' + icon(t.icon) + '</div>' +
+          '<div class="t4">' + esc(t.t) + '</div>' +
+          '</button>';
+      }).join('') + '</div>';
+    }
+
+    /* ═══════════════════════════════════════════════
+       Search
+    ═══════════════════════════════════════════════ */
+    function onSearch(val) {
+      searchQuery = val.trim().toLowerCase();
+      var clrBtn = document.getElementById('searchClear');
+      if (clrBtn) clrBtn.classList.toggle('vis', searchQuery.length > 0);
+      var recentSec = document.getElementById('recentSection');
+      if (recentSec) recentSec.style.display = searchQuery ? 'none' : '';
+      filterGrid(searchQuery);
+    }
+
+    function clearSearch() {
+      searchQuery = '';
+      var si = document.getElementById('searchInput');
+      if (si) { si.value = ''; si.focus(); }
+      var clrBtn = document.getElementById('searchClear');
+      if (clrBtn) clrBtn.classList.remove('vis');
+      filterGrid('');
+      var recentSec = document.getElementById('recentSection');
+      if (recentSec) recentSec.style.display = '';
+    }
+
+    function filterGrid(q) {
+      var tiles = document.querySelectorAll('.tile4'), visible = 0;
+      tiles.forEach(function(tile) {
+        var show = !q || (tile.dataset.label || '').indexOf(q) !== -1;
+        tile.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      var nr = document.getElementById('noResult');
+      if (nr) nr.style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    /* ═══════════════════════════════════════════════
+       Open Tool
+    ═══════════════════════════════════════════════ */
     function openTool(id) {
       if (S.status !== 'ready') return;
       S.status = 'opening';
-      document.querySelectorAll('.tile').forEach(function (el) {
+      saveRecent(id);
+      document.querySelectorAll('.tile4').forEach(function(el) {
         el.disabled = true;
         if (el.dataset.id === id) {
           el.classList.add('opening');
-          el.querySelector('.ic').innerHTML = icon('loader-circle');
+          el.querySelector('.ic4').innerHTML = icon('loader-circle');
         }
       });
+      var rc = document.getElementById('recentCard');
+      if (rc) rc.style.pointerEvents = 'none';
       var x = window.screenX || window.screenLeft || 0;
       var y = window.screenY || window.screenTop || 0;
       if (window.sketchup && typeof sketchup.open === 'function') {
         sketchup.open(id, JSON.stringify({ left: x, top: y }));
       }
-      setTimeout(function () {
-        if (S.status === 'opening') {
-          S.status = 'ready';
-          draw();
-        }
+      setTimeout(function() {
+        if (S.status === 'opening') { S.status = 'ready'; draw(); }
       }, 4000);
     }
 
-    // Dipanggil dari Ruby kalau tool gagal dibuka
-    function onOpenFailed(msg) {
-      S.status = 'ready';
-      draw();
-      showToast(esc(msg));
-    }
+    function onOpenFailed(msg) { S.status = 'ready'; draw(); showToast(esc(msg)); }
 
-    function retry(btn) {
-      busy(btn, true);
-      S.lastKey = null;
-      requestState();
-    }
+    function retry(btn) { busy(btn, true); S.lastKey = null; requestState(); }
 
-    // Balik dari SketchUp (seleksi/model bisa berubah): minta angka terbaru
-    window.addEventListener('focus', function () {
+    window.addEventListener('focus', function() {
       if (S.status === 'ready' || S.status === 'error') requestState();
     });
 
+    /* ═══════════════════════════════════════════════
+       Inline Update Panel
+    ═══════════════════════════════════════════════ */
+    var updOpen = false;
+
+    function openUpdate(btn) {
+      // Animasikan tombol loading
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = icon('loader-circle') + '<span>Memeriksa…</span>';
+        btn.querySelector('svg').style.animation = 'spin .8s linear infinite';
+      }
+      showUpdatePanel({ status: 'checking' });
+      // Request ke Ruby
+      if (window.sketchup && typeof sketchup.updates === 'function') {
+        sketchup.updates();
+      }
+    }
+
+    function showUpdatePanel(st) {
+      updOpen = true;
+      var panel = document.getElementById('updatePanel');
+      panel.classList.add('open');
+      renderUpdatePanel(st);
+    }
+
+    function closeUpdate() {
+      updOpen = false;
+      var panel = document.getElementById('updatePanel');
+      panel.classList.remove('open');
+      // Restore tombol Cek update di footer
+      var btn = document.getElementById('updBtn');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = icon('download') + '<span>Cek update</span>';
+      }
+    }
+
+    /**
+     * Dipanggil dari Ruby via hub.rb: renderUpdate(state_json)
+     * state: { status, current, latest, changelog, download_url, progress, error }
+     * status: checking | latest | available | downloading | installing | done | error
+     */
+    function renderUpdate(st) {
+      // Buka panel otomatis jika belum terbuka (mis. update tersedia saat startup)
+      if (!updOpen) showUpdatePanel(st);
+      else renderUpdatePanel(st);
+    }
+
+    function renderUpdatePanel(st) {
+      var ic     = document.getElementById('updIc');
+      var title  = document.getElementById('updTitle');
+      var vers   = document.getElementById('updVersions');
+      var curr   = document.getElementById('updCurrent');
+      var latest = document.getElementById('updLatest');
+      var prog   = document.getElementById('updProgress');
+      var bar    = document.getElementById('updBar');
+      var log    = document.getElementById('updLog');
+      var msg    = document.getElementById('updMsg');
+      var acts   = document.getElementById('updActions');
+
+      // reset
+      vers.style.display = 'none';
+      prog.style.display = 'none';
+      log.style.display  = 'none';
+      msg.className      = 'upd-msg';
+      msg.textContent    = '';
+      acts.style.display = 'none';
+      acts.innerHTML     = '';
+
+      var s = st.status || 'checking';
+
+      if (s === 'checking') {
+        ic.innerHTML  = spinIcon();
+        title.textContent = 'Memeriksa pembaruan…';
+        msg.textContent   = 'Menghubungi server…';
+
+      } else if (s === 'latest') {
+        ic.innerHTML  = checkIcon();
+        ic.style.background = 'var(--ok-soft)';
+        ic.style.color      = 'var(--ok)';
+        title.textContent = 'Sudah versi terbaru';
+        if (st.current) {
+          curr.textContent  = 'v' + st.current;
+          vers.style.display = 'none'; // hanya 1 versi, tidak perlu arrow
+          msg.textContent   = 'v' + st.current + ' — tidak ada pembaruan baru.';
+        }
+        msg.className = 'upd-msg ok';
+        acts.innerHTML = '<button class="btn ghost sm" onclick="closeUpdate()">' + icon('x') + '<span>Tutup</span></button>';
+        acts.style.display = 'flex';
+
+      } else if (s === 'available') {
+        ic.innerHTML  = downloadIcon();
+        ic.style.background = '';
+        ic.style.color      = '';
+        title.textContent = 'Ada pembaruan tersedia!';
+        curr.textContent   = 'v' + (st.current || '?');
+        latest.textContent = 'v' + (st.latest || '?');
+        vers.style.display = 'flex';
+        if (st.changelog) {
+          log.textContent   = st.changelog;
+          log.style.display = 'block';
+        }
+        acts.innerHTML =
+          '<button class="btn ghost sm" onclick="closeUpdate()">' + icon('x') + '<span>Nanti</span></button>' +
+          '<button class="btn primary sm" onclick="doDownload(this)">' + icon('download') + '<span>Update Sekarang</span></button>';
+        acts.style.display = 'flex';
+
+      } else if (s === 'downloading') {
+        ic.innerHTML = spinIcon();
+        title.textContent = 'Mengunduh…';
+        var pct = typeof st.progress === 'number' ? st.progress : 0;
+        bar.style.width   = pct + '%';
+        prog.style.display = 'block';
+        msg.textContent   = pct > 0 ? pct + '%' : 'Sedang mengunduh…';
+
+      } else if (s === 'installing') {
+        ic.innerHTML = spinIcon();
+        title.textContent = 'Memasang…';
+        msg.textContent   = 'Mohon tunggu, jangan tutup SketchUp.';
+
+      } else if (s === 'done') {
+        ic.innerHTML = checkIcon();
+        ic.style.background = 'var(--ok-soft)';
+        ic.style.color      = 'var(--ok)';
+        title.textContent = 'Update berhasil dipasang!';
+        msg.textContent   = 'Plugin sudah aktif, tidak perlu restart SketchUp.';
+        msg.className     = 'upd-msg ok';
+        acts.innerHTML = '<button class="btn primary sm" onclick="closeUpdate()">' + icon('check') + '<span>Selesai</span></button>';
+        acts.style.display = 'flex';
+
+      } else if (s === 'error') {
+        ic.innerHTML = alertIcon();
+        ic.style.background = 'var(--err-soft)';
+        ic.style.color      = 'var(--err)';
+        title.textContent = 'Gagal memeriksa';
+        msg.textContent   = st.error || 'Terjadi kesalahan.';
+        msg.className     = 'upd-msg err';
+        acts.innerHTML =
+          '<button class="btn ghost sm" onclick="closeUpdate()">' + icon('x') + '<span>Tutup</span></button>' +
+          '<button class="btn primary sm" onclick="retryUpdate(this)">' + icon('refresh-cw') + '<span>Coba lagi</span></button>';
+        acts.style.display = 'flex';
+      }
+    }
+
+    function doDownload(btn) {
+      btn.disabled = true;
+      if (window.sketchup && typeof sketchup.update_download === 'function') {
+        sketchup.update_download();
+      }
+    }
+
+    function retryUpdate(btn) {
+      btn.disabled = true;
+      renderUpdatePanel({ status: 'checking' });
+      if (window.sketchup && typeof sketchup.updates === 'function') {
+        sketchup.updates();
+      }
+    }
+
+    /* Inline SVG helpers untuk update panel */
+    function spinIcon() {
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
+    }
+    function checkIcon() {
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    }
+    function downloadIcon() {
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+    }
+    function alertIcon() {
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+    }
 
     requestState();
   </script>

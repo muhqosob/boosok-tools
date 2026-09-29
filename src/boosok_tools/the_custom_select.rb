@@ -18,7 +18,7 @@ module BoosokTools
         return
       end
 
-      tool = CoreTool.new
+      tool = BoosokTools::SelectTool5D::CoreTool.new
       model.select_tool(tool)
     rescue => e
       UI.messagebox("Gagal mengaktifkan 5D Select Tool: #{e.message}") rescue nil
