@@ -1,5 +1,5 @@
 {
   "version": "1.5.1",
   "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.5.1/boosok_tools_v1.5.1.rbz",
-  "changelog": "Fix: error 'custom_select tidak dikenal' akibat stale constant TOOL_PAGES saat plugin di-update tanpa restart SketchUp."
+  "changelog": "chore(release): bump v1.5.1 + rewrite CHANGELOG\n\n- Bump PLUGIN_VERSION ke 1.5.1 di boosok_tools_loader.rb\n- Update version.json ke 1.5.1 dengan changelog string yang informatif\n- Rewrite seluruh CHANGELOG.md: bahasa konsisten, format Keep a Changelog,\n  tambah entry v1.5.1 (fix stale TOOL_PAGES constant)"
 }
