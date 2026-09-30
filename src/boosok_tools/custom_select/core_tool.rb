@@ -171,35 +171,17 @@ module BoosokTools::SelectTool5D
       warn "[Select Tool] Fallback on onLButtonDown error: #{e.message}" if $DEBUG
     end
 
-#    def onKeyDown(key, repeat, flags, view)
-#      if (defined?(COPY_MODIFIER_KEY) && key == COPY_MODIFIER_KEY) || key == 17 # Ctrl key
-#        @ctrl_pressed = true
-#        onSetCursor
-##        view.invalidate rescue nil
-#      elsif key == 27 # ESC key: keluar dari select tool
-#        Sketchup.active_model.select_tool(nil) rescue nil
-#      end
-#    rescue => e
-#      warn "[Select Tool] Fallback on onKeyDown error: #{e.message}" if $DEBUG
-#    end
-
-def onKeyDown(key, repeat, flags, view)
-  # 27 adalah key code standar untuk tombol ESC
-  if key == 27 
-    @target_depth = 0
-    
-    # Jika effective_depth dihitung ulang atau disimpan sebagai variabel, reset juga:
-    @effective_depth = 0 
-    
-    # Jangan lupa memberitahu SketchUp untuk menggambar ulang layar
-    view.invalidate if view 
-  end
-
-  # ... tangani tombol lain (misalnya CTRL = 17) di bawah sini
-  # if key == 17 || key == COPY_MODIFIER_KEY
-  #   @ctrl_pressed = true
-  # end
-end
+    def onKeyDown(key, repeat, flags, view)
+      if (defined?(COPY_MODIFIER_KEY) && key == COPY_MODIFIER_KEY) || key == 17 # Ctrl key
+        @ctrl_pressed = true
+        onSetCursor
+        view.invalidate rescue nil
+      elsif key == 27 # ESC key: keluar dari select tool
+        Sketchup.active_model.select_tool(nil) rescue nil
+      end
+    rescue => e
+      warn "[Select Tool] Fallback on onKeyDown error: #{e.message}" if $DEBUG
+    end
 
     def onKeyUp(key, repeat, flags, view)
       if (defined?(COPY_MODIFIER_KEY) && key == COPY_MODIFIER_KEY) || key == 17
