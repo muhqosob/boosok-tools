@@ -1,6 +1,6 @@
 {
-  "version": "1.5.3",
-  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.5.3/boosok_tools_v1.5.3.rbz",
-  "changelog": "Merge pull request #2 from muhqosob/fix/ci-workflow-syntax\n\nfix(ci): resolve YAML syntax error in release workflow and bump loader version to 1.5.3",
-  "sha256": "ba3480ecc89ca4da21f3b9193533d7450d5c7ca2ae4d6ea10a1842bc5e21be7a"
+  "version": "1.5.5",
+  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.5.5/boosok_tools_v1.5.5.rbz",
+  "changelog": "- Fix Update Problem\n- Fix Fitur yang tidak merespon\n- Optimasi Ui Dialog",
+  "sha256": "3408a886fb4b41178efc92ce78ccf65304802b96625f5a857b60e5ffd407c997"
 }
