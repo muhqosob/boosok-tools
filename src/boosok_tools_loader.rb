@@ -4,7 +4,7 @@ require 'json'
 
 module BoosokTools
   # Naikkan angka ini lalu push ke main: GitHub Actions otomatis bikin release + update version.json
-  PLUGIN_VERSION = "1.5.3"
+  PLUGIN_VERSION = "1.5.4"
 
   # Semua versi yang sudah dirilis (1.0.10+) membaca URL ini. Jangan dipindah.
   VERSION_URL = "https://raw.githubusercontent.com/muhqosob/boosok-tools/main/the_bosok/version.json"

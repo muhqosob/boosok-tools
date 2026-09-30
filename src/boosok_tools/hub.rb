@@ -1,6 +1,8 @@
 require 'sketchup'
 require 'json'
-load File.join(__dir__, 'titlebar.rb')
+require_relative 'titlebar'
+require_relative 'shortcut_sync'
+require_relative 'license'
 
 module BoosokTools
   # Satu pintu masuk semua tool (Single Window Architecture).
@@ -17,13 +19,13 @@ module BoosokTools
     remove_const(:TOOL_PAGES) if defined?(TOOL_PAGES)
     TOOL_PAGES = {
       'selector'      => { file: 'main.rb',                   page: 'selector.html',        title: 'Selector' },
+      'custom_select' => { file: 'the_custom_select.rb',      page: nil,                    title: 'Select Tools' },
       'replacer'      => { file: 'the_replacer.rb',           page: 'replacer.html',        title: 'Group Replacer' },
       'clean'         => { file: 'the_cleangroup.rb',         page: 'cleangroup.html',      title: 'Group Cleaner' },
       'reset'         => { file: 'the_reset.rb',              page: 'reset.html',           title: 'Reset Scale' },
       'scene'         => { file: 'the_hideonscenemanager.rb', page: 'hidescene.html',       title: 'Hide on Scene' },
       'untag'         => { file: 'untagnpaint.rb',            page: 'untagnpaint.html',     title: 'Untag & Unpaint' },
-      'deep'          => { file: 'deep_properties.rb',        page: 'deep_properties.html', title: 'Deep Properties' },
-      'custom_select' => { file: 'the_custom_select.rb',      page: nil,                    title: '5D Select Tool' }
+      'deep'          => { file: 'deep_properties.rb',        page: 'deep_properties.html', title: 'Deep Properties' }
     }.freeze
 
     @current_tool ||= 'hub'
@@ -91,6 +93,12 @@ module BoosokTools
         BoosokTools.capture_current_position(TITLE)
         HideOnSceneManager.detach_all_observers rescue nil if defined?(HideOnSceneManager)
         TheSelectorPlugin.detach_all_observers rescue nil if defined?(TheSelectorPlugin)
+        # Nonaktifkan Select Tool jika masih aktif
+        begin
+          model = Sketchup.active_model
+          model.select_tool(nil) if model && model.respond_to?(:select_tool)
+        rescue
+        end
         BoosokTools.dialog = nil
         @current_tool = 'hub'
       end
@@ -101,6 +109,17 @@ module BoosokTools
     def self.open_or_show(id)
       cfg = TOOL_PAGES[id.to_s]
       return unless cfg
+
+      # Cek apakah lisensi / trial mengizinkan penggunaan tool
+      if defined?(BoosokTools::License) && !BoosokTools::License.can_use?
+        show
+        dlg = BoosokTools.dialog
+        if dlg && dlg.visible?
+          dlg.execute_script("if (typeof onLicenseExpiredPrompt === 'function') onLicenseExpiredPrompt(); else if (typeof openAbout === 'function') openAbout();") rescue nil
+        end
+        UI.messagebox("Masa uji coba (trial 7 hari) Boosok Tools telah habis.\nSemua tool terkunci.\n\nSilakan masukkan lisensi key di jendela Hub untuk membuka.") rescue nil
+        return
+      end
 
       if id.to_s == 'custom_select'
         load_tool_file(id.to_s)
@@ -123,6 +142,13 @@ module BoosokTools
       dlg = BoosokTools.dialog
       return unless dlg && dlg.visible?
 
+      # Kunci semua tool jika trial habis dan belum berlisensi
+      if defined?(BoosokTools::License) && !BoosokTools::License.can_use?
+        toast("Masa trial 7 hari telah habis. Semua tool terkunci.")
+        dlg.execute_script("if (typeof onLicenseExpiredPrompt === 'function') onLicenseExpiredPrompt(); else if (typeof openAbout === 'function') openAbout();") rescue nil
+        return
+      end
+
       cfg = TOOL_PAGES[id.to_s]
       return toast("Tool \"#{id}\" tidak dikenal.") unless cfg
 
@@ -141,6 +167,12 @@ module BoosokTools
       end
       if @current_tool == 'deep' && id.to_s != 'deep'
         DeepProperties.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(DeepProperties)
+      end
+      # Nonaktifkan Select Tool jika user berpindah ke tool lain
+      begin
+        model = Sketchup.active_model
+        model.select_tool(nil) if model && model.respond_to?(:select_tool)
+      rescue
       end
       @current_tool = id.to_s
 
@@ -173,6 +205,12 @@ module BoosokTools
       end
       if @current_tool == 'deep'
         DeepProperties.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(DeepProperties)
+      end
+      # Nonaktifkan Select Tool saat kembali ke hub
+      begin
+        model = Sketchup.active_model
+        model.select_tool(nil) if model && model.respond_to?(:select_tool)
+      rescue
       end
       @current_tool = 'hub'
       attach_hub_callbacks(dlg)
@@ -226,6 +264,115 @@ module BoosokTools
       dlg.add_action_callback("update_download") do |_ctx|
         MyCustomPlugins::Updater.download_inline(dlg)
       end
+
+      dlg.add_action_callback("get_hotkeys") do |_ctx|
+        begin
+          shortcuts = BoosokTools::ShortcutSync.get_all_shortcuts
+          dlg.execute_script("if (typeof onHotkeysLoaded === 'function') onHotkeysLoaded(#{shortcuts.to_json});")
+        rescue => e
+          puts "[Boosok Hub] get_hotkeys error: #{e.message}"
+        end
+      end
+
+      dlg.add_action_callback("save_hotkeys") do |_ctx, hotkeys_json|
+        begin
+          data = JSON.parse(hotkeys_json) rescue {}
+          clean_hash = {}
+          if data.is_a?(Array)
+            data.each { |item| clean_hash[item['id']] = item['key'] }
+          elsif data.is_a?(Hash)
+            clean_hash = data
+          end
+
+          success = BoosokTools::ShortcutSync.save_shortcuts_to_file(clean_hash)
+          dat_path = BoosokTools::ShortcutSync.generate_dat_file(clean_hash)
+          dlg.execute_script("if (typeof onHotkeysSaved === 'function') onHotkeysSaved(#{success.to_json}, #{dat_path.to_json});")
+        rescue => e
+          puts "[Boosok Hub] save_hotkeys error: #{e.message}"
+          dlg.execute_script("if (typeof onHotkeysSaved === 'function') onHotkeysSaved(false, #{e.message.to_json});")
+        end
+      end
+
+      dlg.add_action_callback("apply_hotkeys_to_sketchup") do |_ctx, hotkeys_json|
+        begin
+          data = JSON.parse(hotkeys_json) rescue {}
+          clean_hash = {}
+          if data.is_a?(Array)
+            data.each { |item| clean_hash[item['id']] = item['key'] }
+          elsif data.is_a?(Hash)
+            clean_hash = data
+          end
+
+          dat_path = BoosokTools::ShortcutSync.apply_to_sketchup(clean_hash)
+          dlg.execute_script("if (typeof onHotkeysApplied === 'function') onHotkeysApplied(true, #{dat_path.to_json});")
+        rescue => e
+          puts "[Boosok Hub] apply_hotkeys_to_sketchup error: #{e.message}"
+          dlg.execute_script("if (typeof onHotkeysApplied === 'function') onHotkeysApplied(false, #{e.message.to_json});")
+        end
+      end
+
+      dlg.add_action_callback("open_shortcut_prefs") do |_ctx|
+        # Buka SketchUp Preferences > Shortcuts
+        begin
+          if UI.respond_to?(:show_preferences)
+            UI.show_preferences('Shortcuts') rescue UI.show_preferences
+          else
+            Sketchup.send_action("showPreferences:") rescue Sketchup.send_action(21022) rescue nil
+          end
+        rescue => e
+          puts "[Boosok Hub] open_shortcut_prefs error: #{e.message}"
+        end
+      end
+
+      # ── Lisensi Callbacks ──────────────────────────────
+      dlg.add_action_callback("get_license_status") do |_ctx|
+        begin
+          st = defined?(BoosokTools::License) ? BoosokTools::License.status : { status: 'unavailable' }
+          dlg.execute_script("if (typeof onLicenseStatus === 'function') onLicenseStatus(#{st.to_json});")
+        rescue => e
+          dlg.execute_script("if (typeof onLicenseStatus === 'function') onLicenseStatus({status:'error',error:#{e.message.to_json}});")
+        end
+      end
+
+      dlg.add_action_callback("validate_license") do |_ctx, key_json|
+        begin
+          key = JSON.parse(key_json) rescue key_json.to_s
+          if defined?(BoosokTools::License)
+            is_valid = BoosokTools::License.validate(key)
+            if is_valid
+              BoosokTools::License.save_key(key)
+              st = BoosokTools::License.status
+              dlg.execute_script("if (typeof onLicenseValidated === 'function') onLicenseValidated(true, #{st.to_json});")
+            else
+              dlg.execute_script("if (typeof onLicenseValidated === 'function') onLicenseValidated(false, null);")
+            end
+          else
+            dlg.execute_script("if (typeof onLicenseValidated === 'function') onLicenseValidated(false, null);")
+          end
+        rescue => e
+          puts "[Boosok Hub] validate_license error: #{e.message}"
+          dlg.execute_script("if (typeof onLicenseValidated === 'function') onLicenseValidated(false, null);")
+        end
+      end
+
+      dlg.add_action_callback("remove_license") do |_ctx|
+        begin
+          Sketchup.write_default("BoosokTools", "license_key", "") rescue nil
+          st = defined?(BoosokTools::License) ? BoosokTools::License.status : { status: 'unlicensed' }
+          dlg.execute_script("if (typeof onLicenseStatus === 'function') onLicenseStatus(#{st.to_json});")
+        rescue => e
+          puts "[Boosok Hub] remove_license error: #{e.message}"
+        end
+      end
+
+      dlg.add_action_callback("open_external_url") do |_ctx, url_json|
+        begin
+          url = JSON.parse(url_json) rescue url_json.to_s
+          UI.openURL(url.to_s)
+        rescue => e
+          puts "[Boosok Hub] open_external_url error: #{e.message}"
+        end
+      end
     end
 
     def self.attach_all_callbacks(dlg)
@@ -270,11 +417,15 @@ module BoosokTools
       return { status: 'error', error: "Tidak ada model yang aktif. Buka atau buat model dulu.", has_booted: booted } unless model
 
       top = model.entities
+      lic_st = defined?(BoosokTools::License) ? BoosokTools::License.status : { status: 'expired', can_use: false, days_left: 0 }
       {
         status: 'ready',
         has_booted: booted,
+        session_id: (BoosokTools.session_id rescue ''),
         version: MyCustomPlugins::PLUGIN_VERSION,
         theme: Sketchup.read_default("BoosokTools", "theme", "").to_s,
+        hotkeys: (BoosokTools::ShortcutSync.get_all_shortcuts rescue {}),
+        license: lic_st,
         stats: {
           objects: top.count { |e| e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) },
           scenes: model.pages.size,

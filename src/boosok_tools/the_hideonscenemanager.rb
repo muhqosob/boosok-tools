@@ -321,6 +321,25 @@ module HideOnSceneManager
       end
     end
 
+    # --- CALLBACK: AKTIFKAN SELECT TOOL (dari tab Objek) ---
+    dialog.add_action_callback("activate_select_tool") do |_action_context|
+      begin
+        load File.join(__dir__, 'the_custom_select.rb') unless defined?(BoosokTools::SelectTool5D)
+        BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
+      rescue => e
+        puts "[HideOnScene] Gagal aktifkan Select Tool: #{e.message}"
+      end
+    end
+
+    # --- CALLBACK: NONAKTIFKAN SELECT TOOL ---
+    dialog.add_action_callback("deactivate_select_tool") do |_action_context|
+      begin
+        Sketchup.active_model.select_tool(nil) rescue nil
+      rescue => e
+        puts "[HideOnScene] Gagal nonaktifkan Select Tool: #{e.message}"
+      end
+    end
+
     # --- CALLBACK 1: PROSES ISOLATE SCENE AKTIF (LANGSUNG REFRESH VIEWPORT) ---
     dialog.add_action_callback("prosesIsolateActive") do |action_context|
       model = Sketchup.active_model

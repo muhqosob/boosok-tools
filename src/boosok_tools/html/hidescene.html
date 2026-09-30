@@ -91,7 +91,7 @@
           </li>
         </ul>
       </div>
-      <div class="note"><svg><use href="#i-info"/></svg><span>Pakai 5D+ Select Tools supaya bisa seleksi group di dalam group tanpa membukanya.</span></div>
+      <div class="note"><svg><use href="#i-square-dashed-mouse-pointer"/></svg><span>Select Tools otomatis aktif saat tab Objek dipilih — gunakan Ctrl+Scroll di viewport untuk seleksi group bertingkat.</span></div>
       <div class="spacer"></div>
       <div class="actions row">
         <button class="btn ghost icon" onclick="showStep(1)" title="Kembali ke scene"><svg><use href="#i-arrow-left"/></svg></button>
@@ -110,8 +110,8 @@
     </div>
     <div class="spacer"></div>
     <div class="actions row">
-      <button class="btn ghost" onclick="sketchup.closeDialog()">Tutup</button>
-      <button class="btn primary" onclick="showStep(1)"><svg><use href="#i-rotate-ccw"/></svg><span>Lanjut lagi</span></button>
+      <button class="btn ghost" onclick="showStep(1)"><svg><use href="#i-rotate-ccw"/></svg><span>Lanjut lagi</span></button>
+      <button class="btn primary" onclick="backToHub()"><svg><use href="#i-house"/></svg><span>Tutup</span></button>
     </div>
   </section>
 
@@ -216,13 +216,40 @@
         x.setAttribute('aria-selected', x === b);
         $(x.dataset.tab).classList.toggle('active', x === b);
       });
+      // Aktifkan Select Tools saat tab Objek aktif
+      if (b.dataset.tab === 'TabObject') {
+        activateSelectTool();
+      } else {
+        deactivateSelectTool();
+      }
       autoFitHeight(0);
     });
+
+    function activateSelectTool() {
+      if (window.sketchup && typeof sketchup.activate_select_tool === 'function') {
+        sketchup.activate_select_tool();
+      }
+    }
+    function deactivateSelectTool() {
+      if (window.sketchup && typeof sketchup.deactivate_select_tool === 'function') {
+        sketchup.deactivate_select_tool();
+      }
+    }
 
     var origShowStep = showStep;
     showStep = function (n) {
       origShowStep(n);
       autoFitHeight(0);
+      // Nonaktifkan Select Tools saat kembali ke step 1 atau step 3 (selesai)
+      if (n !== 2) {
+        deactivateSelectTool();
+      } else {
+        // step 2: cek tab mana yang aktif
+        var activeTab = $('tabs').querySelector('[aria-selected="true"]');
+        if (activeTab && activeTab.dataset.tab === 'TabObject') {
+          activateSelectTool();
+        }
+      }
     };
 
     function goToStep2() {

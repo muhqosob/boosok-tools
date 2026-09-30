@@ -34,6 +34,7 @@
         </li>
       </ul>
     </div>
+    <div class="note"><svg><use href="#i-square-dashed-mouse-pointer"/></svg><span>Select Tools aktif — gunakan Ctrl+Scroll di viewport untuk seleksi group bertingkat.</span></div>
     <div class="spacer"></div>
     <button class="btn primary" onclick="checkOld()">
       <span>Lanjut</span><svg><use href="#i-arrow-right"/></svg>
@@ -55,6 +56,7 @@
         </li>
       </ul>
     </div>
+    <div class="note"><svg><use href="#i-square-dashed-mouse-pointer"/></svg><span>Select Tools aktif — gunakan Ctrl+Scroll untuk seleksi group bertingkat sebagai item baru.</span></div>
     <div class="spacer"></div>
     <div class="actions row">
       <button class="btn ghost" onclick="showStep(1)"><svg><use href="#i-arrow-left"/></svg><span>Kembali</span></button>
@@ -73,9 +75,11 @@
     </div>
     <div class="spacer"></div>
     <div class="actions row">
-      <button class="btn ghost" onclick="closeDialog()">Tutup</button>
-      <button class="btn primary" onclick="restartReplacer()">
+      <button class="btn ghost" onclick="restartReplacer()">
         <svg><use href="#i-rotate-ccw"/></svg><span>Mulai lagi</span>
+      </button>
+      <button class="btn primary" onclick="goBackToHub()">
+        <svg><use href="#i-house"/></svg><span>Tutup</span>
       </button>
     </div>
   </section>
@@ -123,6 +127,7 @@
     }
 
     function closeDialog() {
+      deactivateSelectTool();
       if (window.sketchup && typeof sketchup.closeDialog === 'function') {
         sketchup.closeDialog();
       } else if (window.sketchup && typeof sketchup.close_dialog === 'function') {
@@ -132,6 +137,11 @@
       } else {
         window.close();
       }
+    }
+
+    function goBackToHub() {
+      deactivateSelectTool();
+      backToHub();
     }
 
     // Dipanggil dari Ruby: showStep(n), showToast(msg), resetExecButton(), showSuccessStep(msg)
@@ -146,9 +156,28 @@
     showStep = function (n) {
       origShowStep(n);
       autoFitHeight(0);
+      // Aktifkan Select Tools saat step 1 atau 2, nonaktifkan saat step 3
+      if (n === 1 || n === 2) {
+        activateSelectTool();
+      } else {
+        deactivateSelectTool();
+      }
     };
 
+    function activateSelectTool() {
+      if (window.sketchup && typeof sketchup.activate_select_tool === 'function') {
+        sketchup.activate_select_tool();
+      }
+    }
+    function deactivateSelectTool() {
+      if (window.sketchup && typeof sketchup.deactivate_select_tool === 'function') {
+        sketchup.deactivate_select_tool();
+      }
+    }
+
     autoFitHeight(0);
+    // Aktifkan Select Tools saat pertama buka (step 1)
+    activateSelectTool();
   </script>
 </body>
 </html>

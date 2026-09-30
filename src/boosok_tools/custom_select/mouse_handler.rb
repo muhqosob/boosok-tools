@@ -22,8 +22,13 @@ module BoosokTools::SelectTool5D
       picked_path = (ph.respond_to?(:count) && ph.count > 0 && ph.path_at(0)) ? ph.path_at(0) : []
 
       raw_path = picked_path.empty? ? [] : (active_path + picked_path)
-      # Validasi State Management: pastikan semua entitas di path masih valid
-      path = raw_path.select { |e| e && e.respond_to?(:valid?) && e.valid? }
+      # Validasi State Management: pastikan semua entitas di path valid & skip Axes (Sumbu Koordinat)
+      path = raw_path.select do |e|
+        next false unless e && e.respond_to?(:valid?) && e.valid?
+        next false if defined?(Sketchup::Axes) && e.is_a?(Sketchup::Axes)
+        next false if e.respond_to?(:typename) && e.typename.to_s.downcase.include?('axes')
+        true
+      end
 
       if path != @tool.hover_path
         @tool.hover_path = path
@@ -37,7 +42,7 @@ module BoosokTools::SelectTool5D
       # Fallback on Error: Reset hover path agar tidak corrupt state
       @tool.hover_path = []
       view.invalidate rescue nil if view
-      warn "[5D Select Tool] Error onMouseMove: #{e.message}" if $DEBUG
+      warn "[Select Tool] Error onMouseMove: #{e.message}" if $DEBUG
     end
 
     def onMouseWheel(flags, delta, x, y, view)
@@ -54,7 +59,7 @@ module BoosokTools::SelectTool5D
       end
       false
     rescue => e
-      warn "[5D Select Tool] Error onMouseWheel: #{e.message}" if $DEBUG
+      warn "[Select Tool] Error onMouseWheel: #{e.message}" if $DEBUG
       false
     end
   end

@@ -4,16 +4,35 @@ require 'json'
 module BoosokTools
   unless file_loaded?(__FILE__)
     load File.join(__dir__, 'titlebar.rb')
+    BoosokTools.init_session_file
     require_relative 'updater'
+    require_relative 'shortcut_sync'
+    require_relative 'license'
     require_relative 'hub'
     require_relative 'the_custom_select'
 
-    # Satu item saja; semua tool + cek update ada di dalam launcher
-    UI.menu("Extensions").add_item("Boosok Tools") {
-      load File.join(__dir__, 'titlebar.rb')
-      load File.join(__dir__, 'hub.rb')
-      BoosokTools::Hub.show
-    }
+    BoosokTools::ShortcutSync.init
+
+    # ── Menu Extensions utama: submenu Boosok Tools ──
+    ext_menu   = UI.menu('Extensions')
+    tools_menu = ext_menu.add_submenu('Boosok Tools')
+
+    # Helper lambda (closure) agar bisa akses tools_menu sebagai local variable
+    register_cmd = lambda do |label, &block|
+      cmd = UI::Command.new(label) { block.call }
+      tools_menu.add_item(cmd)
+      cmd
+    end
+
+    register_cmd.call('Buka Hub')      { BoosokTools::Hub.show }
+    register_cmd.call('Selector')      { BoosokTools::Hub.open_or_show('selector') }
+    register_cmd.call('Select Tools')  { BoosokTools::Hub.open_or_show('custom_select') }
+    register_cmd.call('Replacer')      { BoosokTools::Hub.open_or_show('replacer') }
+    register_cmd.call('Cleaner')       { BoosokTools::Hub.open_or_show('clean') }
+    register_cmd.call('Reset Scale')   { BoosokTools::Hub.open_or_show('reset') }
+    register_cmd.call('Hide Scene')    { BoosokTools::Hub.open_or_show('scene') }
+    register_cmd.call('Untag')         { BoosokTools::Hub.open_or_show('untag') }
+    register_cmd.call('Deep Props')    { BoosokTools::Hub.open_or_show('deep') }
 
     # Cek otomatis saat SketchUp dibuka, dialog cuma muncul kalau ada update
     Updater.check

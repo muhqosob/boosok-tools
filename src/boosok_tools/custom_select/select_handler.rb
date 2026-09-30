@@ -21,7 +21,7 @@ module BoosokTools::SelectTool5D
       if path.empty?
         unless ctrl_down || shift_down
           selection.clear
-          Sketchup.status_text = "5D Select: Seleksi dibersihkan."
+          Sketchup.status_text = "Select Tool: Seleksi dibersihkan."
         end
         return
       end
@@ -35,7 +35,7 @@ module BoosokTools::SelectTool5D
 
       # Notifikasi jika objek terkunci
       if target_entity.respond_to?(:locked?) && target_entity.locked?
-        Sketchup.status_text = "5D Select: Objek terkunci (Locked)."
+        Sketchup.status_text = "Select Tool: Objek terkunci (Locked)."
       end
 
       # Kosongkan seleksi sebelumnya HANYA jika tidak menahan tombol Ctrl atau Shift
@@ -76,7 +76,7 @@ module BoosokTools::SelectTool5D
           end
           selected = true
         rescue => e
-          warn "[5D Select Tool] Fallback selection error: #{e.message}" if $DEBUG
+          warn "[Select Tool] Fallback selection error: #{e.message}" if $DEBUG
         end
       end
 
@@ -90,10 +90,10 @@ module BoosokTools::SelectTool5D
                      target_entity.typename rescue "Objek"
                    end
         lock_info = (target_entity.respond_to?(:locked?) && target_entity.locked?) ? " [Terkunci]" : ""
-        Sketchup.status_text = "5D Select: Berhasil memilih #{ent_name} (Level #{depth})#{lock_info} [Total: #{selection.count}]."
+        Sketchup.status_text = "Select Tool: Berhasil memilih #{ent_name} (Level #{depth})#{lock_info} [Total: #{selection.count}]."
       end
     rescue => e
-      warn "[5D Select Tool] Error during process_selection: #{e.message}" if $DEBUG
+      warn "[Select Tool] Error during process_selection: #{e.message}" if $DEBUG
     end
   end
 end

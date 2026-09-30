@@ -1,260 +1,1530 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <title>Boosok Tools</title>
   <link rel="stylesheet" href="../css/ui.css">
+  <script src="../js/session.js"></script>
   <script>
-    if (sessionStorage.getItem('boosok_hub_booted') === '1') {
-      document.write('<style id="noBoot">#boot{display:none!important;}</style>');
-    }
+    (function () {
+      var sid = window.BOOSOK_SESSION_ID || '';
+      var bootedSid = '';
+      try { bootedSid = localStorage.getItem('boosok_session_booted'); } catch (e) { }
+      var sessBooted = false;
+      try { sessBooted = sessionStorage.getItem('boosok_hub_booted') === '1'; } catch (e) { }
+      if ((sid && bootedSid === sid) || sessBooted) {
+        document.write('<style id="noBoot">#boot{display:none!important;}</style>');
+      }
+    })();
   </script>
   <style>
     /* ── Layout ── */
-    body { padding: 14px 14px 12px; gap: 10px; }
-    #app  { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+    body {
+      padding: 14px 14px 12px;
+      gap: 10px;
+    }
+
+    #app {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
 
     /* ── Search bar ── */
-    .search-wrap { position: relative; flex-shrink: 0; }
-    .search-wrap svg.lead {
-      position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
-      width: 14px; height: 14px; color: var(--muted); pointer-events: none;
+    .search-wrap {
+      position: relative;
+      flex-shrink: 0;
     }
+
+    .search-wrap svg.lead {
+      position: absolute;
+      left: 9px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
     #searchInput {
-      width: 100%; height: 30px; padding: 0 28px 0 30px;
-      border-radius: 8px; border: 1px solid var(--line);
-      background: var(--surface); color: var(--ink);
-      font: inherit; font-size: 12px; outline: none;
+      width: 100%;
+      height: 30px;
+      padding: 0 28px 0 30px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+      font-size: 12px;
+      outline: none;
       transition: border-color .15s, box-shadow .15s;
     }
-    #searchInput::placeholder { color: var(--muted); }
-    #searchInput:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(24,24,27,.07); }
-    #searchClear {
-      position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
-      width: 18px; height: 18px; border-radius: 50%; display: none;
-      align-items: center; justify-content: center; cursor: pointer;
-      color: var(--muted); transition: color .15s;
+
+    #searchInput::placeholder {
+      color: var(--muted);
     }
-    #searchClear:hover { color: var(--ink); }
-    #searchClear.vis { display: flex; }
-    #searchClear svg { width: 12px; height: 12px; stroke-width: 2.5; }
+
+    #searchInput:focus {
+      border-color: var(--ink);
+      box-shadow: 0 0 0 3px rgba(24, 24, 27, .07);
+    }
+
+    #searchClear {
+      position: absolute;
+      right: 7px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--muted);
+      transition: color .15s;
+    }
+
+    #searchClear:hover {
+      color: var(--ink);
+    }
+
+    #searchClear.vis {
+      display: flex;
+    }
+
+    #searchClear svg {
+      width: 12px;
+      height: 12px;
+      stroke-width: 2.5;
+    }
 
     /* ── Recent strip ── */
-    #recentSection { flex-shrink: 0; }
-    .sec-label {
-      font-size: 10px; font-weight: 600; letter-spacing: .06em;
-      text-transform: uppercase; color: var(--muted); margin: 0 1px 4px;
+    #recentSection {
+      flex-shrink: 0;
     }
+
+    .sec-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 1px 4px;
+    }
+
     #recentCard {
-      display: flex; align-items: center; gap: 10px; padding: 8px 10px;
-      background: var(--surface); border: 1px solid var(--line);
-      border-radius: 9px; cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      cursor: pointer;
       transition: border-color .15s, box-shadow .15s, transform .08s;
     }
-    #recentCard:hover { border-color: var(--line-strong); box-shadow: 0 2px 8px -4px rgba(0,0,0,.12); }
-    #recentCard:active { transform: scale(.98); }
-    .rc-ic {
-      width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
-      display: grid; place-items: center;
-      background: var(--ink); color: #fff;
+
+    #recentCard:hover {
+      border-color: var(--line-strong);
+      box-shadow: 0 2px 8px -4px rgba(0, 0, 0, .12);
     }
-    [data-theme="dark"] .rc-ic { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--line-strong); }
-    .rc-ic svg { width: 16px; height: 16px; }
-    .rc-txt { flex: 1; min-width: 0; }
-    .rc-txt .t { font-weight: 600; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .rc-txt .s { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    #recentCard:active {
+      transform: scale(.98);
+    }
+
+    .rc-ic {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      background: var(--ink);
+      color: #fff;
+    }
+
+    [data-theme="dark"] .rc-ic {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--line-strong);
+    }
+
+    .rc-ic svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .rc-txt {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .rc-txt .t {
+      font-weight: 600;
+      font-size: 12.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .rc-txt .s {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .rc-badge {
-      font-size: 10px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-      color: var(--muted); padding: 2px 6px; border-radius: 5px;
-      background: var(--bg); border: 1px solid var(--line); white-space: nowrap;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      white-space: nowrap;
     }
 
     /* ── 4-column grid ── */
-    .all-label { flex-shrink: 0; }
+    .all-label {
+      flex-shrink: 0;
+    }
+
     .grid-wrap {
-      flex: 1; min-height: 0; overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
       padding: 2px 1px 2px 1px;
     }
-    .grid-wrap::-webkit-scrollbar { width: 6px; }
-    .grid-wrap::-webkit-scrollbar-track { background: transparent; }
-    .grid-wrap::-webkit-scrollbar-thumb {
-      background: var(--line-strong); border-radius: 6px; border: 1px solid var(--bg);
+
+    .grid-wrap::-webkit-scrollbar {
+      width: 6px;
     }
-    .grid-wrap::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-    [data-theme="dark"] .grid-wrap::-webkit-scrollbar-thumb { background: #3f3f46; border-color: var(--bg); }
+
+    .grid-wrap::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .grid-wrap::-webkit-scrollbar-thumb {
+      background: var(--line-strong);
+      border-radius: 6px;
+      border: 1px solid var(--bg);
+    }
+
+    .grid-wrap::-webkit-scrollbar-thumb:hover {
+      background: var(--muted);
+    }
+
+    [data-theme="dark"] .grid-wrap::-webkit-scrollbar-thumb {
+      background: #3f3f46;
+      border-color: var(--bg);
+    }
 
     .grid4 {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 6px;
     }
+
     .tile4 {
-      cursor: pointer; display: flex; flex-direction: column; align-items: center;
-      gap: 5px; padding: 9px 6px 8px; text-align: center;
-      background: var(--surface); border: 1px solid var(--line); border-radius: 9px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 9px 6px 8px;
+      text-align: center;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 9px;
       transition: border-color .15s, transform .08s, box-shadow .15s, opacity .15s;
     }
-    .tile4:hover { border-color: var(--line-strong); box-shadow: 0 2px 8px -4px rgba(0,0,0,.12); }
-    .tile4:active { transform: scale(.97); }
-    .tile4 .ic4 {
-      width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center;
-      background: var(--accent-soft); color: var(--accent); border: 1px solid var(--line);
+
+    .tile4:hover {
+      border-color: var(--line-strong);
+      box-shadow: 0 2px 8px -4px rgba(0, 0, 0, .12);
     }
-    .tile4 .ic4 svg { width: 16px; height: 16px; }
-    .tile4 .t4 { font-weight: 600; font-size: 10.5px; line-height: 1.3; color: var(--ink); word-break: break-word; }
-    .tile4.off { opacity: .5; pointer-events: none; }
-    .tile4.opening .ic4 svg { animation: spin .8s linear infinite; }
+
+    .tile4:active {
+      transform: scale(.97);
+    }
+
+    .tile4 .ic4 {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--line);
+    }
+
+    .tile4 .ic4 svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .tile4 .t4 {
+      font-weight: 600;
+      font-size: 10.5px;
+      line-height: 1.3;
+      color: var(--ink);
+      word-break: break-word;
+    }
+
+    .tile4.off {
+      opacity: .5;
+      pointer-events: none;
+    }
+
+    .tile4.opening .ic4 svg {
+      animation: spin .8s linear infinite;
+    }
+
+    /* ── Locked Tool State (Trial Expired) ── */
+    .tile4.locked {
+      opacity: .6;
+      filter: grayscale(.45);
+      position: relative;
+      cursor: pointer;
+    }
+
+    .tile4.locked:hover {
+      opacity: .85;
+      border-color: var(--err);
+    }
+
+    .tile4.locked:active {
+      transform: scale(.97);
+    }
+
+    .tile4 .lock-tag {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      color: var(--err);
+    }
+
+    .tile4 .lock-tag svg {
+      width: 9px;
+      height: 9px;
+    }
+
+    #recentCard.locked {
+      cursor: pointer;
+    }
+
+    #recentCard.locked:hover {
+      border-color: var(--err);
+    }
+
+    /* ── Trial Banner ── */
+    .trial-banner {
+      flex-shrink: 0;
+      border-radius: 9px;
+      padding: 7px 10px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: all .15s var(--ease);
+    }
+
+    .trial-banner.trial {
+      justify-content: space-between;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+    }
+
+    .trial-banner.trial:hover {
+      border-color: var(--line-strong);
+    }
+
+    .tb-trial-text {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .tb-trial-text svg {
+      width: 14px;
+      height: 14px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .tb-trial-text strong {
+      color: var(--ink);
+    }
+
+    .tb-trial-link {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--ink);
+      text-decoration: underline;
+      white-space: nowrap;
+    }
+
+    .trial-banner.expired {
+      gap: 9px;
+      background: var(--err-soft, #fef2f2);
+      border: 1px solid var(--err, #ef4444);
+      color: var(--err, #dc2626);
+    }
+
+    .trial-banner.expired:hover {
+      opacity: .95;
+    }
+
+    .trial-banner.expired:active {
+      transform: scale(.99);
+    }
+
+    .tb-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    .tb-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .tb-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tb-title {
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .tb-desc {
+      font-size: 10px;
+      opacity: .9;
+      line-height: 1.3;
+    }
+
+    .tb-action {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: var(--err, #dc2626);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
 
     /* Search empty */
     #noResult {
-      display: none; padding: 24px 0; text-align: center; color: var(--muted); font-size: 12px;
+      display: none;
+      padding: 24px 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
     }
-    #noResult svg { width: 28px; height: 28px; margin-bottom: 6px; opacity: .35; display: block; margin-inline: auto; }
+
+    #noResult svg {
+      width: 28px;
+      height: 28px;
+      margin-bottom: 6px;
+      opacity: .35;
+      display: block;
+      margin-inline: auto;
+    }
 
     /* ── Footer ── */
-    .foot { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
 
     /* ─────────────────────────────────────────────────
        Inline Update Panel
     ───────────────────────────────────────────────── */
     #updatePanel {
-      position: fixed; inset: 0; z-index: 80;
-      display: flex; flex-direction: column; justify-content: flex-end;
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
       padding: 10px;
       /* backdrop */
       background: rgba(0, 0, 0, 0);
       pointer-events: none;
       transition: background .25s ease;
     }
+
     #updatePanel.open {
       background: rgba(0, 0, 0, 0.28);
       pointer-events: auto;
     }
-    [data-theme="dark"] #updatePanel.open { background: rgba(0, 0, 0, 0.5); }
+
+    [data-theme="dark"] #updatePanel.open {
+      background: rgba(0, 0, 0, 0.5);
+    }
 
     #updateSheet {
       background: var(--bg);
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 14px 14px 12px;
-      display: flex; flex-direction: column; gap: 10px;
-      box-shadow: 0 -4px 24px -8px rgba(0,0,0,.22);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 -4px 24px -8px rgba(0, 0, 0, .22);
       transform: translateY(110%);
-      transition: transform .32s cubic-bezier(.22,1,.36,1);
+      transition: transform .32s cubic-bezier(.22, 1, .36, 1);
     }
+
     #updatePanel.open #updateSheet {
       transform: translateY(0);
     }
 
     /* sheet header */
-    .upd-head { display: flex; align-items: center; gap: 9px; }
+    .upd-head {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
     .upd-ic {
-      width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
-      display: grid; place-items: center;
-      background: var(--accent-soft); color: var(--accent); border: 1px solid var(--line);
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--line);
     }
-    .upd-ic svg { width: 16px; height: 16px; }
-    .upd-title { flex: 1; font-size: 13px; font-weight: 600; }
+
+    .upd-ic svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .upd-title {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
     .upd-close {
-      width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center;
-      color: var(--muted); cursor: pointer; transition: background .15s, color .15s;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background .15s, color .15s;
     }
-    .upd-close:hover { background: var(--line); color: var(--ink); }
-    .upd-close svg { width: 14px; height: 14px; stroke-width: 2.5; }
+
+    .upd-close:hover {
+      background: var(--line);
+      color: var(--ink);
+    }
+
+    .upd-close svg {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2.5;
+    }
 
     /* version pill row */
-    .upd-versions { display: flex; align-items: center; gap: 6px; font-size: 12px; }
-    .upd-pill {
-      display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px;
-      background: var(--surface); border: 1px solid var(--line);
-      font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap;
+    .upd-versions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
     }
-    .upd-pill.new { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
-    .upd-arrow { color: var(--muted); }
-    .upd-arrow svg { width: 13px; height: 13px; }
+
+    .upd-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .upd-pill.new {
+      background: var(--ok-soft);
+      border-color: var(--ok);
+      color: var(--ok);
+    }
+
+    .upd-arrow {
+      color: var(--muted);
+    }
+
+    .upd-arrow svg {
+      width: 13px;
+      height: 13px;
+    }
 
     /* progress bar */
     .upd-progress {
-      height: 4px; border-radius: 99px; background: var(--line); overflow: hidden; flex-shrink: 0;
+      height: 4px;
+      border-radius: 99px;
+      background: var(--line);
+      overflow: hidden;
+      flex-shrink: 0;
     }
+
     .upd-bar {
-      height: 100%; border-radius: 99px;
-      background: var(--ink); width: 0%;
+      height: 100%;
+      border-radius: 99px;
+      background: var(--ink);
+      width: 0%;
       transition: width .3s ease;
     }
-    [data-theme="dark"] .upd-bar { background: #fff; }
+
+    [data-theme="dark"] .upd-bar {
+      background: #fff;
+    }
 
     /* changelog text */
     .upd-log {
-      font-size: 11.5px; color: var(--muted); line-height: 1.6;
-      max-height: 80px; overflow-y: auto; border-radius: 7px;
-      background: var(--surface); border: 1px solid var(--line);
-      padding: 8px 10px; user-select: text;
+      font-size: 11.5px;
+      color: var(--muted);
+      line-height: 1.6;
+      max-height: 80px;
+      overflow-y: auto;
+      border-radius: 7px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      user-select: text;
     }
-    .upd-log::-webkit-scrollbar { width: 4px; }
-    .upd-log::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+
+    .upd-log::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .upd-log::-webkit-scrollbar-thumb {
+      background: var(--line-strong);
+      border-radius: 4px;
+    }
 
     /* status message */
-    .upd-msg { font-size: 12px; color: var(--muted); text-align: center; }
-    .upd-msg.ok { color: var(--ok); font-weight: 600; }
-    .upd-msg.err { color: var(--err); font-weight: 500; }
+    .upd-msg {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .upd-msg.ok {
+      color: var(--ok);
+      font-weight: 600;
+    }
+
+    .upd-msg.err {
+      color: var(--err);
+      font-weight: 500;
+    }
 
     /* ── Boot loader ── */
-    :root { --glow: rgba(24,24,27,.25); --lux: cubic-bezier(.22,1,.36,1); --cycle: 5s; }
-    [data-theme="dark"] { --glow: rgba(255,255,255,.55); }
+    :root {
+      --lux: cubic-bezier(.22, 1, .36, 1);
+      --boot-delay: 0.25s;
+      --boot-reveal: 1.35s;
+    }
+
     #boot {
-      position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
-      background: var(--bg); transition: opacity .9s var(--lux), filter .9s var(--lux), transform .9s var(--lux);
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      transition: opacity .5s ease, filter .5s ease, transform .5s ease;
     }
-    #boot.done { opacity: 0; filter: blur(6px); transform: scale(1.03); pointer-events: none; }
-    .lux { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-    .loader {
-      position: relative; width: 160px; height: 60px; opacity: .6;
-      mask: repeating-linear-gradient(90deg, transparent 0, transparent 6px, black 7px, black 8px);
-      -webkit-mask: repeating-linear-gradient(90deg, transparent 0, transparent 6px, black 7px, black 8px);
+
+    #boot.done {
+      opacity: 0;
+      filter: blur(8px);
+      transform: scale(0.98);
+      pointer-events: none;
     }
-    .loader::after {
-      content: ""; position: absolute; inset: 0;
-      background-image:
-        radial-gradient(circle at 50% 50%, var(--ink) 0%, transparent 50%),
-        radial-gradient(circle at 45% 45%, var(--muted) 0%, transparent 45%),
-        radial-gradient(circle at 55% 55%, var(--line-strong) 0%, transparent 45%),
-        radial-gradient(circle at 45% 55%, var(--muted) 0%, transparent 45%),
-        radial-gradient(circle at 55% 45%, var(--ink) 0%, transparent 45%);
-      mask: radial-gradient(circle at 50% 50%, transparent 0%, transparent 10%, black 25%);
-      -webkit-mask: radial-gradient(circle at 50% 50%, transparent 0%, transparent 10%, black 25%);
-      animation: transform-animation 3.6s infinite alternate, opacity-animation 7.2s infinite;
-      animation-timing-function: var(--lux);
+
+    .lux {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
     }
-    @keyframes transform-animation { 0% { transform: translate(-50%); } 100% { transform: translate(50%); } }
-    @keyframes opacity-animation { 0%, 100% { opacity: 0; } 20% { opacity: .8; } 70% { opacity: 0; } }
-    .hairline { width: 180px; height: 1px; background: var(--line); overflow: hidden; }
-    .hairline > div { height: 100%; background: var(--ink); opacity: .6; transform: scaleX(0); transform-origin: left; animation: hair var(--boot, 3s) var(--lux) forwards; }
-    @keyframes hair { to { transform: scaleX(1); } }
-    .lux small { font-size: 10.5px; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); opacity: .8; }
+
+    /* ── Title reveal wrapper ── */
+    .lux-title {
+      position: relative;
+      display: inline-block;
+      overflow: visible;
+      padding: 0;
+    }
+
+    /* Teks mulai clip dari kanan (100% tersembunyi), lalu tersingkap ke kanan */
+    .lux-text {
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink);
+      display: block;
+      white-space: nowrap;
+      clip-path: inset(0 100% 0 0);
+      will-change: clip-path;
+      animation: lux-reveal var(--boot-reveal) var(--lux) var(--boot-delay) forwards;
+    }
+
+    /* Garis cahaya/laser yang bergerak ke samping (kanan) sambil menyingkap tulisan */
+    .lux-sweep {
+      position: absolute;
+      top: -8px;
+      bottom: -8px;
+      left: 0;
+      width: 2.5px;
+      border-radius: 2px;
+      background: linear-gradient(180deg,
+          transparent 0%,
+          var(--ink) 25%,
+          #ffffff 50%,
+          var(--ink) 75%,
+          transparent 100%);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.7), 0 0 18px rgba(99, 102, 241, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      will-change: left, opacity;
+      animation: lux-sweep-line var(--boot-reveal) var(--lux) var(--boot-delay) forwards;
+    }
+
+    /* Titik kilau cahaya di tengah garis sinar */
+    .lux-sweep::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: #ffffff;
+      box-shadow: 0 0 8px #ffffff, 0 0 14px var(--ink);
+    }
+
+    @keyframes lux-reveal {
+      0% {
+        clip-path: inset(0 100% 0 0);
+      }
+
+      100% {
+        clip-path: inset(0 0% 0 0);
+      }
+    }
+
+    @keyframes lux-sweep-line {
+      0% {
+        left: 0%;
+        opacity: 0;
+      }
+
+      3% {
+        opacity: 1;
+      }
+
+      96% {
+        opacity: 1;
+      }
+
+      100% {
+        left: 100%;
+        opacity: 0;
+      }
+    }
+
+    /* Hairline progress bar */
+    .hairline {
+      width: 190px;
+      height: 1.5px;
+      background: var(--line);
+      border-radius: 2px;
+      overflow: hidden;
+      opacity: 0;
+      animation: lux-fadein .4s ease calc(var(--boot-delay) + 0.4s) forwards;
+    }
+
+    .hairline>div {
+      height: 100%;
+      background: var(--ink);
+      opacity: .8;
+      border-radius: 2px;
+      transform: scaleX(0);
+      transform-origin: left;
+      animation: hair var(--boot, 1.8s) var(--lux) calc(var(--boot-delay) + 0.3s) forwards;
+    }
+
+    @keyframes hair {
+      to {
+        transform: scaleX(1);
+      }
+    }
+
+    .lux small {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: .35em;
+      text-transform: uppercase;
+      color: var(--muted);
+      opacity: 0;
+      animation: lux-fadein .5s ease calc(var(--boot-delay) + 0.6s) forwards;
+    }
+
+    @keyframes lux-fadein {
+      to {
+        opacity: 0.85;
+      }
+    }
+
+    /* ── Settings dropdown ── */
+    .settings-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .settings-wrap.locked,
+    .settings-wrap.locked #settingsBtn,
+    #settingsBtn:disabled {
+      opacity: 0.28 !important;
+      cursor: not-allowed !important;
+      pointer-events: none !important;
+    }
+
+    .settings-wrap.locked .settings-menu {
+      display: none !important;
+    }
+
+    .settings-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 8px 24px -6px rgba(0, 0, 0, .18);
+      min-width: 140px;
+      z-index: 90;
+      padding: 4px;
+      animation: rise .18s var(--ease);
+    }
+
+    .settings-menu.open {
+      display: block;
+    }
+
+    .settings-menu button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 7px 10px;
+      border-radius: 7px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--ink);
+      cursor: pointer;
+      transition: background .12s;
+    }
+
+    .settings-menu button:hover {
+      background: var(--line);
+    }
+
+    .settings-menu button svg {
+      width: 14px;
+      height: 14px;
+      color: var(--muted);
+    }
+
+    /* ── Hotkey Panel (slide-up sheet) ── */
+    #hotkeyPanel {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0);
+      pointer-events: none;
+      transition: background .25s ease;
+    }
+
+    #hotkeyPanel.open {
+      background: rgba(0, 0, 0, .28);
+      pointer-events: auto;
+    }
+
+    [data-theme="dark"] #hotkeyPanel.open {
+      background: rgba(0, 0, 0, .5);
+    }
+
+    #hotkeySheet {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 -4px 24px -8px rgba(0, 0, 0, .22);
+      transform: translateY(110%);
+      transition: transform .32s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    #hotkeyPanel.open #hotkeySheet {
+      transform: translateY(0);
+    }
+
+    .hk-head {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .hk-ic {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--line);
+    }
+
+    .hk-ic svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .hk-title {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .hk-close {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+
+    .hk-close:hover {
+      background: var(--line);
+      color: var(--ink);
+    }
+
+    .hk-close svg {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2.5;
+    }
+
+    .hk-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 245px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .hk-list::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .hk-list::-webkit-scrollbar-thumb {
+      background: var(--line-strong);
+      border-radius: 4px;
+    }
+
+    .hk-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+    }
+
+    .hk-name-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .hk-name {
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .hk-path {
+      font-size: 10px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .hk-input {
+      width: 90px;
+      height: 26px;
+      padding: 0 8px;
+      border-radius: 6px;
+      text-align: center;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--ink);
+      font: inherit;
+      font-size: 11.5px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color .15s;
+      caret-color: transparent;
+      user-select: none;
+    }
+
+    .hk-input:focus {
+      border-color: var(--ink);
+    }
+
+    .hk-input.recording {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      animation: hkPulse .6s ease infinite alternate;
+    }
+
+    @keyframes hkPulse {
+      to {
+        box-shadow: 0 0 0 2px rgba(24, 24, 27, .12);
+      }
+    }
+
+    .hk-clear {
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background .12s, color .12s;
+    }
+
+    .hk-clear:hover {
+      background: var(--line);
+      color: var(--ink);
+    }
+
+    .hk-clear svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .hk-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-top: 6px;
+      border-top: 1px solid var(--line);
+    }
+
+    .hk-hint {
+      font-size: 10.5px;
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    /* ── About popup (reuse notif-overlay pattern) ── */
+    #aboutOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 95;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(24, 24, 27, .35);
+    }
+
+    #aboutOverlay.open {
+      display: flex;
+      animation: fade .2s ease;
+    }
+
+    #aboutSheet {
+      width: 310px;
+      max-width: calc(100vw - 28px);
+      padding: 16px;
+      border-radius: 14px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      box-shadow: 0 16px 36px -8px rgba(0, 0, 0, .25);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      animation: notifPop .18s var(--ease);
+    }
+
+    .about-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    /* about-mark sama persis dengan .mark di header hub */
+    .about-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--ink);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .about-mark svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .about-name {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -.01em;
+    }
+
+    .about-ver {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .about-body {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .about-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .about-lbl {
+      color: var(--muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .about-val {
+      font-weight: 600;
+    }
+
+    /* ── License Panel ── */
+    .lic-panel {
+      border-top: 1px solid var(--line);
+      padding-top: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .lic-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      text-transform: uppercase;
+      transition: all .15s var(--ease);
+    }
+
+    .lic-hw-box {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .hw-code {
+      font-size: 13.5px;
+      font-weight: 700;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color: var(--ink);
+      letter-spacing: .08em;
+      user-select: all;
+      -webkit-user-select: all;
+      cursor: pointer;
+    }
+
+    .btn-copy {
+      height: 25px;
+      padding: 0 8px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--ink);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      transition: background .12s, border-color .12s, color .12s, transform .08s;
+      flex-shrink: 0;
+    }
+
+    .btn-copy:hover {
+      background: var(--line);
+      border-color: var(--line-strong);
+    }
+
+    .btn-copy:active {
+      transform: scale(.97);
+    }
+
+    .lic-notice {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    .lic-email-link {
+      color: var(--ink);
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      word-break: break-all;
+      transition: color .12s;
+    }
+
+    .lic-email-link:hover {
+      color: var(--muted);
+    }
+
+    .btn-email-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .12s, border-color .12s, color .12s, transform .08s;
+    }
+
+    .btn-email-action:hover {
+      background: var(--surface);
+      border-color: var(--ink);
+    }
+
+    .btn-email-action:active {
+      transform: scale(.97);
+    }
   </style>
 </head>
+
 <body oncontextmenu="return false;">
   <script src="../js/ui.js"></script>
 
   <div id="boot" role="status" aria-label="Memuat Boosok Tools">
     <div class="lux">
-      <div class="loader"></div>
-      <div class="hairline"><div></div></div>
-      <small>Memuat</small>
+      <div class="lux-title">
+        <span class="lux-text">Boosok Tools</span>
+        <div class="lux-sweep"></div>
+      </div>
+      <div class="hairline">
+        <div></div>
+      </div>
+      <small>Memuat&hellip;</small>
     </div>
   </div>
 
   <header class="head">
-    <div class="mark"><svg><use href="#i-package"/></svg></div>
+    <div class="mark"><svg>
+        <use href="#i-package" />
+      </svg></div>
     <div class="txt">
       <h1>Boosok Tools</h1>
       <p id="hubSub">Pilih tool yang mau dipakai</p>
     </div>
     <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema"></button>
+    <!-- Tombol Settings -->
+    <div class="settings-wrap" id="settingsWrap">
+      <button class="theme-btn" id="settingsBtn" type="button" title="Pengaturan" aria-label="Pengaturan"
+        onclick="toggleSettingsMenu()">
+        <svg>
+          <use href="#i-settings-2" />
+        </svg>
+      </button>
+      <div class="settings-menu" id="settingsMenu" role="menu">
+        <button role="menuitem" onclick="openHotkeyPanel()"><svg>
+            <use href="#i-key-round" />
+          </svg><span>Hotkey</span></button>
+        <button role="menuitem" onclick="openAbout()"><svg>
+            <use href="#i-info" />
+          </svg><span>Tentang</span></button>
+      </div>
+    </div>
   </header>
 
   <main id="app" aria-live="polite"></main>
+
+  <!-- ════════════════════════════════════════════
+       Hotkey Panel (slide-up sheet)
+  ═══════════════════════════════════════════════ -->
+  <div id="hotkeyPanel" role="dialog" aria-modal="true" aria-label="Pengaturan Hotkey">
+    <div style="position:absolute;inset:0;" onclick="closeHotkeyPanel()"></div>
+    <div id="hotkeySheet">
+      <div class="hk-head">
+        <div class="hk-ic"><svg>
+            <use href="#i-key-round" />
+          </svg></div>
+        <span class="hk-title">Hotkey</span>
+        <button class="hk-close" onclick="closeHotkeyPanel()" title="Tutup">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="hk-list" id="hkList"></div>
+      <div class="hk-footer">
+        <div
+          style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:10.5px;line-height:1.45;color:var(--muted);">
+          <div style="font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:3px;color:var(--accent);">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span style="color:var(--ink);">Cara Terapkan ke SketchUp:</span>
+          </div>
+          1. Klik tombol <b>Import...</b> di jendela Preferences.<br>
+          2. Pilih file <b>BoosokTools_Shortcuts.dat</b> di <b>Desktop</b>.<br>
+          3. Klik <b>Open</b> &rarr; Semua shortcut langsung aktif!
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <button class="btn primary" id="btnApplyHk" style="flex:1;font-size:11px;height:32px;"
+            onclick="applyHotkeysToSketchUp(this)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>Terapkan di SketchUp</span>
+          </button>
+          <button class="btn ghost" style="font-size:11px;height:32px;padding:0 10px;" onclick="openSketchUpShortcuts()"
+            title="Buka Preferences Shortcuts SketchUp">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px">
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            <span>Preferences</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       About Overlay
+  ═══════════════════════════════════════════════ -->
+  <div id="aboutOverlay" onclick="closeAbout()">
+    <div id="aboutSheet" onclick="event.stopPropagation()">
+      <div class="about-logo">
+        <div class="about-mark"><svg>
+            <use href="#i-package" />
+          </svg></div>
+        <div>
+          <div class="about-name">Boosok Tools</div>
+          <div class="about-ver" id="aboutVer">v—</div>
+        </div>
+      </div>
+      <div class="about-body">
+        <div class="about-row"><span class="about-lbl">Dibuat oleh</span><span class="about-val">Muh Qosob</span></div>
+        <div class="about-row"><span class="about-lbl">Platform</span><span class="about-val">SketchUp Extension</span>
+        </div>
+      </div>
+
+      <!-- ── Panel Lisensi ── -->
+      <div id="licensePanel" class="lic-panel">
+        <!-- Status badge -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+          <span
+            style="font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Lisensi
+            Plugin</span>
+          <span id="licBadge" class="lic-badge">Memuat…</span>
+        </div>
+
+        <!-- Hardware ID Box + Tombol Salin -->
+        <div class="lic-hw-box">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+            <span
+              style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Hardware
+              ID</span>
+            <button id="btnCopyHwId" class="btn-copy" onclick="copyHwId()" title="Salin Hardware ID ke clipboard">
+              <svg aria-hidden="true" style="width:13px;height:13px">
+                <use href="#i-copy" />
+              </svg>
+              <span id="copyText">Salin</span>
+            </button>
+          </div>
+          <div id="licHwId" class="hw-code" title="Klik untuk memilih teks" onclick="selectHwId()">Memuat…</div>
+        </div>
+
+        <!-- Perintah kirim HWID ke email -->
+        <div id="licNotice" class="lic-notice">
+          <div style="display:flex;align-items:flex-start;gap:7px;">
+            <svg aria-hidden="true" style="width:15px;height:15px;color:var(--ink);flex-shrink:0;margin-top:1px;">
+              <use href="#i-mail" />
+            </svg>
+            <div style="font-size:11px;line-height:1.45;color:var(--muted);flex:1;">
+              Kirim <strong style="color:var(--ink);">Hardware ID</strong> ke email:
+              <a href="javascript:void(0)" id="licMailLink" class="lic-email-link" onclick="openMailInBrowser(event)"
+                title="Buka di browser bawaan">
+                muhqosob@gmail.com
+                <svg aria-hidden="true"
+                  style="width:11px;height:11px;display:inline-block;vertical-align:-1px;margin-left:1px;">
+                  <use href="#i-external-link" />
+                </svg>
+              </a>
+              beserta bukti transfer/kirim dana untuk mendapatkan lisensi key.
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Input key (hanya tampil jika belum aktif) -->
+        <div id="licInputWrap" style="display:flex;flex-direction:column;gap:5px;">
+          <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">
+            Masukkan Lisensi Key</div>
+          <input id="licKeyInput" type="text" placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
+            style="width:100%;height:32px;padding:0 10px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:11.5px;font-family:monospace;letter-spacing:.06em;outline:none;text-transform:uppercase;transition:border-color .15s,box-shadow .15s;"
+            oninput="this.value=this.value.toUpperCase();this.style.borderColor='var(--line)';"
+            onfocus="this.style.borderColor='var(--ink)'" onblur="this.style.borderColor='var(--line)'" />
+        </div>
+
+        <!-- Tombol aksi ketika belum aktif: Aktifkan Lisensi & Tutup bersebelahan -->
+        <div id="licUnlicensedBtns" style="display:flex;gap:10px;width:100%;margin-top:2px;">
+          <button class="btn primary" id="licActivateBtn"
+            style="flex:1;height:34px;font-size:11.5px;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;"
+            onclick="activateLicense(this)">
+            <svg aria-hidden="true" style="width:14px;height:14px">
+              <use href="#i-key-round" />
+            </svg>
+            <span>Aktifkan Lisensi</span>
+          </button>
+          <button class="btn ghost" id="licCloseBtn"
+            style="flex:1;height:34px;font-size:11.5px;border-radius:8px;display:flex;align-items:center;justify-content:center;"
+            onclick="closeAbout()">
+            <span>Tutup</span>
+          </button>
+        </div>
+
+        <!-- Tombol aksi ketika aktif: Hapus Aktivasi & Tutup bersebelahan -->
+        <div id="licActiveBtns" style="display:none;gap:10px;width:100%;margin-top:2px;">
+          <button class="btn danger" id="licRemoveBtn"
+            style="flex:1;height:34px;font-size:11.5px;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;"
+            onclick="removeLicense()">
+            <svg aria-hidden="true" style="width:14px;height:14px">
+              <use href="#i-trash-2" />
+            </svg>
+            <span>Hapus Aktivasi</span>
+          </button>
+          <button class="btn primary" id="licActiveCloseBtn"
+            style="flex:1;height:34px;font-size:11.5px;border-radius:8px;display:flex;align-items:center;justify-content:center;"
+            onclick="closeAbout()">
+            <span>Tutup</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <!-- ════════════════════════════════════════════
        Inline Update Panel (slide-up sheet)
@@ -268,18 +1538,30 @@
       <!-- header row -->
       <div class="upd-head">
         <div class="upd-ic" id="updIc">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83" />
+          </svg>
         </div>
         <span class="upd-title" id="updTitle">Memeriksa pembaruan…</span>
         <button class="upd-close" onclick="closeUpdate()" title="Tutup">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
         </button>
       </div>
 
       <!-- version pills -->
       <div class="upd-versions" id="updVersions" style="display:none">
         <span class="upd-pill" id="updCurrent"></span>
-        <span class="upd-arrow"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        <span class="upd-arrow"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </svg></span>
         <span class="upd-pill new" id="updLatest"></span>
       </div>
 
@@ -304,25 +1586,67 @@
     /* ═══════════════════════════════════════════════
        Constants & Hub State
     ═══════════════════════════════════════════════ */
-    var isAlreadyBooted = sessionStorage.getItem('boosok_hub_booted') === '1';
+    var sid = window.BOOSOK_SESSION_ID || '';
+    var bootedSid = '';
+    try { bootedSid = localStorage.getItem('boosok_session_booted'); } catch (e) { }
+    var sessBooted = false;
+    try { sessBooted = sessionStorage.getItem('boosok_hub_booted') === '1'; } catch (e) { }
+    var isAlreadyBooted = (sid && bootedSid === sid) || sessBooted;
     var BOOT_TIMEOUT_MS = 10000;
-    var MIN_BOOT_MS = 1800;
+    var MIN_BOOT_MS = 1650;
     document.documentElement.style.setProperty('--boot', MIN_BOOT_MS + 'ms');
+    /* Jika sudah pernah boot sebelumnya di sesi ini, langsung sembunyikan boot screen */
+    if (isAlreadyBooted) {
+      var _bootEl = document.getElementById('boot');
+      if (_bootEl) { _bootEl.style.display = 'none'; _bootEl.classList.add('done'); }
+    }
 
     var LS_RECENT = 'boosok_recent_tool';
 
     var TOOLS = [
-      { id: 'selector',      icon: 'mouse-pointer-click',         t: 'Selector',    s: 'Seleksi by tag, nama, atribut',   needs: 'objects' },
-      { id: 'custom_select', icon: 'square-dashed-mouse-pointer', t: '5D Select',   s: 'Seleksi multi-level viewport',    needs: 'objects' },
-      { id: 'replacer',      icon: 'replace',                     t: 'Replacer',    s: 'Ganti objek sekaligus',           needs: 'objects' },
-      { id: 'clean',         icon: 'sparkles',                    t: 'Cleaner',     s: 'Component jadi group murni',      needs: 'objects' },
-      { id: 'reset',         icon: 'scale-3d',                    t: 'Reset Scale', s: 'Kembalikan skala group',          needs: 'objects' },
-      { id: 'scene',         icon: 'eye-off',                     t: 'Hide Scene',  s: 'Atur visibilitas per scene',      needs: 'scenes'  },
-      { id: 'untag',         icon: 'paint-bucket',                t: 'Untag',       s: 'Hapus tag & material',            needs: 'objects' },
-      { id: 'deep',          icon: 'layers',                      t: 'Deep Props',  s: 'Analisis tag & entitas mendalam', needs: 'objects' }
+      { id: 'selector', icon: 'mouse-pointer-click', t: 'Selector', s: 'Seleksi by tag, nama, atribut', needs: 'objects' },
+      { id: 'custom_select', icon: 'square-dashed-mouse-pointer', t: 'Select Tools', s: 'Seleksi multi-level viewport', needs: 'objects' },
+      { id: 'replacer', icon: 'replace', t: 'Replacer', s: 'Ganti objek sekaligus', needs: 'objects' },
+      { id: 'clean', icon: 'sparkles', t: 'Cleaner', s: 'Component jadi group murni', needs: 'objects' },
+      { id: 'reset', icon: 'scale-3d', t: 'Reset Scale', s: 'Kembalikan skala group', needs: 'objects' },
+      { id: 'scene', icon: 'eye-off', t: 'Hide Scene', s: 'Atur visibilitas per scene', needs: 'scenes' },
+      { id: 'untag', icon: 'paint-bucket', t: 'Untag', s: 'Hapus tag & material', needs: 'objects' },
+      { id: 'deep', icon: 'layers', t: 'Deep Props', s: 'Analisis tag & entitas mendalam', needs: 'objects' }
     ];
+
+    /* ═══════════════════════════════════════════════
+       Hotkey Definitions & Storage
+    ═══════════════════════════════════════════════ */
+    var LS_HOTKEYS = 'boosok_hotkeys';
+    var DEFAULT_HOTKEYS = [
+      { id: 'hub', label: 'Buka Hub', key: '' },
+      { id: 'selector', label: 'Selector', key: '' },
+      { id: 'custom_select', label: 'Select Tools', key: '' },
+      { id: 'replacer', label: 'Replacer', key: '' },
+      { id: 'clean', label: 'Cleaner', key: '' },
+      { id: 'reset', label: 'Reset Scale', key: '' },
+      { id: 'scene', label: 'Hide Scene', key: '' },
+      { id: 'untag', label: 'Untag', key: '' },
+      { id: 'deep', label: 'Deep Props', key: '' }
+    ];
+    function loadHotkeys() {
+      try {
+        var saved = JSON.parse(localStorage.getItem(LS_HOTKEYS)) || [];
+        var activeMap = (S.data && S.data.hotkeys) || {};
+        return DEFAULT_HOTKEYS.map(function (def) {
+          var fromSaved = saved.filter(function (s) { return s.id === def.id; })[0];
+          var key = (activeMap[def.id] !== undefined && activeMap[def.id] !== null)
+            ? activeMap[def.id]
+            : (fromSaved ? fromSaved.key : '');
+          return { id: def.id, label: def.label, key: key || '' };
+        });
+      } catch (e) { return DEFAULT_HOTKEYS.map(function (h) { return Object.assign({}, h); }); }
+    }
+    function saveHotkeys(hotkeys) {
+      try { localStorage.setItem(LS_HOTKEYS, JSON.stringify(hotkeys)); } catch (e) { }
+    }
     var TOOL_MAP = {};
-    TOOLS.forEach(function(t){ TOOL_MAP[t.id] = t; });
+    TOOLS.forEach(function (t) { TOOL_MAP[t.id] = t; });
 
     var S = { status: isAlreadyBooted ? 'ready' : 'booting', data: null, lastKey: null };
     var bootStart = Date.now(), pending = null, bootTimer;
@@ -330,14 +1654,14 @@
 
 
     function getRecent() {
-      try { return JSON.parse(localStorage.getItem(LS_RECENT)) || []; } catch(e) { return []; }
+      try { return JSON.parse(localStorage.getItem(LS_RECENT)) || []; } catch (e) { return []; }
     }
     function saveRecent(id) {
       try {
-        var arr = getRecent().filter(function(x){ return x !== id; });
+        var arr = getRecent().filter(function (x) { return x !== id; });
         arr.unshift(id);
         localStorage.setItem(LS_RECENT, JSON.stringify(arr.slice(0, 5)));
-      } catch(e) {}
+      } catch (e) { }
     }
     function getLastUsed() {
       var arr = getRecent();
@@ -349,7 +1673,7 @@
     ═══════════════════════════════════════════════ */
     function requestState() {
       clearTimeout(bootTimer);
-      bootTimer = setTimeout(function() {
+      bootTimer = setTimeout(function () {
         render({ status: 'error', error: 'SketchUp tidak merespon. Tutup jendela ini lalu buka lagi dari menu Extensions.' });
       }, BOOT_TIMEOUT_MS);
       function tryReady() {
@@ -361,21 +1685,35 @@
       }
       if (!tryReady()) {
         var retries = 0;
-        var ri = setInterval(function() { retries++; if (tryReady() || retries > 30) clearInterval(ri); }, 50);
+        var ri = setInterval(function () { retries++; if (tryReady() || retries > 30) clearInterval(ri); }, 50);
       }
     }
 
     function render(st) {
       clearTimeout(bootTimer);
-      if (st.has_booted || sessionStorage.getItem('boosok_hub_booted') === '1') {
-        sessionStorage.setItem('boosok_hub_booted', '1');
+      var curSid = window.BOOSOK_SESSION_ID || (st && st.session_id) || '';
+      var bootedSid = '';
+      try { bootedSid = localStorage.getItem('boosok_session_booted'); } catch (e) { }
+      var sessBooted = false;
+      try { sessBooted = sessionStorage.getItem('boosok_hub_booted') === '1'; } catch (e) { }
+      var isBooted = (st && st.has_booted) || (curSid && bootedSid === curSid) || sessBooted;
+
+      if (isBooted) {
+        if (curSid) { try { localStorage.setItem('boosok_session_booted', curSid); } catch (e) { } }
+        try { sessionStorage.setItem('boosok_hub_booted', '1'); } catch (e) { }
         var bootEl = document.getElementById('boot');
         if (bootEl) { bootEl.style.display = 'none'; bootEl.classList.add('done'); }
         S.status = 'ready';
       } else if (S.status === 'booting') {
+        /* Masih dalam animasi boot pertama kali — tahan MIN_BOOT_MS dulu */
         pending = st;
         setTimeout(finishBoot, Math.max(0, MIN_BOOT_MS - (Date.now() - bootStart)));
         return;
+      }
+      /* Sampai di sini: status sudah ready, pastikan boot screen tersembunyi */
+      var bootEl2 = document.getElementById('boot');
+      if (bootEl2 && isBooted && bootEl2.style.display !== 'none') {
+        bootEl2.style.display = 'none'; bootEl2.classList.add('done');
       }
       if (st.theme && !getStoredTheme()) applyTheme(st.theme);
       var key = JSON.stringify(st);
@@ -388,12 +1726,24 @@
 
     function finishBoot() {
       if (S.status !== 'booting' || !pending) return;
-      sessionStorage.setItem('boosok_hub_booted', '1');
+      var curSid = window.BOOSOK_SESSION_ID || (pending && pending.session_id) || '';
+      if (curSid) { try { localStorage.setItem('boosok_session_booted', curSid); } catch (e) { } }
+      try { sessionStorage.setItem('boosok_hub_booted', '1'); } catch (e) { }
       S.status = 'ready';
       var st = pending; pending = null;
-      render(st);
+      if (st.theme && !getStoredTheme()) applyTheme(st.theme);
+      S.lastKey = JSON.stringify(st);
+      S.status = st.status;
+      S.data = st;
+      draw();
+
       var bootEl = document.getElementById('boot');
-      if (bootEl) bootEl.classList.add('done');
+      if (bootEl) {
+        bootEl.classList.add('done');
+        setTimeout(function () {
+          bootEl.style.display = 'none';
+        }, 550);
+      }
       if (window.sketchup && sketchup.boot_done) sketchup.boot_done();
     }
 
@@ -402,6 +1752,7 @@
       app.classList.remove('enter'); void app.offsetWidth; app.classList.add('enter');
 
       if (S.status === 'error') {
+        updateSettingsLock(true);
         app.innerHTML =
           '<div class="hero"><div class="badge err">' + icon('triangle-alert') + '</div>' +
           '<h2>Gagal memuat</h2><p>Tool belum bisa dibuka.</p></div>' +
@@ -417,7 +1768,10 @@
         '<button class="btn link" id="updBtn" onclick="openUpdate(this)">' +
         icon('download') + '<span>Cek update</span></button></div>';
 
-      if (!stats.objects && !stats.scenes) {
+      var isEmpty = !stats || (!stats.objects && !stats.scenes);
+      updateSettingsLock(isEmpty);
+
+      if (isEmpty) {
         app.innerHTML =
           '<div class="hero"><div class="badge">' + icon('box') + '</div>' +
           '<h2>Model masih kosong</h2><p>Belum ada group, component, atau scene.<br>Buat objek dulu, lalu muat ulang.</p></div>' +
@@ -427,21 +1781,56 @@
         autoFitHeight(0); return;
       }
 
-      var lastId   = getLastUsed();
+      var lic = (S.data && S.data.license) ? S.data.license : null;
+      var isLocked = lic && !lic.can_use;
+
+      var trialBannerHtml = '';
+      if (lic) {
+        if (lic.status === 'expired') {
+          trialBannerHtml =
+            '<div class="trial-banner expired" onclick="onLicenseExpiredPrompt()">' +
+            '<div class="tb-icon">' + icon('triangle-alert') + '</div>' +
+            '<div class="tb-body">' +
+            '<div class="tb-title">Masa Trial 7 Hari Telah Habis</div>' +
+            '<div class="tb-desc">Semua tool terkunci. Masukkan lisensi key.</div>' +
+            '</div>' +
+            '<button class="tb-action" onclick="onLicenseExpiredPrompt(); event.stopPropagation();">Aktifkan</button>' +
+            '</div>';
+        } else if (lic.status === 'trial') {
+          trialBannerHtml =
+            '<div class="trial-banner trial" onclick="openAbout()" title="Klik untuk info lisensi">' +
+            '<div class="tb-trial-text">' + icon('info') + '<span>Trial: <strong>' + (lic.days_left || 7) + ' hari tersisa</strong></span></div>' +
+            '<span class="tb-trial-link">Aktifkan Lisensi →</span>' +
+            '</div>';
+        }
+      }
+
+      var lastId = getLastUsed();
       var lastTool = lastId ? TOOL_MAP[lastId] : null;
 
       var recentHtml = '';
       if (lastTool) {
         var isOff = !stats[lastTool.needs];
-        recentHtml =
-          '<div id="recentSection">' +
-          '<div class="sec-label">Terakhir dipakai</div>' +
-          '<div id="recentCard" role="button" tabindex="0"' +
-          (isOff ? ' style="opacity:.5;pointer-events:none;"' : ' onclick="openTool(\'' + lastTool.id + '\')"') + '>' +
-          '<div class="rc-ic">' + icon(lastTool.icon) + '</div>' +
-          '<div class="rc-txt"><div class="t">' + esc(lastTool.t) + '</div><div class="s">' + esc(lastTool.s) + '</div></div>' +
-          '<span class="rc-badge">Buka lagi</span>' +
-          '</div></div>';
+        if (isLocked) {
+          recentHtml =
+            '<div id="recentSection">' +
+            '<div class="sec-label">Terakhir dipakai</div>' +
+            '<div id="recentCard" class="locked" role="button" tabindex="0" onclick="onLicenseExpiredPrompt()">' +
+            '<div class="rc-ic">' + icon(lastTool.icon) + '</div>' +
+            '<div class="rc-txt"><div class="t">' + esc(lastTool.t) + '</div><div class="s">' + esc(lastTool.s) + '</div></div>' +
+            '<span class="rc-badge" style="background:var(--err-soft,#fff0f0);color:var(--err,#dc2626);border-color:var(--err,#dc2626);font-weight:700;">Terkunci</span>' +
+            '</div></div>';
+        } else {
+          recentHtml =
+            '<div id="recentSection">' +
+            '<div class="sec-label">Terakhir dipakai</div>' +
+            '<div id="recentCard" role="button" tabindex="0"' +
+            (isOff ? ' style="opacity:.5;pointer-events:none;"' : ' onclick="openTool(\'' + lastTool.id + '\')"') + '>' +
+            '<div class="rc-ic">' + icon(lastTool.icon) + '</div>' +
+            '<div class="rc-txt"><div class="t">' + esc(lastTool.t) + '</div><div class="s">' + esc(lastTool.s) + '</div></div>' +
+            '<span class="rc-badge">Buka lagi</span>' +
+            '</div></div>';
+        }
       }
 
       var searchHtml =
@@ -462,25 +1851,36 @@
         '<span><b>' + stats.selected + '</b> terseleksi · <b>' + stats.objects +
         '</b> group/comp · <b>' + stats.scenes + '</b> scene</span></div>';
 
-      app.innerHTML = searchHtml + recentHtml +
+      app.innerHTML = searchHtml + trialBannerHtml + recentHtml +
         '<div class="sec-label all-label">Semua tools</div>' +
         gridHtml + statsNote + foot;
 
       if (searchQuery) {
         var si = document.getElementById('searchInput');
-        if (si) { si.focus(); si.setSelectionRange(9999,9999); filterGrid(searchQuery); }
+        if (si) { si.focus(); si.setSelectionRange(9999, 9999); filterGrid(searchQuery); }
       }
 
       autoFitHeight(0);
-      setTimeout(function(){ autoFitHeight(0); }, 50);
+      setTimeout(function () { autoFitHeight(0); }, 50);
     }
 
     function buildGrid(stats) {
-      return '<div class="grid4" id="grid4">' + TOOLS.map(function(t) {
+      var isLocked = S.data && S.data.license && !S.data.license.can_use;
+      return '<div class="grid4" id="grid4">' + TOOLS.map(function (t) {
         var off = !stats[t.needs];
-        return '<button class="tile4' + (off ? ' off' : '') + '" data-id="' + t.id +
-          '" data-label="' + t.t.toLowerCase() + '"' +
-          (off ? ' disabled' : ' onclick="openTool(\'' + t.id + '\')"') + '>' +
+        var cls = 'tile4';
+        var attr = '';
+        if (isLocked) {
+          cls += ' locked';
+          attr = ' onclick="onLicenseExpiredPrompt()" title="Terkunci — Masa trial 7 hari telah habis"';
+        } else if (off) {
+          cls += ' off';
+          attr = ' disabled';
+        } else {
+          attr = ' onclick="openTool(\'' + t.id + '\')"';
+        }
+        return '<button class="' + cls + '" data-id="' + t.id + '" data-label="' + t.t.toLowerCase() + '"' + attr + '>' +
+          (isLocked ? '<span class="lock-tag">' + icon('key-round') + '</span>' : '') +
           '<div class="ic4">' + icon(t.icon) + '</div>' +
           '<div class="t4">' + esc(t.t) + '</div>' +
           '</button>';
@@ -512,7 +1912,7 @@
 
     function filterGrid(q) {
       var tiles = document.querySelectorAll('.tile4'), visible = 0;
-      tiles.forEach(function(tile) {
+      tiles.forEach(function (tile) {
         var show = !q || (tile.dataset.label || '').indexOf(q) !== -1;
         tile.style.display = show ? '' : 'none';
         if (show) visible++;
@@ -524,11 +1924,32 @@
     /* ═══════════════════════════════════════════════
        Open Tool
     ═══════════════════════════════════════════════ */
+    function onLicenseExpiredPrompt() {
+      showToast('Masa trial 7 hari telah habis. Semua tool terkunci.');
+      openAbout();
+    }
+
     function openTool(id) {
       if (S.status !== 'ready') return;
-      S.status = 'opening';
+      if (S.data && S.data.license && !S.data.license.can_use) {
+        onLicenseExpiredPrompt();
+        return;
+      }
       saveRecent(id);
-      document.querySelectorAll('.tile4').forEach(function(el) {
+
+      /* custom_select hanya mengaktifkan tool di SketchUp lalu menutup dialog —
+         tidak perlu state 'opening' atau animasi tile */
+      if (id === 'custom_select') {
+        if (window.sketchup && typeof sketchup.open === 'function') {
+          var x = window.screenX || window.screenLeft || 0;
+          var y = window.screenY || window.screenTop || 0;
+          sketchup.open(id, JSON.stringify({ left: x, top: y }));
+        }
+        return;
+      }
+
+      S.status = 'opening';
+      document.querySelectorAll('.tile4').forEach(function (el) {
         el.disabled = true;
         if (el.dataset.id === id) {
           el.classList.add('opening');
@@ -542,7 +1963,7 @@
       if (window.sketchup && typeof sketchup.open === 'function') {
         sketchup.open(id, JSON.stringify({ left: x, top: y }));
       }
-      setTimeout(function() {
+      setTimeout(function () {
         if (S.status === 'opening') { S.status = 'ready'; draw(); }
       }, 4000);
     }
@@ -551,7 +1972,7 @@
 
     function retry(btn) { busy(btn, true); S.lastKey = null; requestState(); }
 
-    window.addEventListener('focus', function() {
+    window.addEventListener('focus', function () {
       if (S.status === 'ready' || S.status === 'error') requestState();
     });
 
@@ -605,57 +2026,57 @@
     }
 
     function renderUpdatePanel(st) {
-      var ic     = document.getElementById('updIc');
-      var title  = document.getElementById('updTitle');
-      var vers   = document.getElementById('updVersions');
-      var curr   = document.getElementById('updCurrent');
+      var ic = document.getElementById('updIc');
+      var title = document.getElementById('updTitle');
+      var vers = document.getElementById('updVersions');
+      var curr = document.getElementById('updCurrent');
       var latest = document.getElementById('updLatest');
-      var prog   = document.getElementById('updProgress');
-      var bar    = document.getElementById('updBar');
-      var log    = document.getElementById('updLog');
-      var msg    = document.getElementById('updMsg');
-      var acts   = document.getElementById('updActions');
+      var prog = document.getElementById('updProgress');
+      var bar = document.getElementById('updBar');
+      var log = document.getElementById('updLog');
+      var msg = document.getElementById('updMsg');
+      var acts = document.getElementById('updActions');
 
       // reset
       vers.style.display = 'none';
       prog.style.display = 'none';
-      log.style.display  = 'none';
-      msg.className      = 'upd-msg';
-      msg.textContent    = '';
+      log.style.display = 'none';
+      msg.className = 'upd-msg';
+      msg.textContent = '';
       acts.style.display = 'none';
-      acts.innerHTML     = '';
+      acts.innerHTML = '';
 
       var s = st.status || 'checking';
 
       if (s === 'checking') {
-        ic.innerHTML  = spinIcon();
+        ic.innerHTML = spinIcon();
         title.textContent = 'Memeriksa pembaruan…';
-        msg.textContent   = 'Menghubungi server…';
+        msg.textContent = 'Menghubungi server…';
 
       } else if (s === 'latest') {
-        ic.innerHTML  = checkIcon();
+        ic.innerHTML = checkIcon();
         ic.style.background = 'var(--ok-soft)';
-        ic.style.color      = 'var(--ok)';
+        ic.style.color = 'var(--ok)';
         title.textContent = 'Sudah versi terbaru';
         if (st.current) {
-          curr.textContent  = 'v' + st.current;
+          curr.textContent = 'v' + st.current;
           vers.style.display = 'none'; // hanya 1 versi, tidak perlu arrow
-          msg.textContent   = 'v' + st.current + ' — tidak ada pembaruan baru.';
+          msg.textContent = 'v' + st.current + ' — tidak ada pembaruan baru.';
         }
         msg.className = 'upd-msg ok';
         acts.innerHTML = '<button class="btn ghost sm" onclick="closeUpdate()">' + icon('x') + '<span>Tutup</span></button>';
         acts.style.display = 'flex';
 
       } else if (s === 'available') {
-        ic.innerHTML  = downloadIcon();
+        ic.innerHTML = downloadIcon();
         ic.style.background = '';
-        ic.style.color      = '';
+        ic.style.color = '';
         title.textContent = 'Ada pembaruan tersedia!';
-        curr.textContent   = 'v' + (st.current || '?');
+        curr.textContent = 'v' + (st.current || '?');
         latest.textContent = 'v' + (st.latest || '?');
         vers.style.display = 'flex';
         if (st.changelog) {
-          log.textContent   = st.changelog;
+          log.textContent = st.changelog;
           log.style.display = 'block';
         }
         acts.innerHTML =
@@ -667,32 +2088,32 @@
         ic.innerHTML = spinIcon();
         title.textContent = 'Mengunduh…';
         var pct = typeof st.progress === 'number' ? st.progress : 0;
-        bar.style.width   = pct + '%';
+        bar.style.width = pct + '%';
         prog.style.display = 'block';
-        msg.textContent   = pct > 0 ? pct + '%' : 'Sedang mengunduh…';
+        msg.textContent = pct > 0 ? pct + '%' : 'Sedang mengunduh…';
 
       } else if (s === 'installing') {
         ic.innerHTML = spinIcon();
         title.textContent = 'Memasang…';
-        msg.textContent   = 'Mohon tunggu, jangan tutup SketchUp.';
+        msg.textContent = 'Mohon tunggu, jangan tutup SketchUp.';
 
       } else if (s === 'done') {
         ic.innerHTML = checkIcon();
         ic.style.background = 'var(--ok-soft)';
-        ic.style.color      = 'var(--ok)';
+        ic.style.color = 'var(--ok)';
         title.textContent = 'Update berhasil dipasang!';
-        msg.textContent   = 'Plugin sudah aktif, tidak perlu restart SketchUp.';
-        msg.className     = 'upd-msg ok';
+        msg.textContent = 'Plugin sudah aktif, tidak perlu restart SketchUp.';
+        msg.className = 'upd-msg ok';
         acts.innerHTML = '<button class="btn primary sm" onclick="closeUpdate()">' + icon('check') + '<span>Selesai</span></button>';
         acts.style.display = 'flex';
 
       } else if (s === 'error') {
         ic.innerHTML = alertIcon();
         ic.style.background = 'var(--err-soft)';
-        ic.style.color      = 'var(--err)';
+        ic.style.color = 'var(--err)';
         title.textContent = 'Gagal memeriksa';
-        msg.textContent   = st.error || 'Terjadi kesalahan.';
-        msg.className     = 'upd-msg err';
+        msg.textContent = st.error || 'Terjadi kesalahan.';
+        msg.className = 'upd-msg err';
         acts.innerHTML =
           '<button class="btn ghost sm" onclick="closeUpdate()">' + icon('x') + '<span>Tutup</span></button>' +
           '<button class="btn primary sm" onclick="retryUpdate(this)">' + icon('refresh-cw') + '<span>Coba lagi</span></button>';
@@ -730,6 +2151,522 @@
     }
 
     requestState();
+
+    /* ═══════════════════════════════════════════════
+       Settings Dropdown
+    ═══════════════════════════════════════════════ */
+    function toggleSettingsMenu() {
+      var menu = document.getElementById('settingsMenu');
+      if (!menu) return;
+      var isOpen = menu.classList.contains('open');
+      menu.classList.toggle('open', !isOpen);
+      if (!isOpen) {
+        // tutup jika klik di luar
+        setTimeout(function () {
+          document.addEventListener('click', closeSettingsOnOutside, { once: true });
+        }, 10);
+      }
+    }
+
+    function closeSettingsOnOutside(e) {
+      var wrap = document.getElementById('settingsWrap');
+      if (wrap && !wrap.contains(e.target)) {
+        var menu = document.getElementById('settingsMenu');
+        if (menu) menu.classList.remove('open');
+      }
+    }
+
+    function closeSettingsMenu() {
+      var menu = document.getElementById('settingsMenu');
+      if (menu) menu.classList.remove('open');
+    }
+
+    /* Kunci / buka tombol Settings (Hotkey & Tentang) saat model kosong */
+    function updateSettingsLock(locked) {
+      var wrap = document.getElementById('settingsWrap');
+      var btn = document.getElementById('settingsBtn');
+      if (!wrap || !btn) return;
+      if (locked) {
+        wrap.classList.add('locked');
+        btn.disabled = true;
+        btn.title = 'Tersedia setelah ada isi model';
+        /* Tutup menu jika kebetulan sedang terbuka */
+        closeSettingsMenu();
+      } else {
+        wrap.classList.remove('locked');
+        btn.disabled = false;
+        btn.title = 'Pengaturan';
+      }
+    }
+
+    /* ═══════════════════════════════════════════════
+       Hotkey Panel
+    ═══════════════════════════════════════════════ */
+    var _recordingInput = null;
+
+    function openHotkeyPanel() {
+      closeSettingsMenu();
+      if (window.sketchup && typeof sketchup.get_hotkeys === 'function') {
+        sketchup.get_hotkeys();
+      }
+      renderHotkeyList();
+      var panel = document.getElementById('hotkeyPanel');
+      if (panel) panel.classList.add('open');
+      autoFitHeight(0);
+    }
+
+    function closeHotkeyPanel() {
+      if (_recordingInput) { stopRecording(_recordingInput); }
+      var panel = document.getElementById('hotkeyPanel');
+      if (panel) panel.classList.remove('open');
+    }
+
+    function onHotkeysLoaded(shortcuts) {
+      if (!shortcuts || typeof shortcuts !== 'object') return;
+      var hotkeys = loadHotkeys();
+      hotkeys.forEach(function (h) {
+        if (shortcuts[h.id] !== undefined) {
+          h.key = shortcuts[h.id] || '';
+        }
+      });
+      saveHotkeys(hotkeys);
+      renderHotkeyList();
+    }
+
+    function renderHotkeyList() {
+      var hotkeys = loadHotkeys();
+      var list = document.getElementById('hkList');
+      if (!list) return;
+      // Menu path di SketchUp untuk setiap tool
+      var menuPath = {
+        'hub': 'Buka Hub',
+        'selector': 'Selector',
+        'custom_select': 'Select Tools',
+        'replacer': 'Replacer',
+        'clean': 'Cleaner',
+        'reset': 'Reset Scale',
+        'scene': 'Hide Scene',
+        'untag': 'Untag',
+        'deep': 'Deep Props'
+      };
+      list.innerHTML = hotkeys.map(function (h) {
+        var path = 'Extensions › Boosok Tools › ' + (menuPath[h.id] || h.label);
+        return '<div class="hk-row" data-id="' + h.id + '">' +
+          '<div class="hk-name-wrap">' +
+          '<span class="hk-name">' + esc(h.label) + '</span>' +
+          '<span class="hk-path">' + esc(path) + '</span>' +
+          '</div>' +
+          '<input class="hk-input" type="text" readonly placeholder="— kosong —"' +
+          ' value="' + esc(h.key) + '"' +
+          ' data-hk-id="' + h.id + '"' +
+          ' onclick="startRecording(this)"' +
+          '>' +
+          '<button class="hk-clear" title="Hapus shortcut" onclick="clearHotkey(\'' + h.id + '\')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+          '</button>' +
+          '</div>';
+      }).join('');
+    }
+
+    function openSketchUpShortcuts() {
+      if (window.sketchup && typeof sketchup.open_shortcut_prefs === 'function') {
+        sketchup.open_shortcut_prefs();
+      }
+    }
+
+    function applyHotkeysToSketchUp(btn) {
+      var hotkeys = loadHotkeys();
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><span>Menerapkan…</span>';
+      }
+      if (window.sketchup && typeof sketchup.apply_hotkeys_to_sketchup === 'function') {
+        sketchup.apply_hotkeys_to_sketchup(JSON.stringify(hotkeys));
+      }
+      setTimeout(function () {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg><span>Tersinkron!</span>';
+          setTimeout(function () {
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Terapkan di SketchUp</span>';
+          }, 2500);
+        }
+      }, 700);
+    }
+
+    function onHotkeysApplied(success, msg) {
+      if (success) {
+        showToast('Hotkey berhasil disinkronkan ke preferensi SketchUp!');
+      } else {
+        showToast('Gagal sinkronisasi: ' + (msg || ''));
+      }
+    }
+
+    function onHotkeysSaved(success, msg) {
+      if (success) {
+        showToast('Hotkey tersimpan!');
+      }
+    }
+
+    function startRecording(input) {
+      if (_recordingInput && _recordingInput !== input) stopRecording(_recordingInput);
+      _recordingInput = input;
+      input.value = 'Tekan kombinasi…';
+      input.classList.add('recording');
+      input.addEventListener('keydown', onHotkeyKeydown);
+    }
+
+    function stopRecording(input) {
+      if (!input) return;
+      input.classList.remove('recording');
+      input.removeEventListener('keydown', onHotkeyKeydown);
+      if (_recordingInput === input) _recordingInput = null;
+      // Restore nilai tersimpan jika masih "Tekan kombinasi…"
+      if (input.value === 'Tekan kombinasi…') {
+        var hotkeys = loadHotkeys();
+        var id = input.getAttribute('data-hk-id');
+        var found = hotkeys.filter(function (h) { return h.id === id; })[0];
+        input.value = found ? (found.key || '') : '';
+      }
+    }
+
+    function onHotkeyKeydown(e) {
+      e.preventDefault();
+      if (e.key === 'Escape') { stopRecording(e.target); return; }
+      if (['Control', 'Shift', 'Alt', 'Meta'].indexOf(e.key) !== -1) return;
+
+      var parts = [];
+      if (e.ctrlKey) parts.push('Ctrl');
+      if (e.altKey) parts.push('Alt');
+      if (e.shiftKey) parts.push('Shift');
+      var k = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+      parts.push(k);
+      var combo = parts.join('+');
+
+      var id = e.target.getAttribute('data-hk-id');
+      var hotkeys = loadHotkeys();
+      hotkeys.forEach(function (h) { if (h.id === id) h.key = combo; });
+      saveHotkeys(hotkeys);
+      // Kirim ke Ruby agar langsung update SharedPreferences.json
+      if (window.sketchup && typeof sketchup.save_hotkeys === 'function') {
+        sketchup.save_hotkeys(JSON.stringify(hotkeys));
+      }
+      e.target.value = combo;
+      stopRecording(e.target);
+      showToast('Shortcut ' + combo + ' disimpan');
+    }
+
+    function clearHotkey(id) {
+      var hotkeys = loadHotkeys();
+      hotkeys.forEach(function (h) { if (h.id === id) h.key = ''; });
+      saveHotkeys(hotkeys);
+      if (window.sketchup && typeof sketchup.save_hotkeys === 'function') {
+        sketchup.save_hotkeys(JSON.stringify(hotkeys));
+      }
+      renderHotkeyList();
+      showToast('Shortcut dihapus');
+    }
+
+    /* ═══════════════════════════════════════════════
+       About + Lisensi
+    ═══════════════════════════════════════════════ */
+    function openAbout() {
+      closeSettingsMenu();
+      var verEl = document.getElementById('aboutVer');
+      if (verEl && S.data && S.data.version) verEl.textContent = 'v' + S.data.version;
+      document.getElementById('aboutOverlay').classList.add('open');
+      // Muat status lisensi dari Ruby
+      if (window.sketchup && typeof sketchup.get_license_status === 'function') {
+        sketchup.get_license_status();
+      } else {
+        // Mode browser preview — tampilkan placeholder
+        onLicenseStatus({ status: 'unlicensed', hw_id: 'PREVIEW00', hw_short: 'PREVIEW0' });
+      }
+    }
+
+    function closeAbout() {
+      document.getElementById('aboutOverlay').classList.remove('open');
+    }
+
+    // Dipanggil oleh Ruby setelah get_license_status
+    function onLicenseStatus(st) {
+      var badge = document.getElementById('licBadge');
+      var hwEl = document.getElementById('licHwId');
+      var notice = document.getElementById('licNotice');
+      var mailLink = document.getElementById('licMailLink');
+      var inputWrap = document.getElementById('licInputWrap');
+      var unlicensedBtns = document.getElementById('licUnlicensedBtns');
+      var activeBtns = document.getElementById('licActiveBtns');
+      var keyInput = document.getElementById('licKeyInput');
+
+      if (!badge) return;
+
+      // Update Hardware ID
+      if (hwEl && st.hw_id) {
+        hwEl.textContent = st.hw_id;
+      }
+
+      // Simpan Hardware ID untuk URL email
+      if (st.hw_id) {
+        window._currentHwId = st.hw_id;
+      }
+
+      // Sinkronkan ke S.data.license agar Hub langsung responsif
+      if (S.data) {
+        S.data.license = st;
+      }
+
+      var isActive = (st.status === 'active');
+      if (isActive) {
+        badge.textContent = '✓ AKTIF';
+        badge.style.background = 'var(--ok-soft, #e6f9ee)';
+        badge.style.borderColor = 'var(--ok, #16a34a)';
+        badge.style.color = 'var(--ok, #16a34a)';
+        if (notice) notice.style.display = 'none';
+        if (inputWrap) inputWrap.style.display = 'none';
+        if (unlicensedBtns) unlicensedBtns.style.display = 'none';
+        if (activeBtns) activeBtns.style.display = 'flex';
+      } else if (st.status === 'trial') {
+        badge.textContent = 'TRIAL (' + (st.days_left || 7) + ' HARI)';
+        badge.style.background = 'var(--surface)';
+        badge.style.borderColor = 'var(--accent, #6366f1)';
+        badge.style.color = 'var(--accent, #6366f1)';
+        if (notice) notice.style.display = 'block';
+        if (inputWrap) inputWrap.style.display = 'flex';
+        if (unlicensedBtns) unlicensedBtns.style.display = 'flex';
+        if (activeBtns) activeBtns.style.display = 'none';
+        if (keyInput) {
+          keyInput.style.borderColor = 'var(--line)';
+          keyInput.value = '';
+          keyInput.placeholder = 'XXXXX-XXXXX-XXXXX-XXXXX';
+        }
+      } else if (st.status === 'expired') {
+        badge.textContent = '✗ TERKUNCI (EXPIRED)';
+        badge.style.background = 'var(--err-soft, #fff0f0)';
+        badge.style.borderColor = 'var(--err, #dc2626)';
+        badge.style.color = 'var(--err, #dc2626)';
+        if (notice) notice.style.display = 'block';
+        if (inputWrap) inputWrap.style.display = 'flex';
+        if (unlicensedBtns) unlicensedBtns.style.display = 'flex';
+        if (activeBtns) activeBtns.style.display = 'none';
+        if (keyInput) {
+          keyInput.style.borderColor = 'var(--err, #dc2626)';
+          keyInput.value = '';
+          keyInput.placeholder = 'Masukkan lisensi untuk membuka';
+        }
+      } else if (st.status === 'invalid') {
+        badge.textContent = '✗ TIDAK VALID';
+        badge.style.background = 'var(--err-soft, #fff0f0)';
+        badge.style.borderColor = 'var(--err, #dc2626)';
+        badge.style.color = 'var(--err, #dc2626)';
+        if (notice) notice.style.display = 'block';
+        if (inputWrap) inputWrap.style.display = 'flex';
+        if (unlicensedBtns) unlicensedBtns.style.display = 'flex';
+        if (activeBtns) activeBtns.style.display = 'none';
+        if (keyInput) {
+          keyInput.style.borderColor = 'var(--err, #dc2626)';
+          keyInput.value = '';
+          keyInput.placeholder = 'Kode tidak valid — coba lagi';
+        }
+      } else {
+        badge.textContent = 'BELUM AKTIF';
+        badge.style.background = 'var(--surface)';
+        badge.style.borderColor = 'var(--line)';
+        badge.style.color = 'var(--muted)';
+        if (notice) notice.style.display = 'block';
+        if (inputWrap) inputWrap.style.display = 'flex';
+        if (unlicensedBtns) unlicensedBtns.style.display = 'flex';
+        if (activeBtns) activeBtns.style.display = 'none';
+        if (keyInput) {
+          keyInput.style.borderColor = 'var(--line)';
+          keyInput.value = '';
+          keyInput.placeholder = 'XXXXX-XXXXX-XXXXX-XXXXX';
+        }
+      }
+    }
+
+    // Kirim key ke Ruby untuk divalidasi
+    function activateLicense(btn) {
+      var keyInput = document.getElementById('licKeyInput');
+      var key = keyInput ? keyInput.value.trim() : '';
+      if (!key || key.length < 10) {
+        if (keyInput) {
+          keyInput.style.borderColor = 'var(--err, #dc2626)';
+          keyInput.focus();
+        }
+        return;
+      }
+      if (btn) { busy(btn, true); }
+      if (window.sketchup && typeof sketchup.validate_license === 'function') {
+        sketchup.validate_license(JSON.stringify(key));
+      }
+      // Timeout fallback jika Ruby tidak menjawab
+      setTimeout(function () {
+        if (btn && btn.disabled) busy(btn, false);
+      }, 5000);
+    }
+
+    // Dipanggil Ruby setelah validasi
+    function onLicenseValidated(success, st) {
+      var btn = document.getElementById('licActivateBtn');
+      if (btn) busy(btn, false);
+      var keyInput = document.getElementById('licKeyInput');
+      if (success) {
+        if (keyInput) keyInput.style.borderColor = 'var(--ok, #16a34a)';
+        if (st) {
+          if (S.data) S.data.license = st;
+          onLicenseStatus(st);
+          draw(); // Refresh tampilan Hub secara langsung
+        }
+        showToast('Lisensi berhasil diaktifkan! Semua tool terbuka.');
+      } else {
+        if (keyInput) {
+          keyInput.style.borderColor = 'var(--err, #dc2626)';
+          keyInput.value = '';
+          keyInput.placeholder = 'Kode tidak valid — coba lagi';
+        }
+        var badge = document.getElementById('licBadge');
+        if (badge) {
+          badge.textContent = '✗ TIDAK VALID';
+          badge.style.background = 'var(--err-soft, #fff0f0)';
+          badge.style.borderColor = 'var(--err, #dc2626)';
+          badge.style.color = 'var(--err, #dc2626)';
+        }
+      }
+    }
+
+    // Hapus lisensi yang tersimpan
+    function removeLicense() {
+      if (window.sketchup && typeof sketchup.remove_license === 'function') {
+        sketchup.remove_license();
+      } else {
+        var hwText = document.getElementById('licHwId') ? document.getElementById('licHwId').textContent : '';
+        onLicenseStatus({ status: 'unlicensed', hw_id: hwText });
+        draw();
+      }
+    }
+
+    // Salin Hardware ID ke clipboard dengan feedback visual jelas
+    function copyHwId() {
+      var hwEl = document.getElementById('licHwId');
+      if (!hwEl) return;
+      var text = hwEl.textContent.trim();
+      var btn = document.getElementById('btnCopyHwId');
+      var copyText = document.getElementById('copyText');
+      var copyIconUse = btn ? btn.querySelector('use') : null;
+
+      function onCopied() {
+        if (copyText) copyText.textContent = 'Tersalin!';
+        if (copyIconUse) copyIconUse.setAttribute('href', '#i-check');
+        if (btn) {
+          btn.style.borderColor = 'var(--ok, #16a34a)';
+          btn.style.color = 'var(--ok, #16a34a)';
+        }
+        setTimeout(function () {
+          if (copyText) copyText.textContent = 'Salin';
+          if (copyIconUse) copyIconUse.setAttribute('href', '#i-copy');
+          if (btn) {
+            btn.style.borderColor = '';
+            btn.style.color = '';
+          }
+        }, 2000);
+      }
+
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(onCopied).catch(function () {
+            fallbackCopy(text);
+            onCopied();
+          });
+        } else {
+          fallbackCopy(text);
+          onCopied();
+        }
+      } catch (e) {
+        fallbackCopy(text);
+        onCopied();
+      }
+    }
+
+    function selectHwId() {
+      var hwEl = document.getElementById('licHwId');
+      if (!hwEl) return;
+      var range = document.createRange();
+      range.selectNodeContents(hwEl);
+      var sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+
+    function fallbackCopy(text) {
+      var el = document.createElement('textarea');
+      el.value = text;
+      el.style.position = 'fixed';
+      el.style.opacity = '0';
+      document.body.appendChild(el);
+      el.select();
+      try { document.execCommand('copy'); } catch (e) { }
+      document.body.removeChild(el);
+    }
+
+    function getMailParams() {
+      var hwId = window._currentHwId || (S.data && S.data.license && S.data.license.hw_id) || '';
+      if (!hwId) {
+        var el = document.getElementById('licHwId');
+        if (el && el.textContent) hwId = el.textContent.trim();
+      }
+      var subject = encodeURIComponent('Permintaan Lisensi Boosok Tools');
+      var body = encodeURIComponent(
+        'Halo Muh Qosob,\n\n' +
+        'Saya ingin meminta lisensi key untuk Boosok Tools.\n\n' +
+        'Hardware ID : ' + hwId + '\n\n' +
+        '(Mohon lampirkan bukti transfer/kirim dana di sini)\n\n' +
+        'Terima kasih!'
+      );
+      return {
+        subject: subject,
+        body: body,
+        gmailUrl: 'https://mail.google.com/mail/?view=cm&fs=1&to=muhqosob@gmail.com&su=' + subject + '&body=' + body,
+        mailtoUrl: 'mailto:muhqosob@gmail.com?subject=' + subject + '&body=' + body
+      };
+    }
+
+    function openMailInBrowser(e) {
+      if (e) {
+        try { e.preventDefault(); e.stopPropagation(); } catch (err) { }
+      }
+      var p = getMailParams();
+      if (window.sketchup && typeof sketchup.open_external_url === 'function') {
+        sketchup.open_external_url(p.gmailUrl);
+      } else {
+        window.open(p.gmailUrl, '_blank');
+      }
+      return false;
+    }
+
+    function openMailtoClient(e) {
+      if (e) {
+        try { e.preventDefault(); e.stopPropagation(); } catch (err) { }
+      }
+      var p = getMailParams();
+      if (window.sketchup && typeof sketchup.open_external_url === 'function') {
+        sketchup.open_external_url(p.mailtoUrl);
+      } else {
+        window.location.href = p.mailtoUrl;
+      }
+      return false;
+    }
+
+    /* Escape menutup hotkey panel atau about overlay */
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if (document.getElementById('aboutOverlay').classList.contains('open')) { closeAbout(); return; }
+      if (document.getElementById('hotkeyPanel').classList.contains('open')) { closeHotkeyPanel(); return; }
+      closeSettingsMenu();
+    });
   </script>
 </body>
+
 </html>

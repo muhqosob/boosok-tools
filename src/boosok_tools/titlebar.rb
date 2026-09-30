@@ -289,6 +289,7 @@ module BoosokTools
   end
 
   @hub_booted ||= false
+  @session_id ||= "#{Time.now.to_i}_#{rand(1000..9999)}"
 
   def self.hub_booted?
     @hub_booted == true
@@ -296,5 +297,20 @@ module BoosokTools
 
   def self.set_hub_booted(val = true)
     @hub_booted = val
+  end
+
+  def self.session_id
+    @session_id ||= "#{Time.now.to_i}_#{rand(1000..9999)}"
+  end
+
+  def self.init_session_file
+    @session_id = "#{Time.now.to_i}_#{rand(1000..9999)}"
+    @hub_booted = false
+    js_dir = File.join(__dir__, 'js')
+    Dir.mkdir(js_dir) unless File.directory?(js_dir)
+    session_file = File.join(js_dir, 'session.js')
+    File.write(session_file, "window.BOOSOK_SESSION_ID = #{@session_id.to_json};\n")
+  rescue => e
+    puts "[Boosok Tools] init_session_file error: #{e.message}"
   end
 end
