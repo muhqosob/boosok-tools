@@ -18,7 +18,7 @@ module BoosokTools
     # SketchUp akan terus pakai versi lama TOOL_PAGES dari memori → error "tidak dikenal".
     remove_const(:TOOL_PAGES) if defined?(TOOL_PAGES)
     TOOL_PAGES = {
-      'selector'      => { file: 'main.rb',                   page: 'selector.html',        title: 'Selector' },
+      'selector'      => { file: 'main.rb',                  page: 'selector.html',        title: 'Selector' },
       'custom_select' => { file: 'the_custom_select.rb',      page: nil,                    title: 'Select Tools' },
       'replacer'      => { file: 'the_replacer.rb',           page: 'replacer.html',        title: 'Group Replacer' },
       'clean'         => { file: 'the_cleangroup.rb',         page: 'cleangroup.html',      title: 'Group Cleaner' },
@@ -124,8 +124,10 @@ module BoosokTools
       if id.to_s == 'custom_select'
         load_tool_file(id.to_s)
         BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
-        dlg = BoosokTools.dialog
-        dlg.close rescue nil if dlg && dlg.visible?
+        
+        # DIHAPUS agar dialog tidak tertutup
+        # dlg = BoosokTools.dialog
+        # dlg.close rescue nil if dlg && dlg.visible? 
         return
       end
 
@@ -155,7 +157,9 @@ module BoosokTools
       if id.to_s == 'custom_select'
         load_tool_file(id.to_s)
         BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
-        dlg.close rescue nil
+        
+        # DIHAPUS agar dialog tidak tertutup
+        # dlg.close rescue nil 
         return
       end
 
