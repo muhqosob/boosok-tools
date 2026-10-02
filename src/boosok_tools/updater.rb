@@ -194,7 +194,7 @@ module BoosokTools
       begin
 
         # Muat ulang loader utama (memperbarui PLUGIN_VERSION dan konstanta lainnya)
-        loader_file = File.expand_path('../boosok_tools_loader.rb', base_dir)
+        loader_file = File.expand_path('../boosok_tools.rb', base_dir)
         load loader_file if File.exist?(loader_file)
 
         # Muat ulang semua file modul plugin

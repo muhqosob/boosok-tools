@@ -33,6 +33,13 @@ module BoosokTools
     plugin_dir = File.dirname(__FILE__)
     $LOAD_PATH << plugin_dir unless $LOAD_PATH.include?(plugin_dir)
 
+    # Migrasi dari versi <= 1.6.0 yang file root-nya bernama boosok_tools_loader.rb. Kalau masih
+    # ada, ia mendaftarkan extension yang sama dan menimpa PLUGIN_VERSION dengan angka lama
+    # (update terus-menerus muncul), jadi hapus. Nama root harus sama dengan nama folder
+    # (boosok_tools.rb + boosok_tools/) agar bisa di-sign di portal SketchUp.
+    old_root = File.join(plugin_dir, 'boosok_tools_loader.rb')
+    (File.delete(old_root) if File.exist?(old_root)) rescue nil
+
     # Tanpa ekstensi: SketchUp mencari bootstrap.rb maupun bootstrap.rbe
     loader_path = File.join('boosok_tools', 'bootstrap')
     ext = SketchupExtension.new("Boosok Tools", loader_path)
