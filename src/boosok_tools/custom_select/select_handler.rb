@@ -1,6 +1,6 @@
 Sketchup.require 'boosok_tools/locale' unless defined?(::BoosokTools::Locale)
 
-module BoosokTools::SelectTool5D
+module BoosokTools::SelectTool
   class SelectHandler
     def initialize(tool)
       @tool = tool

@@ -171,8 +171,8 @@ module BoosokTools
       end
 
       if id.to_s == 'custom_select'
-        load_tool_file(id.to_s) unless defined?(BoosokTools::SelectTool5D)
-        BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
+        load_tool_file(id.to_s) unless defined?(BoosokTools::SelectTool)
+        BoosokTools::SelectTool.activate_tool if defined?(BoosokTools::SelectTool)
         return
       end
 
@@ -199,8 +199,8 @@ module BoosokTools
       return toast("Tool \"#{id}\" tidak dikenal.") unless cfg
 
       if id.to_s == 'custom_select'
-        load_tool_file(id.to_s) unless defined?(BoosokTools::SelectTool5D)
-        BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
+        load_tool_file(id.to_s) unless defined?(BoosokTools::SelectTool)
+        BoosokTools::SelectTool.activate_tool if defined?(BoosokTools::SelectTool)
         return
       end
 
@@ -298,11 +298,11 @@ module BoosokTools
         end
       end
 
-      # Select Tool 5D (dipakai Replacer & tab Objek di Hide Scene) — satu pendaftaran saja
+      # Select Tool (dipakai Replacer & tab Objek di Hide Scene) — satu pendaftaran saja
       dlg.add_action_callback("activate_select_tool") do |_ctx|
         begin
-          load_tool_file('custom_select') unless defined?(BoosokTools::SelectTool5D)
-          BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
+          load_tool_file('custom_select') unless defined?(BoosokTools::SelectTool)
+          BoosokTools::SelectTool.activate_tool if defined?(BoosokTools::SelectTool)
         rescue => e
           puts "[Boosok Hub] Gagal aktifkan Select Tool: #{e.message}"
         end

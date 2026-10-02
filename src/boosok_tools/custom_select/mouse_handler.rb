@@ -1,4 +1,4 @@
-module BoosokTools::SelectTool5D
+module BoosokTools::SelectTool
   class MouseHandler
     def initialize(tool)
       @tool = tool

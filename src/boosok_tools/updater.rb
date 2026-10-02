@@ -213,7 +213,7 @@ module BoosokTools
           'hub.rb'
         ]
 
-        # Muat ulang semua handler 5D Select Tool
+        # Muat ulang semua handler Select Tool
         custom_select_dir = File.join(base_dir, 'custom_select')
         if File.directory?(custom_select_dir)
           Dir[File.join(custom_select_dir, '*.rb')].sort.each do |f|

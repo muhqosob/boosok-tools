@@ -1,6 +1,6 @@
 Sketchup.require 'boosok_tools/locale' unless defined?(::BoosokTools::Locale)
 
-module BoosokTools::SelectTool5D
+module BoosokTools::SelectTool
   class DrawHandler
     THEME_TTL = 1.0 unless defined?(THEME_TTL)
 

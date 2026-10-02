@@ -1,6 +1,6 @@
 Sketchup.require 'boosok_tools/locale' unless defined?(::BoosokTools::Locale)
 
-module BoosokTools::SelectTool5D
+module BoosokTools::SelectTool
   class CoreTool
     attr_accessor :hover_path, :target_depth, :ctrl_pressed, :cursor_x, :cursor_y
 
