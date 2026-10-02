@@ -314,6 +314,7 @@
     "upd_dont_close": "Jangan tutup SketchUp dulu.",
     "upd_done_title": "Update berhasil!",
     "upd_done_sub": "sudah langsung update tanpa perlu restart SketchUp.",
+    "upd_done_sub_restart": "terpasang. Restart SketchUp agar versi baru aktif.",
     "upd_done_hint": "Jika ada jendela fitur yang sedang terbuka, silakan tutup dan buka kembali.",
     "upd_restart_su": "Restart SketchUp",
     "upd_fail_title": "Gagal memperbarui",

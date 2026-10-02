@@ -1,8 +1,8 @@
 require 'sketchup'
 require 'json'
-load File.join(__dir__, 'titlebar.rb')
+Sketchup.require 'boosok_tools/titlebar'
 
-module TheSelectorPlugin
+module BoosokTools::TheSelectorPlugin
   @dialog = nil
   @cached_tags = []
   @update_timer = nil
@@ -16,55 +16,55 @@ module TheSelectorPlugin
 
   class LayersObserver < Sketchup::LayersObserver
     def onLayerAdded(*args)
-      TheSelectorPlugin.schedule_sync rescue nil
+      BoosokTools::TheSelectorPlugin.schedule_sync rescue nil
     end
 
     def onLayerRemoved(*args)
-      TheSelectorPlugin.schedule_sync rescue nil
+      BoosokTools::TheSelectorPlugin.schedule_sync rescue nil
     end
 
     def onLayerChanged(*args)
-      TheSelectorPlugin.schedule_sync rescue nil
+      BoosokTools::TheSelectorPlugin.schedule_sync rescue nil
     end
 
     def onLayerFolderAdded(*args)
-      TheSelectorPlugin.schedule_sync rescue nil
+      BoosokTools::TheSelectorPlugin.schedule_sync rescue nil
     end
 
     def onLayerFolderRemoved(*args)
-      TheSelectorPlugin.schedule_sync rescue nil
+      BoosokTools::TheSelectorPlugin.schedule_sync rescue nil
     end
 
     def onLayerFolderChanged(*args)
-      TheSelectorPlugin.schedule_sync rescue nil
+      BoosokTools::TheSelectorPlugin.schedule_sync rescue nil
     end
   end
 
   class ModelObserver < Sketchup::ModelObserver
     def onTransactionCommit(*args)
-      TheSelectorPlugin.schedule_sync rescue nil
+      BoosokTools::TheSelectorPlugin.schedule_sync rescue nil
     end
 
     def onTransactionUndo(*args)
-      TheSelectorPlugin.schedule_sync rescue nil
+      BoosokTools::TheSelectorPlugin.schedule_sync rescue nil
     end
 
     def onTransactionRedo(*args)
-      TheSelectorPlugin.schedule_sync rescue nil
+      BoosokTools::TheSelectorPlugin.schedule_sync rescue nil
     end
   end
 
   class AppObserver < Sketchup::AppObserver
     def onActivateModel(model)
-      TheSelectorPlugin.attach_to_model(model) rescue nil
+      BoosokTools::TheSelectorPlugin.attach_to_model(model) rescue nil
     end
 
     def onNewModel(model)
-      TheSelectorPlugin.attach_to_model(model) rescue nil
+      BoosokTools::TheSelectorPlugin.attach_to_model(model) rescue nil
     end
 
     def onOpenModel(model)
-      TheSelectorPlugin.attach_to_model(model) rescue nil
+      BoosokTools::TheSelectorPlugin.attach_to_model(model) rescue nil
     end
   end
 
@@ -170,7 +170,7 @@ module TheSelectorPlugin
   end
 
   def self.run_selector
-    require_relative 'hub' unless defined?(BoosokTools::Hub)
+    Sketchup.require 'boosok_tools/hub' unless defined?(BoosokTools::Hub)
     BoosokTools::Hub.open_or_show('selector')
   end
 

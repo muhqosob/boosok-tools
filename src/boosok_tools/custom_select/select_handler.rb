@@ -1,6 +1,6 @@
-require_relative '../locale' unless defined?(::BoosokTools::Locale)
+Sketchup.require 'boosok_tools/locale' unless defined?(::BoosokTools::Locale)
 
-module BoosokTools::SelectTool5D
+module BoosokTools::SelectTool
   class SelectHandler
     def initialize(tool)
       @tool = tool
@@ -94,7 +94,7 @@ module BoosokTools::SelectTool5D
                    elsif target_entity.respond_to?(:definition) && !target_entity.definition.name.empty?
                      target_entity.definition.name
                    else
-                     target_entity.typename rescue obj_fallback
+                     ::BoosokTools::SelectTool.type_name(target_entity)
                    end
         lock_badge = (target_entity.respond_to?(:locked?) && target_entity.locked?) ? loc('cs_locked_badge', ' [Terkunci]') : ""
         tpl = loc('cs_status_selected', 'Select Tool: Berhasil memilih %{name} (Level %{depth})%{lock} [Total: %{count}].')

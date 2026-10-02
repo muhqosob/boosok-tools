@@ -1,4 +1,4 @@
-# Naikkan PLUGIN_VERSION di src/boosok_tools_loader.rb lalu push ke main.
+# Naikkan PLUGIN_VERSION di src/boosok_tools.rb lalu push ke main.
 # Pesan commit terakhir dipakai sebagai changelog. Push tanpa naik versi = tidak rilis.
 name: Release
 
@@ -23,7 +23,7 @@ jobs:
       - name: Cek versi
         id: v
         run: |
-          VER=$(grep -oP 'PLUGIN_VERSION = "\K[^"]+' src/boosok_tools_loader.rb)
+          VER=$(grep -oP 'PLUGIN_VERSION = "\K[^"]+' src/boosok_tools.rb)
           echo "ver=$VER" >> "$GITHUB_OUTPUT"
           if gh release view "v$VER" >/dev/null 2>&1; then
             echo "v$VER sudah dirilis, skip."

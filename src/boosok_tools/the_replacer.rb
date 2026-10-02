@@ -1,21 +1,26 @@
-load File.join(__dir__, 'titlebar.rb')
+Sketchup.require 'boosok_tools/titlebar'
 
-module TheReplacer
-  $the_replacer_old_items  ||= []
-  $the_replacer_cache      ||= []
-  $the_replacer_timer      ||= nil
-  $the_replacer_dlg        ||= nil
+module BoosokTools::TheReplacer
+  @old_items  ||= []
+  @cache      ||= []
+  @timer      ||= nil
+  @dialog        ||= nil
 
   # Observer hanya menandai "selection berubah"; penyaringan dilakukan timer, dan hanya kalau berubah.
   class SelectionDirtyObserver < Sketchup::SelectionObserver
-    def onSelectionBulkChange(*);  TheReplacer.mark_dirty; end
-    def onSelectionAdded(*);       TheReplacer.mark_dirty; end
-    def onSelectionRemoved(*);     TheReplacer.mark_dirty; end
-    def onSelectionCleared(*);     TheReplacer.mark_dirty; end
+    def onSelectionBulkChange(*);  BoosokTools::TheReplacer.mark_dirty; end
+    def onSelectionAdded(*);       BoosokTools::TheReplacer.mark_dirty; end
+    def onSelectionRemoved(*);     BoosokTools::TheReplacer.mark_dirty; end
+    def onSelectionCleared(*);     BoosokTools::TheReplacer.mark_dirty; end
   end
 
   def self.mark_dirty
     @sel_dirty = true
+  end
+
+  # Dipanggil Hub saat dialog ditutup supaya callback didaftarkan lagi di dialog berikutnya
+  def self.release_dialog
+    @dialog = nil
   end
 
   # --- Timer sticky cache ------------------------------------------
@@ -25,17 +30,17 @@ module TheReplacer
     stop_cache_timer
     @sel_dirty = true
     attach_selection_observer(Sketchup.active_model)
-    $the_replacer_timer = UI.start_timer(0.2, true) do
+    @timer = UI.start_timer(0.2, true) do
       begin
         model = Sketchup.active_model
         next unless model
         attach_selection_observer(model) if model != @observed_model
-        next unless @sel_dirty && $the_replacer_old_items.empty?
+        next unless @sel_dirty && @old_items.empty?
         @sel_dirty = false
         current = model.selection.select { |e| e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) }
         # Sticky: jangan timpa cache valid dengan selection kosong
-        if !current.empty? || $the_replacer_cache.empty?
-          $the_replacer_cache = current
+        if !current.empty? || @cache.empty?
+          @cache = current
         end
       rescue; end
     end
@@ -59,9 +64,9 @@ module TheReplacer
   end
 
   def self.stop_cache_timer
-    if $the_replacer_timer
-      UI.stop_timer($the_replacer_timer) rescue nil
-      $the_replacer_timer = nil
+    if @timer
+      UI.stop_timer(@timer) rescue nil
+      @timer = nil
     end
     detach_selection_observer
   end
@@ -74,7 +79,7 @@ module TheReplacer
     ya = tr_lama.yaxis.normalize
     za = tr_lama.zaxis.normalize
     base = Geom::Transformation.axes(tr_lama.origin, xa, ya, za)
-    base * Geom::Transformation.scaling(tr_baru.xscale, tr_baru.yscale, tr_baru.zscale)
+    base * Geom::Transformation.scaling(tr_baru.xaxis.length, tr_baru.yaxis.length, tr_baru.zaxis.length)
   rescue
     tr_lama
   end
@@ -105,7 +110,7 @@ module TheReplacer
   # -----------------------------------------------------------------
 
   def self.run
-    require_relative 'hub' unless defined?(BoosokTools::Hub)
+    Sketchup.require 'boosok_tools/hub' unless defined?(BoosokTools::Hub)
     BoosokTools::Hub.open_or_show('replacer')
   end
 
@@ -114,8 +119,8 @@ module TheReplacer
     start_cache_timer
     # Callback cukup didaftarkan sekali per dialog; add_action_callback dengan nama sama
     # akan bertumpuk (handler jalan 2-3x). Timer di atas tetap dinyalakan tiap tool dibuka.
-    return if $the_replacer_dlg.equal?(dialog)
-    $the_replacer_dlg = dialog
+    return if @dialog.equal?(dialog)
+    @dialog = dialog
 
     # "activate_select_tool"/"deactivate_select_tool" didaftarkan sekali oleh Hub.
 
@@ -125,14 +130,14 @@ module TheReplacer
       live = model ? model.selection.to_a.select { |e|
         e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
       } : []
-      picked = live.empty? ? $the_replacer_cache : live
+      picked = live.empty? ? @cache : live
 
       if picked.empty?
         dialog.execute_script("showToast('Pilih minimal 1 Grup/Komponen Lama terlebih dahulu di layar!');")
       else
-        $the_replacer_old_items = picked.dup
+        @old_items = picked.dup
         stop_cache_timer
-        $the_replacer_cache = []
+        @cache = []
         model.selection.clear if model
         dialog.execute_script("showStep(2);")
       end
@@ -140,8 +145,8 @@ module TheReplacer
 
     # --- CALLBACK 2: RESTART ---
     restart_cb = lambda do |_action_context|
-      $the_replacer_old_items = []
-      $the_replacer_cache     = []
+      @old_items = []
+      @cache     = []
       model = Sketchup.active_model
       model.selection.clear if model
       start_cache_timer
@@ -171,21 +176,21 @@ module TheReplacer
 
       item_baru = new_sel[0]
 
-      if $the_replacer_old_items.empty?
+      if @old_items.empty?
         dialog.execute_script("showToast('Item Lama belum dipilih. Ulangi dari Langkah 1.'); resetExecButton(); showStep(1);")
         start_cache_timer
         next
       end
 
       # Filter item lama yang masih valid
-      $the_replacer_old_items.select! { |e| e && e.valid? }
-      if $the_replacer_old_items.empty?
+      @old_items.select! { |e| e && e.valid? }
+      if @old_items.empty?
         dialog.execute_script("showToast('Item Lama sudah tidak ada (terhapus/di-undo). Ulangi dari Langkah 1.'); resetExecButton(); showStep(1);")
         start_cache_timer
         next
       end
 
-      if $the_replacer_old_items.include?(item_baru)
+      if @old_items.include?(item_baru)
         dialog.execute_script("showToast('Item baru tidak boleh sama dengan item lama!');")
         dialog.execute_script("resetExecButton();")
         next
@@ -200,7 +205,7 @@ module TheReplacer
 
         replaced = 0
 
-        $the_replacer_old_items.each do |item_lama|
+        @old_items.each do |item_lama|
           begin
             next unless item_lama && item_lama.valid?
 
@@ -270,7 +275,7 @@ module TheReplacer
         model.commit_operation
         model.selection.clear
 
-        $the_replacer_old_items = []
+        @old_items = []
         dialog.execute_script("resetExecButton();")
         done_msg = follow_new ? "Sukses mengganti #{replaced} objek (ukuran ikut item baru)." :
                                 "Sukses mengganti & menyesuaikan ukuran #{replaced} objek."

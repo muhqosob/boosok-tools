@@ -1,9 +1,9 @@
 require 'sketchup'
 require 'json'
-require_relative 'titlebar'
-require_relative 'shortcut_sync'
-require_relative 'license'
-require_relative 'locale'
+Sketchup.require 'boosok_tools/titlebar'
+Sketchup.require 'boosok_tools/shortcut_sync'
+Sketchup.require 'boosok_tools/license'
+Sketchup.require 'boosok_tools/locale'
 
 module BoosokTools
   # Satu pintu masuk semua tool (Single Window Architecture).
@@ -19,14 +19,14 @@ module BoosokTools
     # SketchUp akan terus pakai versi lama TOOL_PAGES dari memori → error "tidak dikenal".
     remove_const(:TOOL_PAGES) if defined?(TOOL_PAGES)
     TOOL_PAGES = {
-      'selector'      => { file: 'main.rb',                  page: 'selector.html',        title: 'Selector' },
-      'custom_select' => { file: 'the_custom_select.rb',      page: nil,                    title: 'Select Tools' },
-      'replacer'      => { file: 'the_replacer.rb',           page: 'replacer.html',        title: 'Group Replacer' },
-      'clean'         => { file: 'the_cleangroup.rb',         page: 'cleangroup.html',      title: 'Group Cleaner' },
-      'reset'         => { file: 'the_reset.rb',              page: 'reset.html',           title: 'Reset Scale' },
-      'scene'         => { file: 'the_hideonscenemanager.rb', page: 'hidescene.html',       title: 'Hide on Scene' },
-      'untag'         => { file: 'untagnpaint.rb',            page: 'untagnpaint.html',     title: 'Untag & Unpaint' },
-      'deep'          => { file: 'deep_properties.rb',        page: 'deep_properties.html', title: 'Deep Properties' }
+      'selector'      => { file: 'main',                  page: 'selector.html',        title: 'Selector' },
+      'custom_select' => { file: 'the_custom_select',      page: nil,                    title: 'Select Tools' },
+      'replacer'      => { file: 'the_replacer',           page: 'replacer.html',        title: 'Group Replacer' },
+      'clean'         => { file: 'the_cleangroup',         page: 'cleangroup.html',      title: 'Group Cleaner' },
+      'reset'         => { file: 'the_reset',              page: 'reset.html',           title: 'Reset Scale' },
+      'scene'         => { file: 'the_hideonscenemanager', page: 'hidescene.html',       title: 'Hide on Scene' },
+      'untag'         => { file: 'untagnpaint',            page: 'untagnpaint.html',     title: 'Untag & Unpaint' },
+      'deep'          => { file: 'deep_properties',        page: 'deep_properties.html', title: 'Deep Properties' }
     }.freeze
 
     @current_tool ||= 'hub'
@@ -103,7 +103,7 @@ module BoosokTools
       end
 
       page_file = custom_page || 'hub.html'
-      dlg.set_file(File.join(__dir__, 'html', page_file))
+      dlg.set_file(File.join(::BoosokTools::SUPPORT_DIR, 'html', page_file))
       TitleBar.attach(dlg, TITLE, width: WIDTH)
 
       @current_tool = tool_id ? tool_id.to_s : 'hub'
@@ -122,10 +122,10 @@ module BoosokTools
       dlg.set_on_closed do
         BoosokTools.capture_current_position(TITLE)
         TOOL_PAGES.each_key { |tid| deactivate_tool(tid) }
-        $cleangroup_dlg = nil
-        $the_replacer_dlg = nil
-        $reset_dlg = nil
-        $untag_dlg = nil
+        ConvertToCleanGroup.release_dialog if defined?(ConvertToCleanGroup)
+        TheReplacer.release_dialog if defined?(TheReplacer)
+        TheResetScale.release_dialog if defined?(TheResetScale)
+        UntagUnpaintManager.release_dialog if defined?(UntagUnpaintManager)
         DeepProperties.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(DeepProperties)
         DeepProperties.instance_variable_set(:@dialog_registered_id, nil) rescue nil if defined?(DeepProperties)
         TheSelectorPlugin.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(TheSelectorPlugin)
@@ -171,8 +171,8 @@ module BoosokTools
       end
 
       if id.to_s == 'custom_select'
-        load_tool_file(id.to_s) unless defined?(BoosokTools::SelectTool5D)
-        BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
+        load_tool_file(id.to_s) unless defined?(BoosokTools::SelectTool)
+        BoosokTools::SelectTool.activate_tool if defined?(BoosokTools::SelectTool)
         return
       end
 
@@ -199,8 +199,8 @@ module BoosokTools
       return toast("Tool \"#{id}\" tidak dikenal.") unless cfg
 
       if id.to_s == 'custom_select'
-        load_tool_file(id.to_s) unless defined?(BoosokTools::SelectTool5D)
-        BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
+        load_tool_file(id.to_s) unless defined?(BoosokTools::SelectTool)
+        BoosokTools::SelectTool.activate_tool if defined?(BoosokTools::SelectTool)
         return
       end
 
@@ -225,9 +225,8 @@ module BoosokTools
     def self.load_tool_file(id)
       cfg = TOOL_PAGES[id.to_s]
       return unless cfg && cfg[:file]
-      file_path = File.join(__dir__, cfg[:file])
-      return false unless File.exist?(file_path)
-      load file_path
+      # cfg[:file] = nama modul tanpa ekstensi (di paket terenkripsi file aslinya .rbe)
+      BoosokTools.load_module(cfg[:file])
       true
     rescue Exception => e
       puts "[Boosok Tools] Gagal memuat file tool '#{id}': #{e.class}: #{e.message}"
@@ -299,11 +298,11 @@ module BoosokTools
         end
       end
 
-      # Select Tool 5D (dipakai Replacer & tab Objek di Hide Scene) — satu pendaftaran saja
+      # Select Tool (dipakai Replacer & tab Objek di Hide Scene) — satu pendaftaran saja
       dlg.add_action_callback("activate_select_tool") do |_ctx|
         begin
-          load_tool_file('custom_select') unless defined?(BoosokTools::SelectTool5D)
-          BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
+          load_tool_file('custom_select') unless defined?(BoosokTools::SelectTool)
+          BoosokTools::SelectTool.activate_tool if defined?(BoosokTools::SelectTool)
         rescue => e
           puts "[Boosok Hub] Gagal aktifkan Select Tool: #{e.message}"
         end
@@ -336,11 +335,11 @@ module BoosokTools
 
       dlg.add_action_callback("updates") do |_ctx|
         # Push state update inline ke hub (bukan buka dialog baru)
-        MyCustomPlugins::Updater.check_inline(dlg)
+        BoosokTools::Updater.check_inline(dlg)
       end
 
       dlg.add_action_callback("update_download") do |_ctx|
-        MyCustomPlugins::Updater.download_inline(dlg)
+        BoosokTools::Updater.download_inline(dlg)
       end
 
       dlg.add_action_callback("get_hotkeys") do |_ctx|
@@ -520,7 +519,7 @@ module BoosokTools
     # Jumlah group/component di level atas. Scan entitas mahal di model besar, jadi hasilnya
     # di-cache dan hanya dihitung ulang kalau jumlah entitas berubah atau cache sudah > 10 detik.
     def self.model_stats(model)
-      top = model.entities
+      top = model.entities # rubocop:disable SketchupSuggestions/ModelEntities -- statistik seluruh model, bukan konteks edit
       key = [model.object_id, top.length]
       now = Time.now.to_f
       if @stats_key != key || !@stats_at || now - @stats_at > STATS_TTL
@@ -542,7 +541,7 @@ module BoosokTools
         status: 'ready',
         has_booted: booted,
         session_id: (BoosokTools.session_id rescue ''),
-        version: MyCustomPlugins::PLUGIN_VERSION,
+        version: BoosokTools::PLUGIN_VERSION,
         theme: Sketchup.read_default("BoosokTools", "theme", "").to_s,
         language: cur_lang,
         hotkeys: (BoosokTools::ShortcutSync.get_all_shortcuts rescue {}),

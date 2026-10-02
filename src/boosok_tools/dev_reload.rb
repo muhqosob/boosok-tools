@@ -10,8 +10,8 @@ module BoosokTools
   #  - .html/.js/.css/.json     → halaman dialog yang terbuka di-refresh saja
   #  - Menu: Extensions > Boosok Tools > Reload Plugin (Dev)  untuk reload manual
   module Dev
-    ROOT       = __dir__ unless defined?(ROOT)
-    MARKER     = File.join(__dir__, '.dev_mode') unless defined?(MARKER)
+    ROOT       = ::BoosokTools::SUPPORT_DIR unless defined?(ROOT)
+    MARKER     = File.join(::BoosokTools::SUPPORT_DIR, '.dev_mode') unless defined?(MARKER)
     WATCH_EXT  = %w[.rb .html .js .css .json].freeze unless defined?(WATCH_EXT)
     # File yang ditulis plugin saat berjalan: jangan dianggap perubahan (hindari reload berulang)
     IGNORE     = %w[session.js strings.js].freeze unless defined?(IGNORE)

@@ -35,6 +35,21 @@ Get-ChildItem -Path $src -Recurse -File | ForEach-Object {
     $changed++
 }
 
+# File root (registrasi extension + SUPPORT_DIR + load_module) ada di luar folder boosok_tools
+$loaderSrc = Join-Path (Split-Path $src -Parent) "boosok_tools.rb"
+$loaderDst = Join-Path (Split-Path $dst -Parent) "boosok_tools.rb"
+# Nama root lama (<= 1.6.0): hapus supaya tidak mendaftarkan extension ganda
+$oldLoader = Join-Path (Split-Path $dst -Parent) "boosok_tools_loader.rb"
+if (Test-Path $oldLoader) { Remove-Item $oldLoader -Force; Write-Host "  [DEL] boosok_tools_loader.rb (nama lama)" -ForegroundColor Yellow }
+if (Test-Path $loaderSrc) {
+    $same = (Test-Path $loaderDst) -and ((Get-FileHash $loaderSrc).Hash -eq (Get-FileHash $loaderDst).Hash)
+    if (-not $same) {
+        Copy-Item $loaderSrc $loaderDst -Force
+        Write-Host "  [OK] boosok_tools.rb (restart SketchUp agar file root ter-load)" -ForegroundColor Yellow
+        $changed++
+    }
+}
+
 # Penanda mode dev (aktifkan auto-reload di plugin)
 $marker = Join-Path $dst ".dev_mode"
 if (-not (Test-Path $marker)) {

@@ -1,6 +1,6 @@
-require_relative '../locale' unless defined?(::BoosokTools::Locale)
+Sketchup.require 'boosok_tools/locale' unless defined?(::BoosokTools::Locale)
 
-module BoosokTools::SelectTool5D
+module BoosokTools::SelectTool
   class CoreTool
     attr_accessor :hover_path, :target_depth, :ctrl_pressed, :cursor_x, :cursor_y
 
@@ -13,7 +13,7 @@ module BoosokTools::SelectTool5D
 
       # Load Custom Cursor (panah biru khas Select Tool)
       begin
-        res_dir = File.join(__dir__, 'resources')
+        res_dir = File.join(::BoosokTools::SUPPORT_DIR, 'custom_select', 'resources')
         cursor_path     = File.join(res_dir, 'cursor_select.png')
         cursor_add_path = File.join(res_dir, 'cursor_select_add.png')
         @cursor_select_id = UI.create_cursor(cursor_path, 3, 3) if File.exist?(cursor_path)
@@ -39,7 +39,8 @@ module BoosokTools::SelectTool5D
       model = Sketchup.active_model
       if model && model.valid?
         # Pengecekan Empty State Model
-        if model.entities.empty?
+        # Sengaja entities root (bukan active_entities): cek model kosong tidak boleh tergantung konteks edit
+        if model.entities.empty? # rubocop:disable SketchupSuggestions/ModelEntities
           Sketchup.status_text = loc('cs_model_empty', 'Select Tool: Model kosong. Buat objek / grup terlebih dahulu.')
         else
           update_status_bar
@@ -48,6 +49,21 @@ module BoosokTools::SelectTool5D
       end
     rescue => e
       warn "[Select Tool] Error during activate: #{e.message}" if $DEBUG
+    end
+
+    # Tool dijeda (mis. orbit/pan): hapus overlay hover supaya tidak tertinggal di viewport
+    def suspend(view)
+      view.invalidate
+    end
+
+    # Area yang ditempati gambar tool, supaya highlight tidak terpotong (clipped) di viewport
+    def getExtents
+      bb = Geom::BoundingBox.new
+      model = Sketchup.active_model
+      bb.add(model.bounds) if model
+      bb
+    rescue
+      Geom::BoundingBox.new
     end
 
     def deactivate(view)
@@ -136,7 +152,7 @@ module BoosokTools::SelectTool5D
                    elsif entity.respond_to?(:definition) && !entity.definition.name.empty?
                      entity.definition.name
                    else
-                     entity.typename rescue obj_fallback
+                     ::BoosokTools::SelectTool.type_name(entity)
                    end
         tpl = loc('cs_status_hover', 'Select Tool [Level %{lvl}/%{max}: %{name}]: [Klik] Seleksi | [CTRL + Scroll] Ubah Level | [ESC] Reset')
         Sketchup.status_text = tpl.gsub('%{lvl}', lvl.to_s).gsub('%{max}', (path.length - 1).to_s).gsub('%{name}', ent_name.to_s)

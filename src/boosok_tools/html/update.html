@@ -236,7 +236,9 @@
       },
       done: function (s) {
         return hero(badge('check', 'ok draw'), t('upd_done_title', 'Update berhasil!'),
-          v(s.latest, 'new') + '<br><br>' + t('upd_done_sub', 'sudah langsung update tanpa perlu restart SketchUp.')) +
+          v(s.latest, 'new') + '<br><br>' + (s.restart
+            ? t('upd_done_sub_restart', 'terpasang. Restart SketchUp agar versi baru aktif.')
+            : t('upd_done_sub', 'sudah langsung update tanpa perlu restart SketchUp.'))) +
           '<div class="spacer"></div><div class="note">' + icon('info') +
           '<span>' + t('upd_done_hint', 'Jika ada jendela fitur yang sedang terbuka, silakan tutup dan buka kembali.') + '</span></div>' +
           '<div class="actions row">' +

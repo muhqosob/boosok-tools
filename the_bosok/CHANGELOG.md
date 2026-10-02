@@ -9,7 +9,7 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ### 🔧 Perbaikan
 
-- **Fix: Highlight Nested Level 1 & 2 pada 5D Select Tool**
+- **Fix: Highlight Nested Level 1 & 2 pada Select Tool**
 
   Highlight sebelumnya hanya berfungsi di nested level 0 (outermost group) atau deepest edge karena
   ketergantungan pada `InstancePath` yang mengembalikan transformasi identitas untuk intermediate instances.
@@ -62,10 +62,10 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ### 🔧 Perbaikan
 
-- **Fix: `NameError` saat mengaktifkan 5D Select Tool dari Hub**
+- **Fix: `NameError` saat mengaktifkan Select Tool dari Hub**
 
   `CoreTool.new` gagal karena Ruby tidak bisa resolve nama kelas tanpa namespace penuh
-  saat file di-`load` secara dinamis. Diperbaiki ke `BoosokTools::SelectTool5D::CoreTool.new`.
+  saat file di-`load` secara dinamis. Diperbaiki ke `BoosokTools::SelectTool::CoreTool.new`.
 
 ---
 
@@ -73,7 +73,7 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ### ✨ Fitur Baru
 
-- **5D Select Tool — Seleksi Hirarki Viewport**
+- **Select Tool — Seleksi Hirarki Viewport**
 
   Tool seleksi inovatif yang memungkinkan inspeksi dan seleksi sub-komponen/group
   secara mendalam langsung dari viewport, tanpa perlu membuka container induk:

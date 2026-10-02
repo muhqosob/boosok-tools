@@ -1,12 +1,23 @@
 require 'sketchup'
-require_relative 'locale' unless defined?(BoosokTools::Locale)
+Sketchup.require 'boosok_tools/locale' unless defined?(BoosokTools::Locale)
 
 module BoosokTools
-  module SelectTool5D
-    PATH ||= File.join(__dir__, 'custom_select')
+  module SelectTool
+    # Daftar eksplisit (bukan Dir['*.rb']): di paket terenkripsi filenya .rbe sehingga glob tidak ketemu.
+    # Handler cuma saling pakai saat tool dibuat, jadi urutan muat tidak berpengaruh.
+    HANDLERS = %w[core_tool draw_handler mouse_handler select_handler ui_info_handler].freeze unless defined?(HANDLERS)
+
+    # Nama tipe entity ("Group", "Face", ...). Pengganti Entity#typename yang lambat.
+    def self.type_name(entity)
+      entity.class.name.to_s.split('::').last || 'Entity'
+    end
+
+    def self.load_handlers
+      HANDLERS.each { |h| BoosokTools.load_module("custom_select/#{h}") }
+    end
 
     def self.reload!
-      Dir[File.join(PATH, '*.rb')].each { |f| load f }
+      load_handlers
       activate_tool
       puts "[Select Tool] Berhasil me-reload semua file dan mengaktifkan tool baru!"
     end
@@ -19,32 +30,27 @@ module BoosokTools
       end
 
       # Handler sudah dimuat di bawah (saat file ini di-load); jangan parse ulang tiap aktivasi
-      Dir[File.join(PATH, '*.rb')].each { |f| load f } unless defined?(BoosokTools::SelectTool5D::CoreTool)
+      load_handlers unless defined?(BoosokTools::SelectTool::CoreTool)
       model = Sketchup.active_model
       unless model && model.valid?
         UI.messagebox("Tidak ada model aktif yang terbuka di SketchUp.") rescue nil
         return
       end
 
-      tool = BoosokTools::SelectTool5D::CoreTool.new
+      tool = BoosokTools::SelectTool::CoreTool.new
       model.select_tool(tool)
     rescue => e
       UI.messagebox("Gagal mengaktifkan Select Tool: #{e.message}") rescue nil
     end
 
     def self.run
-      require_relative 'hub' unless defined?(BoosokTools::Hub)
+      Sketchup.require 'boosok_tools/hub' unless defined?(BoosokTools::Hub)
       BoosokTools::Hub.open_or_show('custom_select')
     end
 
     # Muat semua handler di dalam folder custom_select
-    Dir[File.join(PATH, '*.rb')].each { |f| load f }
+    load_handlers
   end
-end
-
-# Alias untuk kompatibilitas ke belakang (backwards compatibility)
-module CustomTools
-  SelectTool5D = BoosokTools::SelectTool5D unless defined?(SelectTool5D)
 end
 
 file_loaded(__FILE__)

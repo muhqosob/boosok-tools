@@ -3,16 +3,16 @@ require 'json'
 
 module BoosokTools
   unless file_loaded?(__FILE__)
-    load File.join(__dir__, 'titlebar.rb')
+    Sketchup.require 'boosok_tools/titlebar'
     BoosokTools.init_session_file
-    require_relative 'locale'
+    Sketchup.require 'boosok_tools/locale'
     # Buat js/strings.js dari locales/*.json sebelum dialog mana pun dimuat
     BoosokTools::Locale.export_js
-    require_relative 'updater'
-    require_relative 'shortcut_sync'
-    require_relative 'license'
-    require_relative 'hub'
-    require_relative 'the_custom_select'
+    Sketchup.require 'boosok_tools/updater'
+    Sketchup.require 'boosok_tools/shortcut_sync'
+    Sketchup.require 'boosok_tools/license'
+    Sketchup.require 'boosok_tools/hub'
+    Sketchup.require 'boosok_tools/the_custom_select'
 
     BoosokTools::ShortcutSync.init
 
@@ -38,7 +38,7 @@ module BoosokTools
     register_cmd.call('Deep Props')    { BoosokTools::Hub.open_or_show('deep') }
 
     # Mode developer (hanya aktif kalau file .dev_mode ada di folder plugin)
-    require_relative 'dev_reload'
+    Sketchup.require 'boosok_tools/dev_reload'
     if BoosokTools::Dev.enabled?
       register_cmd.call('Reload Plugin (Dev)') { BoosokTools::Dev.reload_all }
       BoosokTools::Dev.start

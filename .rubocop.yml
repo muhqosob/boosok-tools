@@ -1,0 +1,39 @@
+# Pengecekan yang sama dengan Extension Signature Portal SketchUp (RuboCop + rubocop-sketchup).
+# Portal menolak paket yang masih punya offense, jadi jalankan `rubocop` di root repo sebelum
+# membuat .rbz untuk di-upload. Hasil yang diharapkan: "no offenses detected".
+# Lebih lengkap: .\check_sketchup.ps1 (RuboCop + cek require_relative/load yang tidak
+# ditangkap RuboCop tapi merusak paket terenkripsi).
+#
+# Setup sekali (versi dipin supaya tidak butuh MSYS2/kompilasi di Windows):
+#   gem install rubocop-ast -v 1.30.0 --no-document
+#   gem install rubocop -v 1.56.4 --no-document
+#   gem install rubocop-sketchup -v 1.2.0 --no-document --ignore-dependencies
+#
+# Cuma cop SketchUp yang aktif; aturan gaya Ruby umum sengaja dimatikan.
+# Cop yang sengaja dilewati harus pakai `# rubocop:disable ... -- alasan` di barisnya.
+
+require: rubocop-sketchup
+
+AllCops:
+  DisabledByDefault: true
+  NewCops: disable
+  SuggestExtensions: false
+  TargetRubyVersion: 2.7
+  SketchUp:
+    # Relatif terhadap file ini. Isinya harus persis: boosok_tools.rb + folder boosok_tools/
+    SourcePath: src
+    # Asumsi versi SketchUp minimum (Ruby 2.7). Naik/turunkan sesuai dukungan yang dijanjikan.
+    TargetSketchUpVersion: 2021
+    # Paket dienkripsi jadi .rbe oleh portal: cek aturan require/load untuk file terenkripsi.
+    EncryptedExtension: true
+
+SketchupBugs:
+  Enabled: true
+SketchupDeprecations:
+  Enabled: true
+SketchupPerformance:
+  Enabled: true
+SketchupRequirements:
+  Enabled: true
+SketchupSuggestions:
+  Enabled: true

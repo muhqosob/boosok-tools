@@ -227,7 +227,7 @@ module BoosokTools
         File.write(desktop_path, content) rescue nil
 
         # Simpan juga ke folder plugin
-        target_dir = File.dirname(__FILE__)
+        target_dir = ::BoosokTools::SUPPORT_DIR
         dat_path = File.join(target_dir, 'BoosokTools_Shortcuts.dat')
         File.write(dat_path, content) rescue nil
 

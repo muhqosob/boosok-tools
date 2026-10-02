@@ -1,6 +1,6 @@
-require_relative '../locale' unless defined?(::BoosokTools::Locale)
+Sketchup.require 'boosok_tools/locale' unless defined?(::BoosokTools::Locale)
 
-module BoosokTools::SelectTool5D
+module BoosokTools::SelectTool
   class DrawHandler
     THEME_TTL = 1.0 unless defined?(THEME_TTL)
 
@@ -173,7 +173,6 @@ module BoosokTools::SelectTool5D
 
       # Skip jika kursor mengarah ke Axes
       return if defined?(Sketchup::Axes) && target_entity.is_a?(Sketchup::Axes)
-      return if target_entity.respond_to?(:typename) && target_entity.typename.to_s.downcase.include?('axes')
 
       # Warna highlight: hijau cerah (dibuat sekali). Ubah di HIGHLIGHT_RGB / HIGHLIGHT_FILL_ALPHA.
       color_outline = (@hl_outline ||= Sketchup::Color.new(*HIGHLIGHT_RGB))
@@ -429,14 +428,13 @@ module BoosokTools::SelectTool5D
 
     # Ekstrak data hierarki dari hover_path → [{level:, name:, tag:, icon:}], atau nil bila ada Axes
     def build_hierarchy_rows(path)
-      return nil if path.any? { |e| (defined?(Sketchup::Axes) && e.is_a?(Sketchup::Axes)) || (e.respond_to?(:typename) && e.typename.to_s.downcase.include?('axes')) }
+      return nil if path.any? { |e| defined?(Sketchup::Axes) && e.is_a?(Sketchup::Axes) }
 
       path.each_with_index.map do |entity, idx|
         next unless entity && entity.respond_to?(:valid?) && entity.valid?
         next if defined?(Sketchup::Axes) && entity.is_a?(Sketchup::Axes)
-        next if entity.respond_to?(:typename) && entity.typename.to_s.downcase.include?('axes')
 
-        type = entity.typename rescue "Entity"
+        type = ::BoosokTools::SelectTool.type_name(entity)
         # Nama: nama instance kalau ada; kalau kosong, ambil dari definition-nya (Group maupun
         # Component) — bukan lagi nomor urut level seperti "Group#1", "Group#2".
         name = if entity.respond_to?(:name) && !entity.name.empty?
