@@ -260,7 +260,8 @@ module TheSelectorPlugin
       target_attr_val = data["attr_val"].to_s.strip.downcase
 
       model = Sketchup.active_model
-      return dialog.execute_script("resetSubmitButton(); showToast('Tidak ada model yang aktif.');") unless model
+      no_model_msg = defined?(BoosokTools::Locale) ? BoosokTools::Locale.t('sel_no_model', 'Tidak ada model yang aktif.') : 'Tidak ada model yang aktif.'
+      return dialog.execute_script("resetSubmitButton(); showToast(#{no_model_msg.to_json});") unless model
 
       selection = model.selection
       selection.clear
@@ -321,11 +322,13 @@ module TheSelectorPlugin
 
       if matching_entities.any?
         selection.add(matching_entities)
-        pesan = "Sukses! Ditemukan dan menyeleksi <b>#{matching_entities.size}</b> objek."
-        dialog.execute_script("showSuccessStep('#{pesan}');")
+        found_msg = defined?(BoosokTools::Locale) ? BoosokTools::Locale.t('sel_found', 'Sukses! Ditemukan dan menyeleksi <b>%{count}</b> objek.') : 'Sukses! Ditemukan dan menyeleksi <b>%{count}</b> objek.'
+        pesan = found_msg.gsub('%{count}', matching_entities.size.to_s)
+        dialog.execute_script("showSuccessStep(#{pesan.to_json});")
       else
+        not_found_msg = defined?(BoosokTools::Locale) ? BoosokTools::Locale.t('sel_not_found_msg', 'Tidak ditemukan objek dengan kriteria tersebut.') : 'Tidak ditemukan objek dengan kriteria tersebut.'
         dialog.execute_script("resetSubmitButton();")
-        dialog.execute_script("showToast('Tidak ditemukan objek dengan kriteria tersebut.');")
+        dialog.execute_script("showToast(#{not_found_msg.to_json});")
       end
     rescue => e
       dialog.execute_script("resetSubmitButton();")

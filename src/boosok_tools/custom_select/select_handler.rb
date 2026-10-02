@@ -1,7 +1,13 @@
+require_relative '../locale' unless defined?(::BoosokTools::Locale)
+
 module BoosokTools::SelectTool5D
   class SelectHandler
     def initialize(tool)
       @tool = tool
+    end
+
+    def loc(key, fallback)
+      defined?(::BoosokTools::Locale) ? ::BoosokTools::Locale.t(key, fallback) : fallback
     end
 
     def process_selection(flags)
@@ -21,7 +27,7 @@ module BoosokTools::SelectTool5D
       if path.empty?
         unless ctrl_down || shift_down
           selection.clear
-          Sketchup.status_text = "Select Tool: Seleksi dibersihkan."
+          Sketchup.status_text = loc('cs_status_cleared', 'Select Tool: Seleksi dibersihkan.')
         end
         return
       end
@@ -35,7 +41,7 @@ module BoosokTools::SelectTool5D
 
       # Notifikasi jika objek terkunci
       if target_entity.respond_to?(:locked?) && target_entity.locked?
-        Sketchup.status_text = "Select Tool: Objek terkunci (Locked)."
+        Sketchup.status_text = loc('cs_status_locked', 'Select Tool: Objek terkunci (Locked).')
       end
 
       # Kosongkan seleksi sebelumnya HANYA jika tidak menahan tombol Ctrl atau Shift
@@ -82,15 +88,17 @@ module BoosokTools::SelectTool5D
 
       # Tampilkan feedback hasil seleksi ke status bar
       if selected
+        obj_fallback = loc('cs_object', 'Objek')
         ent_name = if target_entity.respond_to?(:name) && !target_entity.name.empty?
                      target_entity.name
                    elsif target_entity.respond_to?(:definition) && !target_entity.definition.name.empty?
                      target_entity.definition.name
                    else
-                     target_entity.typename rescue "Objek"
+                     target_entity.typename rescue obj_fallback
                    end
-        lock_info = (target_entity.respond_to?(:locked?) && target_entity.locked?) ? " [Terkunci]" : ""
-        Sketchup.status_text = "Select Tool: Berhasil memilih #{ent_name} (Level #{depth})#{lock_info} [Total: #{selection.count}]."
+        lock_badge = (target_entity.respond_to?(:locked?) && target_entity.locked?) ? loc('cs_locked_badge', ' [Terkunci]') : ""
+        tpl = loc('cs_status_selected', 'Select Tool: Berhasil memilih %{name} (Level %{depth})%{lock} [Total: %{count}].')
+        Sketchup.status_text = tpl.gsub('%{name}', ent_name.to_s).gsub('%{depth}', depth.to_s).gsub('%{lock}', lock_badge).gsub('%{count}', selection.count.to_s)
       end
     rescue => e
       warn "[Select Tool] Error during process_selection: #{e.message}" if $DEBUG

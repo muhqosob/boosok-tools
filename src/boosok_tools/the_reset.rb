@@ -12,12 +12,10 @@ module TheResetScale
 
   def self.attach_callbacks(dialog)
     return unless dialog
-    if $reset_dlg.equal?(dialog)
-      return
-    end
+    return if $reset_dlg.equal?(dialog) # sudah terdaftar di dialog ini (hindari handler bertumpuk)
     $reset_dlg = dialog
 
-    dialog.add_action_callback("reset") do |_action_context, mode, recursive|
+    reset_cb = lambda do |_action_context, mode, recursive|
       mode_str = mode.to_s.empty? ? "preserve" : mode.to_s
       is_recursive = (recursive == true)
 
@@ -33,6 +31,9 @@ module TheResetScale
         dialog.execute_script("resetExecButton(); showToast(#{result.to_json});")
       end
     end
+
+    dialog.add_action_callback("reset", &reset_cb)
+    dialog.add_action_callback("proses_reset", &reset_cb)
   end
 
   def self.reset_selection(mode = "preserve", recursive = false)

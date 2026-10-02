@@ -173,32 +173,33 @@ module BoosokTools
       fg = is_dark ? [0x00F4F4F6].pack('L') : [0xFFFFFFFF].pack('L')
       DwmSetWindowAttribute.call(hwnd, 36, fg, 4) rescue nil
 
-      # Force titlebar repaint: toggle WM_NCACTIVATE off then on
-      # WM_NCACTIVATE = 0x0086
-      SendMessageA.call(hwnd, 0x0086, 0, 0) rescue nil
-      SendMessageA.call(hwnd, 0x0086, 1, 0) rescue nil
-
-      # Also SWP_FRAMECHANGED for good measure
+      # Repaint frame (SWP_NOSIZE|SWP_NOMOVE|SWP_NOZORDER|SWP_FRAMECHANGED).
+      # Tidak pakai SendMessage(WM_NCACTIVATE): sinkron & memaksa repaint ganda.
       SetWindowPos.call(hwnd, 0, 0, 0, 0, 0, 0x0027) rescue nil
-
-      log("apply hwnd=#{hwnd} dark=#{is_dark}")
     end
 
+    # Tema hanya diterapkan kalau jendela/temanya berubah. Sebelumnya dijalankan di
+    # setiap load halaman (syncTheme) + 5 timer → repaint frame berulang tiap pindah menu.
     def self.set_theme(title, is_dark)
       return unless ready?
       hwnd = find_hwnd(title)
-      if hwnd != 0
-        apply_dark_titlebar(hwnd, is_dark)
-      end
+      return if hwnd == 0
+      return if @applied_theme == [hwnd, is_dark]
+      apply_dark_titlebar(hwnd, is_dark)
+      @applied_theme = [hwnd, is_dark]
     end
 
     def self.attach(dialog, title, width: nil)
       return unless dialog
-      log("attach '#{title}' ready=#{ready?}")
+      @applied_theme = nil
+      last_h = nil
 
       dialog.add_action_callback("syncTheme") do |_ctx, theme|
         is_dark = (theme.to_s == 'dark')
-        Sketchup.write_default("BoosokTools", "theme", theme.to_s)
+        if @saved_theme != theme.to_s
+          Sketchup.write_default("BoosokTools", "theme", theme.to_s)
+          @saved_theme = theme.to_s
+        end
         set_theme(title, is_dark)
       end
 
@@ -227,9 +228,11 @@ module BoosokTools
 
       dialog.add_action_callback("set_dialog_height") do |_ctx, height|
         h = height.to_i
-        if h > 200 && h < 1200
+        # set_size = resize jendela native + relayout; lewati kalau tingginya tidak berubah
+        if h > 200 && h < 1200 && (last_h.nil? || (h - last_h).abs >= 4)
           w = width ? width.to_i : 380
           dialog.set_size(w, h)
+          last_h = h
         end
       end
 

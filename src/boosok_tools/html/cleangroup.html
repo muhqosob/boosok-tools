@@ -4,58 +4,60 @@
   <meta charset="UTF-8">
   <title>Group Cleaner</title>
   <link rel="stylesheet" href="../css/ui.css">
+  <script src="../js/strings.js"></script>
+  <script src="../js/locale.js"></script>
 </head>
 <body oncontextmenu="return false;">
   <script src="../js/ui.js"></script>
 
   <header class="head">
-    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()"><svg><use href="#i-arrow-left"/></svg></button>
+    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()" data-i18n-title="back_to_hub" data-i18n-aria="back_aria"><svg><use href="#i-arrow-left"/></svg></button>
     <div class="mark"><svg><use href="#i-sparkles"/></svg></div>
     <div class="txt">
-      <h1>Group Cleaner</h1>
-      <p>Component jadi group murni</p>
+      <h1 data-i18n="clean_title">Group Cleaner</h1>
+      <p data-i18n="clean_sub">Component jadi group murni</p>
     </div>
-    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema"></button>
+    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema" data-i18n-title="theme_toggle" data-i18n-aria="theme_toggle"></button>
   </header>
 
   <section class="step active" id="step1">
     <div class="card">
-      <div class="cap">Yang dilakukan</div>
+      <div class="cap" data-i18n="clean_what">Yang dilakukan</div>
       <ul class="steps">
         <li>
           <div class="ic"><svg><use href="#i-eraser"/></svg></div>
-          <div><div class="t">Hapus 2d__Line</div><div class="s">Semua group / component bernama 2d__Line</div></div>
+          <div><div class="t" data-i18n="clean_step1_t">Hapus 2d__Line</div><div class="s" data-i18n="clean_step1_s">Semua group / component bernama 2d__Line</div></div>
         </li>
         <li>
           <div class="ic"><svg><use href="#i-key-round"/></svg></div>
-          <div><div class="t">Bersihkan atribut</div><div class="s">Termasuk dynamic attributes</div></div>
+          <div><div class="t" data-i18n="clean_step2_t">Bersihkan atribut</div><div class="s" data-i18n="clean_step2_s">Termasuk dynamic attributes</div></div>
         </li>
         <li>
           <div class="ic"><svg><use href="#i-box"/></svg></div>
-          <div><div class="t">Semua isi jadi group</div><div class="s">Tag & posisi tetap, instance lain aman</div></div>
+          <div><div class="t" data-i18n="clean_step3_t">Semua isi jadi group</div><div class="s" data-i18n="clean_step3_s">Tag & posisi tetap, instance lain aman</div></div>
         </li>
       </ul>
     </div>
-    <div class="note"><svg><use href="#i-info"/></svg><span>Seleksi tepat <b>1 component</b> di model dulu.</span></div>
+    <div class="note"><svg><use href="#i-info"/></svg><span data-i18n="clean_note">Seleksi tepat <b>1 component</b> di model dulu.</span></div>
     <div class="spacer"></div>
     <button class="btn primary" id="btnExec" onclick="executeCleanGroup(this)">
-      <svg><use href="#i-sparkles"/></svg><span>Bersihkan</span>
+      <svg><use href="#i-sparkles"/></svg><span data-i18n="clean_btn">Bersihkan</span>
     </button>
   </section>
 
   <section class="step" id="step2">
     <div class="hero">
       <div class="badge ok draw"><svg><use href="#i-check"/></svg></div>
-      <h2>Sudah bersih</h2>
+      <h2 data-i18n="clean_done_title">Sudah bersih</h2>
       <p id="success-message"></p>
     </div>
     <div class="spacer"></div>
     <div class="actions row">
       <button class="btn ghost" onclick="restartClean()">
-        <svg><use href="#i-rotate-ccw"/></svg><span>Lagi</span>
+        <svg><use href="#i-rotate-ccw"/></svg><span data-i18n="again">Lagi</span>
       </button>
       <button class="btn primary" onclick="backToHub()">
-        <svg><use href="#i-house"/></svg><span>Tutup</span>
+        <svg><use href="#i-house"/></svg><span data-i18n="close">Tutup</span>
       </button>
     </div>
   </section>
@@ -68,7 +70,7 @@
           sketchup.proses_clean_group();
         } else {
           resetExecButton();
-          showToast('Fungsi Group Cleaner belum siap. Silakan coba lagi.', 'error');
+          showToast(t('clean_err','Fungsi Group Cleaner belum siap. Silakan coba lagi.'), 'error');
         }
       } catch (err) {
         resetExecButton();
@@ -107,7 +109,8 @@
     // Dipanggil dari Ruby: showStep(n), showToast(msg), resetExecButton(), showSuccessStep(msg)
     function resetExecButton() { busy('btnExec', false); }
     function showSuccessStep(msg) {
-      document.getElementById('success-message').textContent = msg;
+      var translated = (window.translateMessage ? window.translateMessage(msg) : msg);
+      document.getElementById('success-message').textContent = translated;
       showStep(2);
       autoFitHeight(0);
     }

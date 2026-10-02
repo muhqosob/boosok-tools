@@ -4,64 +4,72 @@
   <meta charset="UTF-8">
   <title>Group Replacer</title>
   <link rel="stylesheet" href="../css/ui.css">
+  <script src="../js/strings.js"></script>
+  <script src="../js/locale.js"></script>
 </head>
 <body oncontextmenu="return false;">
   <script src="../js/ui.js"></script>
 
   <header class="head">
-    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()"><svg><use href="#i-arrow-left"/></svg></button>
+    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()" data-i18n-title="back_to_hub" data-i18n-aria="back_aria"><svg><use href="#i-arrow-left"/></svg></button>
     <div class="mark"><svg><use href="#i-replace"/></svg></div>
     <div class="txt">
-      <h1>Group Replacer</h1>
-      <p>Ganti objek, ukuran ikut yang lama</p>
+      <h1 data-i18n="repl_title">Group Replacer</h1>
+      <p data-i18n="repl_sub">Ganti objek, ukuran ikut yang lama</p>
     </div>
     <span class="pill" id="cur">1 / 2</span>
-    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema"></button>
+    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema" data-i18n-title="theme_toggle" data-i18n-aria="theme_toggle"></button>
   </header>
 
   <!-- Langkah 1: item lama -->
   <section class="step active" id="step1" data-label="1 / 2">
     <div class="card">
-      <div class="cap">Item lama</div>
+      <div class="cap" data-i18n="repl_old">Item lama</div>
       <ul class="steps">
         <li>
           <div class="ic"><svg><use href="#i-square-dashed-mouse-pointer"/></svg></div>
-          <div><div class="t">Seleksi item lama</div><div class="s">Satu atau beberapa group / component yang mau diganti</div></div>
+          <div><div class="t" data-i18n="repl_old_s1_t">Seleksi item lama</div><div class="s" data-i18n="repl_old_s1_s">Satu atau beberapa group / component yang mau diganti</div></div>
         </li>
         <li>
           <div class="ic"><svg><use href="#i-arrow-right"/></svg></div>
-          <div><div class="t">Klik Lanjut</div><div class="s">Seleksi akan dikosongkan untuk langkah berikutnya</div></div>
+          <div><div class="t" data-i18n="repl_old_s2_t">Klik Lanjut</div><div class="s" data-i18n="repl_old_s2_s">Seleksi akan dikosongkan untuk langkah berikutnya</div></div>
         </li>
       </ul>
     </div>
-    <div class="note"><svg><use href="#i-square-dashed-mouse-pointer"/></svg><span>Select Tools aktif — gunakan Ctrl+Scroll di viewport untuk seleksi group bertingkat.</span></div>
+    <div class="note"><svg><use href="#i-square-dashed-mouse-pointer"/></svg><span data-i18n="repl_note1">Select Tools aktif — gunakan Ctrl+Scroll di viewport untuk seleksi group bertingkat.</span></div>
     <div class="spacer"></div>
     <button class="btn primary" onclick="checkOld()">
-      <span>Lanjut</span><svg><use href="#i-arrow-right"/></svg>
+      <span data-i18n="next">Lanjut</span><svg><use href="#i-arrow-right"/></svg>
     </button>
   </section>
 
   <!-- Langkah 2: item baru -->
   <section class="step" id="step2" data-label="2 / 2">
     <div class="card">
-      <div class="cap">Item baru</div>
+      <div class="cap" data-i18n="repl_new">Item baru</div>
       <ul class="steps">
         <li>
           <div class="ic"><svg><use href="#i-component"/></svg></div>
-          <div><div class="t">Seleksi tepat 1 item baru</div><div class="s">Group / component pengganti</div></div>
+          <div><div class="t" data-i18n="repl_new_s1_t">Seleksi tepat 1 item baru</div><div class="s" data-i18n="repl_new_s1_s">Group / component pengganti</div></div>
         </li>
         <li>
           <div class="ic"><svg><use href="#i-replace"/></svg></div>
-          <div><div class="t">Klik Ganti</div><div class="s">Tag, nama & ukuran X/Y mengikuti item lama</div></div>
+          <div><div class="t" data-i18n="repl_new_s2_t">Klik Ganti</div><div class="s" data-i18n="repl_new_s2_s">Tag, nama & ukuran X/Y mengikuti item lama</div></div>
         </li>
       </ul>
     </div>
-    <div class="note"><svg><use href="#i-square-dashed-mouse-pointer"/></svg><span>Select Tools aktif — gunakan Ctrl+Scroll untuk seleksi group bertingkat sebagai item baru.</span></div>
+    <div class="label" data-i18n="repl_size">Ukuran hasil</div>
+    <div class="seg" id="sizeSeg" role="tablist">
+      <button type="button" role="tab" data-mode="old" aria-selected="true" onclick="setSizeMode('old')" data-i18n="repl_size_old">Ikut item lama</button>
+      <button type="button" role="tab" data-mode="new" aria-selected="false" onclick="setSizeMode('new')" data-i18n="repl_size_new">Ikut item baru</button>
+    </div>
+    <div class="note"><svg><use href="#i-info"/></svg><span id="sizeHint" data-i18n="repl_size_old_d">Item baru diskalakan agar ukurannya sama dengan item lama.</span></div>
+    <div class="note"><svg><use href="#i-square-dashed-mouse-pointer"/></svg><span data-i18n="repl_note2">Select Tools aktif — gunakan Ctrl+Scroll untuk seleksi group bertingkat sebagai item baru.</span></div>
     <div class="spacer"></div>
     <div class="actions row">
-      <button class="btn ghost" onclick="showStep(1)"><svg><use href="#i-arrow-left"/></svg><span>Kembali</span></button>
+      <button class="btn ghost" onclick="showStep(1)"><svg><use href="#i-arrow-left"/></svg><span data-i18n="back">Kembali</span></button>
       <button class="btn primary" id="btnExec" onclick="executeReplace(this)">
-        <svg><use href="#i-replace"/></svg><span>Ganti</span>
+        <svg><use href="#i-replace"/></svg><span data-i18n="replace_btn">Ganti</span>
       </button>
     </div>
   </section>
@@ -70,16 +78,16 @@
   <section class="step" id="step3">
     <div class="hero">
       <div class="badge ok draw"><svg><use href="#i-check"/></svg></div>
-      <h2>Berhasil diganti</h2>
+      <h2 data-i18n="repl_done_title">Berhasil diganti</h2>
       <p id="success-message"></p>
     </div>
     <div class="spacer"></div>
     <div class="actions row">
       <button class="btn ghost" onclick="restartReplacer()">
-        <svg><use href="#i-rotate-ccw"/></svg><span>Mulai lagi</span>
+        <svg><use href="#i-rotate-ccw"/></svg><span data-i18n="restart">Mulai lagi</span>
       </button>
       <button class="btn primary" onclick="goBackToHub()">
-        <svg><use href="#i-house"/></svg><span>Tutup</span>
+        <svg><use href="#i-house"/></svg><span data-i18n="close">Tutup</span>
       </button>
     </div>
   </section>
@@ -90,21 +98,40 @@
         if (window.sketchup && typeof sketchup.check_old_items === 'function') {
           sketchup.check_old_items();
         } else {
-          showToast('Fungsi Group Replacer belum siap.', 'error');
+          showToast(t('repl_err', 'Fungsi Group Replacer belum siap.'), 'error');
         }
       } catch (err) {
         showToast('Error: ' + err.message, 'error');
       }
     }
 
+    // Ukuran hasil: 'old' = ikut item lama (default), 'new' = ikut item baru. Pilihan terakhir diingat.
+    var sizeMode = 'old';
+    try { if (localStorage.getItem('boosok_repl_size') === 'new') sizeMode = 'new'; } catch (e) { }
+
+    function setSizeMode(mode) {
+      sizeMode = (mode === 'new') ? 'new' : 'old';
+      try { localStorage.setItem('boosok_repl_size', sizeMode); } catch (e) { }
+      document.querySelectorAll('#sizeSeg button').forEach(function (b) {
+        b.setAttribute('aria-selected', b.getAttribute('data-mode') === sizeMode ? 'true' : 'false');
+      });
+      var hint = document.getElementById('sizeHint');
+      if (hint) {
+        var key = sizeMode === 'new' ? 'repl_size_new_d' : 'repl_size_old_d';
+        hint.setAttribute('data-i18n', key);
+        hint.textContent = window.t(key);
+      }
+      autoFitHeight(0);
+    }
+
     function executeReplace(btn) {
       busy(btn, true);
       try {
         if (window.sketchup && typeof sketchup.proses_replace === 'function') {
-          sketchup.proses_replace();
+          sketchup.proses_replace(sizeMode);
         } else {
           resetExecButton();
-          showToast('Fungsi Group Replacer belum siap.', 'error');
+          showToast(t('repl_err', 'Fungsi Group Replacer belum siap.'), 'error');
         }
       } catch (err) {
         resetExecButton();
@@ -147,7 +174,8 @@
     // Dipanggil dari Ruby: showStep(n), showToast(msg), resetExecButton(), showSuccessStep(msg)
     function resetExecButton() { busy('btnExec', false); }
     function showSuccessStep(msg) {
-      document.getElementById('success-message').textContent = msg;
+      var translated = (window.translateMessage ? window.translateMessage(msg) : msg);
+      document.getElementById('success-message').textContent = translated;
       showStep(3);
       autoFitHeight(0);
     }
@@ -175,7 +203,7 @@
       }
     }
 
-    autoFitHeight(0);
+    setSizeMode(sizeMode);
     // Aktifkan Select Tools saat pertama buka (step 1)
     activateSelectTool();
   </script>

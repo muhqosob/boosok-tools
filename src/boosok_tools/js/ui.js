@@ -53,6 +53,9 @@
     '<symbol id="i-arrow-down-z-a" viewBox="0 0 24 24"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M15 4h5l-5 6h5"/><path d="M20 14h-5"/><path d="M15 20v-3.5a2.5 2.5 0 0 1 5 0V20"/></symbol>' +
     '<symbol id="i-chevrons-down-up" viewBox="0 0 24 24"><path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/></symbol>' +
     '<symbol id="i-chevrons-up-down" viewBox="0 0 24 24"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></symbol>' +
+    '<symbol id="i-languages" viewBox="0 0 24 24"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></symbol>' +
+    '<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>' +
+    '<symbol id="i-folder-open" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></symbol>' +
     '</svg>';
   document.body.insertAdjacentHTML('afterbegin', sprite);
 })();
@@ -80,7 +83,8 @@ function busy(btn, on) {
   if (on) {
     if (btn.disabled) return;
     btn.dataset.html = btn.innerHTML;
-    btn.innerHTML = '<span class="spin">' + icon('loader-circle') + '</span><span>Memproses…</span>';
+    var procText = (window.t ? window.t('processing', 'Memproses…') : 'Memproses…');
+    btn.innerHTML = '<span class="spin">' + icon('loader-circle') + '</span><span>' + procText + '</span>';
     btn.disabled = true;
   } else {
     if (btn.dataset.html != null) btn.innerHTML = btn.dataset.html;
@@ -99,6 +103,7 @@ function showNotif(msg, type) {
     overlay = document.createElement('div');
     overlay.className = 'overlay';
     overlay.id = 'notif-overlay';
+    var okLabel = (window.t ? window.t('ok', 'OK') : 'OK');
     overlay.innerHTML =
       '<div class="sheet" id="notif-sheet">' +
         '<div class="notif-head">' +
@@ -111,7 +116,7 @@ function showNotif(msg, type) {
           '</svg>' +
           '<span class="notif-msg" id="notif-msg"></span>' +
         '</div>' +
-        '<button class="btn primary" id="notif-ok">OK</button>' +
+        '<button class="btn primary" id="notif-ok">' + okLabel + '</button>' +
       '</div>';
     document.body.appendChild(overlay);
     document.getElementById('notif-ok').addEventListener('click', function () {
@@ -132,7 +137,12 @@ function showNotif(msg, type) {
 
   iconHref.setAttribute('href', type === 'success' ? '#i-circle-check' : '#i-circle-alert');
   iconEl.className = 'notif-icon ' + type;
-  msgEl.innerHTML = msg;
+  
+  var finalMsg = msg;
+  if (window.translateMessage) {
+    finalMsg = window.translateMessage(msg);
+  }
+  msgEl.innerHTML = finalMsg;
 
   overlay.classList.add('open');
   var okBtn = document.getElementById('notif-ok');
@@ -203,6 +213,23 @@ window.addEventListener('keydown', function (e) {
     return false;
   }
 }, true);
+
+// Esc = klik tombol "Kembali" ke Hub (semua halaman tool). Halaman Hub tidak punya .back-btn,
+// jadi tidak terpengaruh. Esc yang sudah ditangani (modal notifikasi, dropdown, dsb.) dilewati,
+// dan di dalam kolom input Esc hanya melepas fokus (tekan Esc sekali lagi untuk kembali).
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape' || e.defaultPrevented || e.repeat) return;
+  var tag = e.target && e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+    if (e.target.blur) e.target.blur();
+    return;
+  }
+  var back = document.querySelector('.back-btn');
+  if (back && !back.disabled) {
+    e.preventDefault();
+    back.click();
+  }
+});
 
 // ==========================================
 // PENGATURAN TEMA (LIGHT / DARK MODE)
@@ -621,10 +648,11 @@ function updateToolbar() {
 
   var el = document.getElementById('tbTagCount');
   if (el) {
+    var tagUnit = (window.t ? window.t('tag_unit', 'tag') : 'tag');
     if (visibleTags.length > 0) {
-      el.textContent = checkedTagCount + '/' + visibleTags.length + ' tag';
+      el.textContent = checkedTagCount + '/' + visibleTags.length + ' ' + tagUnit;
     } else {
-      el.textContent = '0 tag';
+      el.textContent = '0 ' + tagUnit;
     }
   }
 
@@ -655,7 +683,9 @@ function toggleExpandAll() {
   });
   var btn = document.getElementById('btnExpandAll');
   if (btn) {
-    btn.title = _dpAllExpanded ? 'Collapse semua' : 'Expand semua';
+    btn.title = _dpAllExpanded
+      ? (window.t ? window.t('deep_collapse', 'Collapse semua') : 'Collapse semua')
+      : (window.t ? window.t('deep_expand', 'Expand semua') : 'Expand semua');
     var use = btn.querySelector('use');
     if (use) use.setAttribute('href', _dpAllExpanded ? '#i-chevrons-up-down' : '#i-chevrons-down-up');
   }
@@ -757,7 +787,8 @@ function renderList() {
   var list = document.getElementById('dpList');
   if (!list) return;
   if (!_dpTags.length) {
-    list.innerHTML = '<div class="dp-empty">Pilih objek di SketchUp lalu klik <b>Scan Objek</b>.</div>';
+    var emptyMsg = (window.t ? window.t('deep_empty', 'Pilih objek di SketchUp lalu klik <b>Scan Objek</b>.') : 'Pilih objek di SketchUp lalu klik <b>Scan Objek</b>.');
+    list.innerHTML = '<div class="dp-empty">' + emptyMsg + '</div>';
     autoFitHeight(0);
     return;
   }
@@ -847,21 +878,27 @@ function renderList() {
     var matchSearch = !q || t.name.toLowerCase().indexOf(q) !== -1;
     var isHiddenRow = isFilteredOut || !matchSearch;
 
+    var detailTitle = (window.t ? window.t('deep_view_detail', 'Lihat detail') : 'Lihat detail');
+    var selectPrefix = (window.t ? window.t('deep_select_tag_prefix', 'Pilih tag ') : 'Pilih tag ');
+    var eyeTitle = t.visible
+      ? (window.t ? window.t('deep_hide_tag', 'Sembunyikan tag') : 'Sembunyikan tag')
+      : (window.t ? window.t('deep_show_tag', 'Tampilkan tag') : 'Tampilkan tag');
+
     html +=
       '<div class="dp-row' + (isHiddenRow ? ' hidden-row' : '') + '" id="dprow-' + idx + '" data-tag="' + esc(t.name) + '" data-filtered-out="' + (isFilteredOut ? 'true' : 'false') + '">' +
         '<div class="dp-tag-row">' +
           '<div class="dp-arrow' + (hasChildren ? '' : ' empty') + '" ' +
-            'onclick="toggleExpand(' + idx + ')" title="Lihat detail">' +
+            'onclick="toggleExpand(' + idx + ')" title="' + detailTitle + '">' +
             '<svg><use href="#i-chevron-right"/></svg>' +
           '</div>' +
-          '<label class="dp-cb-wrap" title="Pilih tag ' + esc(t.name) + '">' +
+          '<label class="dp-cb-wrap" title="' + selectPrefix + esc(t.name) + '">' +
             '<input type="checkbox" class="dp-check" value="' + esc(t.name) + '">' +
             '<span class="box"><svg><use href="#i-check"/></svg></span>' +
           '</label>' +
           '<div class="dp-color" style="background:' + t.color + ';"></div>' +
           '<span class="dp-tag-name" title="' + esc(t.name) + '">' + esc(t.name) + '</span>' +
           summaryHtml +
-          '<div class="dp-eye' + eyeClass + '" title="' + (t.visible ? 'Sembunyikan' : 'Tampilkan') + ' tag" ' +
+          '<div class="dp-eye' + eyeClass + '" title="' + eyeTitle + '" ' +
             'onclick="toggleVis(\'' + safeTagAttr + '\',' + (!t.visible) + ',this)">' +
             '<svg><use href="' + eyeIcon + '"/></svg>' +
           '</div>' +
@@ -952,7 +989,7 @@ function doScan(btn) {
     } else {
       clearTimeout(_dpScanTimer);
       busy('btnScan', false);
-      showToast('Fungsi Scan belum siap.', 'error');
+      showToast(window.t ? window.t('deep_err_scan', 'Fungsi Scan belum siap.') : 'Fungsi Scan belum siap.', 'error');
     }
   } catch(err) {
     clearTimeout(_dpScanTimer);
@@ -965,7 +1002,7 @@ function doScan(btn) {
 function doSelect() {
   var checked = document.querySelectorAll('.dp-check:checked');
   if (!checked.length) {
-    showToast('Centang minimal 1 tag terlebih dahulu.', 'error');
+    showToast(window.t ? window.t('deep_err_min1', 'Centang minimal 1 tag terlebih dahulu.') : 'Centang minimal 1 tag terlebih dahulu.', 'error');
     autoFitHeight(0);
     return;
   }
@@ -988,7 +1025,7 @@ function doSelect() {
     if (window.sketchup && typeof sketchup.dp_select === 'function') {
       sketchup.dp_select(payload);
     } else {
-      showToast('Fungsi Seleksi belum siap.', 'error');
+      showToast(window.t ? window.t('deep_err_select', 'Fungsi Seleksi belum siap.') : 'Fungsi Seleksi belum siap.', 'error');
     }
   } catch(err) {
     showToast('Error: ' + err.message, 'error');

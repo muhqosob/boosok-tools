@@ -1,4 +1,5 @@
 require 'sketchup'
+require_relative 'locale' unless defined?(BoosokTools::Locale)
 
 module BoosokTools
   module SelectTool5D
@@ -12,12 +13,13 @@ module BoosokTools
 
     def self.activate_tool
       if defined?(BoosokTools::License) && !BoosokTools::License.can_use?
-        UI.messagebox("Masa uji coba (trial 7 hari) Boosok Tools telah habis.\nSemua tool terkunci.\n\nSilakan buka Hub dan aktifkan lisensi Anda.") rescue nil
-        BoosokTools::Hub.show rescue nil
+        # Cukup notifikasi "terkunci" (tanpa popup aktivasi)
+        BoosokTools::Hub.notify_locked rescue nil
         return
       end
 
-      Dir[File.join(PATH, '*.rb')].each { |f| load f }
+      # Handler sudah dimuat di bawah (saat file ini di-load); jangan parse ulang tiap aktivasi
+      Dir[File.join(PATH, '*.rb')].each { |f| load f } unless defined?(BoosokTools::SelectTool5D::CoreTool)
       model = Sketchup.active_model
       unless model && model.valid?
         UI.messagebox("Tidak ada model aktif yang terbuka di SketchUp.") rescue nil

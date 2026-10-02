@@ -5,6 +5,8 @@
   <meta charset="UTF-8">
   <title>Boosok Tools Update</title>
   <link rel="stylesheet" href="../css/ui.css">
+  <script src="../js/strings.js"></script>
+  <script src="../js/locale.js"></script>
   <style>
     #app {
       flex: 1;
@@ -163,11 +165,11 @@
         <use href="#i-package" />
       </svg></div>
     <div class="txt">
-      <h1>Boosok Tools</h1>
-      <p>Pembaruan plugin</p>
+      <h1 data-i18n="upd_title">Boosok Tools</h1>
+      <p data-i18n="upd_sub">Pembaruan plugin</p>
     </div>
     <span class="pill" id="cur"></span>
-    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema"></button>
+    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema" data-i18n-title="theme_toggle" data-i18n-aria="theme_toggle"></button>
   </header>
 
   <main id="app" aria-live="polite"></main>
@@ -192,60 +194,63 @@
       var items = String(text || '').split(/\r?\n/)
         .map(function (l) { return l.replace(/^\s*[-*•]\s*/, '').trim(); })
         .filter(Boolean);
-      if (!items.length) items = ['Tidak ada catatan perubahan.'];
+      if (!items.length) items = [t('upd_no_changelog', 'Tidak ada catatan perubahan.')];
       return items.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('');
     }
 
     var views = {
       idle: function (s) { return views.checking(s); },
       checking: function () {
-        return hero(badge('search', 'pulse bob'), 'Memeriksa pembaruan', 'Menghubungi server…') +
-          '<div class="spacer"></div><div class="actions">' + btn('close', 'Tutup', 'ghost') + '</div>';
+        return hero(badge('search', 'pulse bob'), t('upd_checking_title', 'Memeriksa pembaruan'), t('upd_checking_sub', 'Menghubungi server…')) +
+          '<div class="spacer"></div><div class="actions">' + btn('close', t('close', 'Tutup'), 'ghost') + '</div>';
       },
       latest: function (s) {
-        return hero(badge('check', 'ok draw'), 'Sudah versi terbaru',
-          'Boosok Tools ' + v(s.current) + ' sudah paling baru.') +
-          '<div class="author-credit">Dibuat oleh: &quot;Muh Qosob&quot;</div>' +
+        var subText = t('upd_latest_sub', 'Boosok Tools {ver} sudah paling baru.').replace('{ver}', v(s.current));
+        return hero(badge('check', 'ok draw'), t('upd_latest_title', 'Sudah versi terbaru'), subText) +
+          '<div class="author-credit">' + t('upd_author', 'Dibuat oleh: &quot;Muh Qosob&quot;') + '</div>' +
           '<div class="spacer"></div><div class="actions row">' +
-          btn('check', 'Cek lagi', 'ghost', 'refresh-cw') + btn('close', 'Tutup', 'primary') + '</div>' +
-          '<div class="actions" style="align-items:center">' + btn('changelog', 'Lihat Change Log di GitHub', 'link', 'external-link') + '</div>';
+          btn('check', t('upd_check_again', 'Cek lagi'), 'ghost', 'refresh-cw') + btn('close', t('close', 'Tutup'), 'primary') + '</div>' +
+          '<div class="actions" style="align-items:center">' + btn('changelog', t('upd_changelog', 'Lihat Change Log di GitHub'), 'link', 'external-link') + '</div>';
       },
       available: function (s) {
-        return hero(badge('arrow-up', 'pulse'), 'Update tersedia') +
+        return hero(badge('arrow-up', 'pulse'), t('upd_avail_title', 'Update tersedia')) +
           '<div class="versions">' + v(s.current) + icon('arrow-right') + v(s.latest, 'new') + '</div>' +
-          '<div class="card"><div class="cap">Yang baru</div><ul>' + changelog(s.changelog) + '</ul></div>' +
-          '<div class="actions row">' + btn('close', 'Nanti', 'ghost') +
-          btn('download', 'Update sekarang', 'primary', 'arrow-right') + '</div>';
+          '<div class="card"><div class="cap">' + t('upd_whats_new', 'Yang baru') + '</div><ul>' + changelog(s.changelog) + '</ul></div>' +
+          '<div class="actions row">' + btn('close', t('upd_later', 'Nanti'), 'ghost') +
+          btn('download', t('upd_now', 'Update sekarang'), 'primary', 'arrow-right') + '</div>';
       },
       downloading: function (s) {
         var known = s.progress > 0;
-        return hero(badge('download', 'bob'), 'Mengunduh ' + v(s.latest, 'new')) +
-          '<div class="progress"><div class="meta"><span>Mengunduh paket</span><b id="pct">' +
+        var downTitle = t('upd_downloading', 'Mengunduh {ver}').replace('{ver}', v(s.latest, 'new'));
+        return hero(badge('download', 'bob'), downTitle) +
+          '<div class="progress"><div class="meta"><span>' + t('upd_download_pkg', 'Mengunduh paket') + '</span><b id="pct">' +
           (known ? s.progress + '%' : '…') + '</b></div>' +
           '<div class="bar' + (known ? '' : ' indeterminate') + '" id="bar"><div style="width:' +
           (known ? s.progress : 0) + '%"></div></div></div><div class="spacer"></div>' +
-          '<div class="note">' + icon('info') + '<span>Boleh lanjut kerja, jendela ini kasih tahu kalau sudah selesai.</span></div>';
+          '<div class="note">' + icon('info') + '<span>' + t('upd_keep_working', 'Boleh lanjut kerja, jendela ini kasih tahu kalau sudah selesai.') + '</span></div>';
       },
       installing: function (s) {
-        return hero(badge('settings', 'spin'), 'Memasang ' + v(s.latest, 'new'), 'Jangan tutup SketchUp dulu.') +
+        var instTitle = t('upd_installing', 'Memasang {ver}').replace('{ver}', v(s.latest, 'new'));
+        return hero(badge('settings', 'spin'), instTitle, t('upd_dont_close', 'Jangan tutup SketchUp dulu.')) +
           '<div class="progress"><div class="bar indeterminate"><div></div></div></div><div class="spacer"></div>';
       },
       done: function (s) {
-        return hero(badge('check', 'ok draw'), 'Update berhasil!',
-          v(s.latest, 'new') + '<br><br>sudah langsung update tanpa perlu restart SketchUp.') +
+        return hero(badge('check', 'ok draw'), t('upd_done_title', 'Update berhasil!'),
+          v(s.latest, 'new') + '<br><br>' + t('upd_done_sub', 'sudah langsung update tanpa perlu restart SketchUp.')) +
           '<div class="spacer"></div><div class="note">' + icon('info') +
-          '<span>Jika ada jendela fitur yang sedang terbuka, silakan tutup dan buka kembali.</span></div>' +
+          '<span>' + t('upd_done_hint', 'Jika ada jendela fitur yang sedang terbuka, silakan tutup dan buka kembali.') + '</span></div>' +
           '<div class="actions row">' +
-          btn('quit', 'Restart SketchUp', 'ghost', 'power') +
-          btn('close', 'Tutup', 'primary', 'check') + '</div>' +
-          '<div class="actions" style="align-items:center">' + btn('changelog', 'Lihat Change Log di GitHub', 'link', 'external-link') + '</div>';
+          btn('quit', t('upd_restart_su', 'Restart SketchUp'), 'ghost', 'power') +
+          btn('close', t('close', 'Tutup'), 'primary', 'check') + '</div>' +
+          '<div class="actions" style="align-items:center">' + btn('changelog', t('upd_changelog', 'Lihat Change Log di GitHub'), 'link', 'external-link') + '</div>';
       },
       error: function (s) {
-        return hero(badge('triangle-alert', 'err'), 'Gagal memperbarui') +
-          '<div class="note err">' + icon('circle-alert') + '<span>' + esc(s.error || 'Terjadi kesalahan.') + '</span></div>' +
+        var errMsg = s.error ? (window.translateMessage ? window.translateMessage(s.error) : s.error) : t('upd_fail_generic', 'Terjadi kesalahan.');
+        return hero(badge('triangle-alert', 'err'), t('upd_fail_title', 'Gagal memperbarui')) +
+          '<div class="note err">' + icon('circle-alert') + '<span>' + esc(errMsg) + '</span></div>' +
           '<div class="spacer"></div><div class="actions">' +
-          '<div class="actions row">' + btn('close', 'Tutup', 'ghost') + btn('check', 'Coba lagi', 'primary', 'refresh-cw') + '</div>' +
-          btn('browser', 'Download manual di browser', 'link', 'external-link') + '</div>';
+          '<div class="actions row">' + btn('close', t('close', 'Tutup'), 'ghost') + btn('check', t('upd_retry', 'Coba lagi'), 'primary', 'refresh-cw') + '</div>' +
+          btn('browser', t('upd_manual', 'Download manual di browser'), 'link', 'external-link') + '</div>';
       }
     };
 

@@ -5,6 +5,9 @@ module BoosokTools
   unless file_loaded?(__FILE__)
     load File.join(__dir__, 'titlebar.rb')
     BoosokTools.init_session_file
+    require_relative 'locale'
+    # Buat js/strings.js dari locales/*.json sebelum dialog mana pun dimuat
+    BoosokTools::Locale.export_js
     require_relative 'updater'
     require_relative 'shortcut_sync'
     require_relative 'license'
@@ -33,6 +36,16 @@ module BoosokTools
     register_cmd.call('Hide Scene')    { BoosokTools::Hub.open_or_show('scene') }
     register_cmd.call('Untag')         { BoosokTools::Hub.open_or_show('untag') }
     register_cmd.call('Deep Props')    { BoosokTools::Hub.open_or_show('deep') }
+
+    # Mode developer (hanya aktif kalau file .dev_mode ada di folder plugin)
+    require_relative 'dev_reload'
+    if BoosokTools::Dev.enabled?
+      register_cmd.call('Reload Plugin (Dev)') { BoosokTools::Dev.reload_all }
+      BoosokTools::Dev.start
+    end
+
+    # Preload file tool sebentar setelah startup supaya buka Hub pertama kali tetap cepat
+    UI.start_timer(1.5, false) { BoosokTools::Hub.preload_tools rescue nil }
 
     # Cek otomatis saat SketchUp dibuka, dialog cuma muncul kalau ada update
     Updater.check

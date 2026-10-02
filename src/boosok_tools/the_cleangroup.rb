@@ -84,9 +84,7 @@ module ConvertToCleanGroup
 
   def self.attach_callbacks(dialog)
     return unless dialog
-    if $cleangroup_dlg.equal?(dialog)
-      return
-    end
+    return if $cleangroup_dlg.equal?(dialog) # sudah terdaftar di dialog ini (hindari handler bertumpuk)
     $cleangroup_dlg = dialog
 
     # --- CALLBACK: MULAI KEMBALI ---
@@ -94,13 +92,14 @@ module ConvertToCleanGroup
       Sketchup.active_model.selection.clear if Sketchup.active_model
       dialog.execute_script("showStep(1); resetExecButton();")
     end
-    dialog.add_action_callback("restart_process", &restart_cb)
     dialog.add_action_callback("clean_restart_process", &restart_cb)
 
     # --- CALLBACK: PROSES EKSEKUSI ---
-    dialog.add_action_callback("proses_clean_group") do |_action_context|
+    clean_cb = lambda do |_action_context|
       execute_clean(dialog)
     end
+    dialog.add_action_callback("proses_clean_group", &clean_cb)
+    dialog.add_action_callback("clean_group", &clean_cb)
   end
 
   def self.execute_clean(dialog)

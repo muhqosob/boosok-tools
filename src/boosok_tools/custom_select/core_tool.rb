@@ -1,3 +1,5 @@
+require_relative '../locale' unless defined?(::BoosokTools::Locale)
+
 module BoosokTools::SelectTool5D
   class CoreTool
     attr_accessor :hover_path, :target_depth, :ctrl_pressed, :cursor_x, :cursor_y
@@ -28,13 +30,17 @@ module BoosokTools::SelectTool5D
       @mouse_handler  = MouseHandler.new(self)
     end
 
+    def loc(key, fallback)
+      defined?(::BoosokTools::Locale) ? ::BoosokTools::Locale.t(key, fallback) : fallback
+    end
+
     def activate
       reset_state!
       model = Sketchup.active_model
       if model && model.valid?
         # Pengecekan Empty State Model
         if model.entities.empty?
-          Sketchup.status_text = "Select Tool: Model kosong. Buat objek / grup terlebih dahulu."
+          Sketchup.status_text = loc('cs_model_empty', 'Select Tool: Model kosong. Buat objek / grup terlebih dahulu.')
         else
           update_status_bar
         end
@@ -91,7 +97,7 @@ module BoosokTools::SelectTool5D
       path = valid_hover_path
       # Pengecekan Empty State: kursor sedang berada di area kosong
       if path.empty?
-        Sketchup.status_text = "Select Tool: Arahkan kursor ke group/komponen untuk mengubah level."
+        Sketchup.status_text = loc('cs_hover_empty', 'Select Tool: Arahkan kursor ke group/komponen untuk mengubah level.')
         return
       end
 
@@ -116,21 +122,24 @@ module BoosokTools::SelectTool5D
       path = valid_hover_path
       if path.empty?
         if @target_depth > 0
-          Sketchup.status_text = "Select Tool [Level #{@target_depth} Aktif]: Arahkan ke objek | [ESC] Reset ke Level 0"
+          tpl = loc('cs_status_lvl_active', 'Select Tool [Level %{lvl} Aktif]: Arahkan ke objek | [ESC] Reset ke Level 0')
+          Sketchup.status_text = tpl.gsub('%{lvl}', @target_depth.to_s)
         else
-          Sketchup.status_text = "Select Tool: Arahkan ke objek | [CTRL + Scroll] Pilih level nested | [Klik] Seleksi"
+          Sketchup.status_text = loc('cs_status_idle', 'Select Tool: Arahkan ke objek | [CTRL + Scroll] Pilih level nested | [Klik] Seleksi')
         end
       else
         lvl = effective_depth
         entity = path[lvl]
+        obj_fallback = loc('cs_object', 'Objek')
         ent_name = if entity.respond_to?(:name) && !entity.name.empty?
                      entity.name
                    elsif entity.respond_to?(:definition) && !entity.definition.name.empty?
                      entity.definition.name
                    else
-                     entity.typename rescue "Objek"
+                     entity.typename rescue obj_fallback
                    end
-        Sketchup.status_text = "Select Tool [Level #{lvl}/#{path.length - 1}: #{ent_name}]: [Klik] Seleksi | [CTRL + Scroll] Ubah Level | [ESC] Reset"
+        tpl = loc('cs_status_hover', 'Select Tool [Level %{lvl}/%{max}: %{name}]: [Klik] Seleksi | [CTRL + Scroll] Ubah Level | [ESC] Reset')
+        Sketchup.status_text = tpl.gsub('%{lvl}', lvl.to_s).gsub('%{max}', (path.length - 1).to_s).gsub('%{name}', ent_name.to_s)
       end
     rescue => e
       # Abaikan error status bar

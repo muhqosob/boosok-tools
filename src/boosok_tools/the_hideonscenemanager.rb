@@ -313,32 +313,8 @@ module HideOnSceneManager
       send_init_data(dialog)
     end
 
-    dialog.add_action_callback("ready") do |_action_context|
-      if defined?(BoosokTools::Hub) && BoosokTools::Hub.current_tool == 'scene'
-        send_init_data(dialog)
-      elsif defined?(BoosokTools::Hub)
-        BoosokTools::Hub.push(BoosokTools::Hub.state)
-      end
-    end
-
-    # --- CALLBACK: AKTIFKAN SELECT TOOL (dari tab Objek) ---
-    dialog.add_action_callback("activate_select_tool") do |_action_context|
-      begin
-        load File.join(__dir__, 'the_custom_select.rb') unless defined?(BoosokTools::SelectTool5D)
-        BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
-      rescue => e
-        puts "[HideOnScene] Gagal aktifkan Select Tool: #{e.message}"
-      end
-    end
-
-    # --- CALLBACK: NONAKTIFKAN SELECT TOOL ---
-    dialog.add_action_callback("deactivate_select_tool") do |_action_context|
-      begin
-        Sketchup.active_model.select_tool(nil) rescue nil
-      rescue => e
-        puts "[HideOnScene] Gagal nonaktifkan Select Tool: #{e.message}"
-      end
-    end
+    # "ready" ditangani Hub (cabang current_tool == 'scene' memanggil send_init_data);
+    # "activate_select_tool"/"deactivate_select_tool" juga didaftarkan sekali oleh Hub.
 
     # --- CALLBACK 1: PROSES ISOLATE SCENE AKTIF (LANGSUNG REFRESH VIEWPORT) ---
     dialog.add_action_callback("prosesIsolateActive") do |action_context|

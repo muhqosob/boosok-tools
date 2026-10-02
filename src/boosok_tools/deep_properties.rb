@@ -79,6 +79,46 @@ module DeepProperties
     [sel, ctx_name, nil]
   end
 
+  # ── Hitung isi secara rekursif dengan memo per definisi ─────────────────────
+  # Isi sebuah definisi cukup dihitung sekali lalu dijumlahkan ke tiap instance-nya.
+  # Hasil sama dengan menelusuri setiap instance, tapi komponen yang dipakai ribuan kali
+  # tidak ditelusuri ribuan kali.
+  def self.add_counts(into, from)
+    from.each do |tag, c|
+      d = (into[tag] ||= { edges: 0, faces: 0, groups: 0, components: 0 })
+      d[:edges] += c[:edges]
+      d[:faces] += c[:faces]
+      d[:groups] += c[:groups]
+      d[:components] += c[:components]
+    end
+  end
+
+  def self.count_entity(ent, counts, memo)
+    return unless ent.respond_to?(:valid?) && ent.valid?
+    raw_tag = ent.layer.name rescue 'Layer0'
+    c = (counts[display_tag_name(raw_tag)] ||= { edges: 0, faces: 0, groups: 0, components: 0 })
+    if ent.is_a?(Sketchup::Edge)
+      c[:edges] += 1
+    elsif ent.is_a?(Sketchup::Face)
+      c[:faces] += 1
+    elsif ent.is_a?(Sketchup::ComponentInstance) || ent.is_a?(Sketchup::Group)
+      c[ent.is_a?(Sketchup::Group) ? :groups : :components] += 1
+      defn = ent.definition rescue nil
+      add_counts(counts, definition_counts(defn, memo)) if defn
+    end
+  end
+
+  def self.definition_counts(defn, memo)
+    key = defn.entityID
+    return memo[key] if memo.key?(key)
+    memo[key] = {} # cegah rekursi tak berujung
+    h = {}
+    defn.entities.each { |e| count_entity(e, h, memo) }
+    memo[key] = h
+  rescue
+    {}
+  end
+
   # ── Scan Tags ───────────────────────────────────────────────────────────────
   def self.scan_tags(model)
     root_list, ctx_name, err = scan_root_entities(model)
@@ -93,23 +133,8 @@ module DeepProperties
 
     # Peta tag_name => { edges: N, faces: N, groups: N, components: N }
     counts = {}
-
-    collect_all_entities(root_list) do |ent|
-      next unless ent.valid?
-      raw_tag = ent.layer.name rescue 'Layer0'
-      tag_name = display_tag_name(raw_tag)
-
-      counts[tag_name] ||= { edges: 0, faces: 0, groups: 0, components: 0 }
-      if ent.is_a?(Sketchup::Edge)
-        counts[tag_name][:edges] += 1
-      elsif ent.is_a?(Sketchup::Face)
-        counts[tag_name][:faces] += 1
-      elsif ent.is_a?(Sketchup::ComponentInstance)
-        counts[tag_name][:components] += 1
-      elsif ent.is_a?(Sketchup::Group)
-        counts[tag_name][:groups] += 1
-      end
-    end
+    memo = {}
+    root_list.each { |ent| count_entity(ent, counts, memo) }
 
     # Hanya menampilkan tag yang ada isinya di objek terpilih
     result = counts.keys.sort_by { |n| n.downcase }.map do |tag_name|

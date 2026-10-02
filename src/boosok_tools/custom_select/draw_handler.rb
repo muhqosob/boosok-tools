@@ -1,7 +1,16 @@
+require_relative '../locale' unless defined?(::BoosokTools::Locale)
+
 module BoosokTools::SelectTool5D
   class DrawHandler
+    THEME_TTL = 1.0 unless defined?(THEME_TTL)
+
     def initialize(tool)
       @tool = tool
+      @cache = {}        # slot => [key, value]; dihitung ulang hanya saat key berubah
+      @shapes = {}       # bentuk 2D (rounded rect / lingkaran) dalam koordinat relatif
+      @palettes = {}     # 'dark'/'light' => hash warna (objek Color dibuat sekali)
+      @theme_dark = false
+      @theme_at = 0.0
     end
 
     def draw(view)
@@ -15,6 +24,96 @@ module BoosokTools::SelectTool5D
     end
 
     private
+
+    # Hitung nilai hanya kalau key berubah. draw dipanggil di setiap gerakan mouse, sedangkan
+    # hierarki / geometri highlight baru berubah saat objek di bawah kursor berganti.
+    def cached(slot, key)
+      entry = @cache[slot]
+      return entry[1] if entry && entry[0] == key
+      value = yield
+      @cache[slot] = [key, value]
+      value
+    end
+
+    # Identitas path hover. MouseHandler membuat array hover_path baru HANYA saat objek di bawah
+    # kursor berganti, jadi object_id-nya cukup sebagai kunci (tanpa memanggil API entitas per frame).
+    # Panjang path hasil filter (entitas yang sudah dihapus) ikut jadi kunci.
+    def path_key(path)
+      [@tool.hover_path.object_id, path.length]
+    end
+
+    # Tema dibaca dari registry (Sketchup.read_default meng-eval nilainya) → jangan tiap frame.
+    def dark_theme?
+      now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      if now - @theme_at > THEME_TTL
+        @theme_dark = (Sketchup.read_default("BoosokTools", "theme", "").to_s == "dark") rescue false
+        @theme_at = now
+      end
+      @theme_dark
+    end
+
+    def color(r, g, b, a = 255)
+      Sketchup::Color.new(r, g, b, a)
+    end
+
+    def palette(is_dark)
+      @palettes[is_dark] ||= if is_dark
+        {
+          card_bg: color(30, 30, 34), card_border: color(46, 46, 52), card_shadow: color(0, 0, 0, 60),
+          row_active_bg: color(244, 244, 246), row_active_title: color(24, 24, 27),
+          row_active_tag: color(80, 80, 90), row_active_icon: color(24, 24, 27),
+          # Level tidak terpilih: abu-abu jelas (bukan hampir hitam), teks diterangkan agar tetap kontras
+          row_inactive_bg: color(96, 96, 104), row_inactive_border: color(124, 124, 134),
+          row_inactive_title: color(244, 244, 246), row_inactive_tag: color(205, 205, 214),
+          row_inactive_icon: color(205, 205, 214)
+        }
+      else
+        {
+          card_bg: color(247, 247, 248), card_border: color(230, 230, 233), card_shadow: color(24, 24, 27, 22),
+          row_active_bg: color(24, 24, 27), row_active_title: color(255, 255, 255),
+          row_active_tag: color(180, 180, 185), row_active_icon: color(255, 255, 255),
+          row_inactive_bg: color(238, 238, 241), row_inactive_border: color(222, 222, 226),
+          row_inactive_title: color(24, 24, 27), row_inactive_tag: color(113, 113, 122),
+          row_inactive_icon: color(113, 113, 122)
+        }
+      end
+    end
+
+    # Warna highlight objek di bawah kursor (bounding box, face, edge): hijau cerah #00e676
+    # (Tanpa `unless defined?` supaya perubahan warna ikut saat auto-reload.)
+    HIGHLIGHT_RGB        = [0, 230, 118].freeze
+    HIGHLIGHT_FILL_ALPHA = 70 # transparansi isi (0-255)
+
+    LEVEL_COLORS = [
+      [126, 142, 196], [79, 182, 237], [77, 195, 190], [235, 138, 110], [176, 125, 196],
+      [238, 168, 88], [154, 204, 114], [232, 120, 154], [144, 164, 174], [121, 134, 203]
+    ].freeze unless defined?(LEVEL_COLORS)
+
+    def level_color(idx)
+      @level_colors ||= LEVEL_COLORS.map { |r, g, b| Sketchup::Color.new(r, g, b) }
+      @level_colors[idx % @level_colors.length]
+    end
+
+    # Titik rounded-rect relatif terhadap (0,0): trigonometri cukup sekali per ukuran.
+    def rounded_base(w, h, r)
+      @shapes[[:rr, w, h, r]] ||= begin
+        pts = []
+        segments = 6
+        step = (Math::PI / 2) / segments
+        (0..segments).each { |i| a = -Math::PI / 2 + i * step; pts << [w - r + r * Math.cos(a), r + r * Math.sin(a)] }
+        (0..segments).each { |i| a = i * step;                 pts << [w - r + r * Math.cos(a), h - r + r * Math.sin(a)] }
+        (0..segments).each { |i| a = Math::PI / 2 + i * step;  pts << [r + r * Math.cos(a), h - r + r * Math.sin(a)] }
+        (0..segments).each { |i| a = Math::PI + i * step;      pts << [r + r * Math.cos(a), r + r * Math.sin(a)] }
+        pts.freeze
+      end
+    end
+
+    def circle_base(r, segments)
+      @shapes[[:ci, r, segments]] ||= (0...segments).map do |i|
+        a = i * 2 * Math::PI / segments
+        [r * Math.cos(a), r * Math.sin(a)]
+      end.freeze
+    end
 
     def draw_centered_text(view, y, text, size: 10, bold: false, color: nil)
       return if text.nil? || text.empty?
@@ -31,6 +130,10 @@ module BoosokTools::SelectTool5D
       view.draw_text(Geom::Point3d.new(x, y, 0), text, color: color, font: "Segoe UI", size: size, bold: bold)
     end
 
+    def loc(key, fallback)
+      defined?(::BoosokTools::Locale) ? ::BoosokTools::Locale.t(key, fallback) : fallback
+    end
+
     def draw_hud_instructions(view)
       bottom_y = view.vpheight - 70
 
@@ -38,19 +141,20 @@ module BoosokTools::SelectTool5D
       is_hovering = path && !path.empty?
 
       # Judul Center Sempurna
-      draw_centered_text(view, bottom_y, "SELECT TOOL", size: 12, bold: true, color: Sketchup::Color.new(24, 24, 27))
+      title = loc('cs_title', 'SELECT TOOL')
+      draw_centered_text(view, bottom_y, title, size: 12, bold: true, color: Sketchup::Color.new(24, 24, 27))
 
       # Subtitle 1 Center Sempurna
       sub1 = if is_hovering
-               "Klik untuk seleksi Level | Tahan klik & seret untuk geser"
+               loc('cs_sub1_hover', 'Klik untuk seleksi Level | Tahan klik & seret untuk geser')
              else
-               "ESC : Exit"
+               loc('cs_sub1_exit', 'ESC : Exit')
              end
       draw_centered_text(view, bottom_y + 18, sub1, size: 10, bold: false, color: Sketchup::Color.new(70, 70, 75))
 
       # Subtitle 2 Center Sempurna
       sub2 = if is_hovering
-               "(Tahan) CTRL + Scroll: Untuk ubah kedalaman Level grup | ESC: Exit"
+               loc('cs_sub2_hover', '(Tahan) CTRL + Scroll: Untuk ubah kedalaman Level grup | ESC: Exit')
              end
       draw_centered_text(view, bottom_y + 35, sub2, size: 9, bold: false, color: Sketchup::Color.new(120, 120, 130))
     rescue
@@ -71,20 +175,22 @@ module BoosokTools::SelectTool5D
       return if defined?(Sketchup::Axes) && target_entity.is_a?(Sketchup::Axes)
       return if target_entity.respond_to?(:typename) && target_entity.typename.to_s.downcase.include?('axes')
 
-      # Warna highlight tema Boosok Tools
-      color_outline = Sketchup::Color.new(24, 24, 27)         # #18181b dark
-      color_fill    = Sketchup::Color.new(24, 24, 27, 40)     # Dark transparan
+      # Warna highlight: hijau cerah (dibuat sekali). Ubah di HIGHLIGHT_RGB / HIGHLIGHT_FILL_ALPHA.
+      color_outline = (@hl_outline ||= Sketchup::Color.new(*HIGHLIGHT_RGB))
+      color_fill    = (@hl_fill ||= Sketchup::Color.new(*HIGHLIGHT_RGB, HIGHLIGHT_FILL_ALPHA))
+
+      # Geometri highlight bergantung pada (path, depth), bukan pada posisi kursor → di-cache.
+      # Tanpa cache, bounding box / mesh face dihitung ulang di setiap gerakan mouse.
+      key = [path_key(path), depth]
 
       if target_entity.is_a?(Sketchup::Edge)
-        parent_tr = parent_world_transform(path, depth)
-        draw_edge_highlight(view, target_entity, parent_tr)
+        draw_edge_highlight(view, target_entity, key) { parent_world_transform(path, depth) }
 
       elsif target_entity.is_a?(Sketchup::Face)
-        parent_tr = parent_world_transform(path, depth)
-        draw_face_highlight(view, target_entity, parent_tr, color_fill)
+        draw_face_highlight(view, target_entity, key, color_fill) { parent_world_transform(path, depth) }
 
       elsif target_entity.respond_to?(:definition) || target_entity.respond_to?(:bounds)
-        corners = get_world_corners_for_container(path, depth)
+        corners = cached(:hl_bbox, key) { get_world_corners_for_container(path, depth) }
         draw_bounding_box_highlight(view, corners, color_fill, color_outline) if corners
       end
     rescue => e
@@ -190,10 +296,24 @@ module BoosokTools::SelectTool5D
       warn "[Select Tool] Error drawing bbox highlight: #{e.message}" if $DEBUG
     end
 
-    # Menggambar highlight untuk Face: Hanya fill permukaan tanpa border outline (persis Gambar 3)
-    def draw_face_highlight(view, face, world_tr, color_fill)
+    # Menggambar highlight untuk Face: Hanya fill permukaan tanpa border outline (persis Gambar 3).
+    # Titik hasil triangulasi bergantung pada (face, kamera), bukan posisi kursor ? di-cache,
+    # dan baru dihitung ulang saat objek berganti atau kamera bergerak (orbit/zoom).
+    def draw_face_highlight(view, face, key, color_fill)
       return unless face && face.respond_to?(:valid?) && face.valid?
 
+      cam_eye = (view.camera.eye.to_a rescue nil)
+      fill = cached(:hl_face, [key, cam_eye]) { compute_face_fill(view, face, yield) }
+      return unless fill
+
+      view.drawing_color = color_fill
+      view.draw(fill[0], fill[1])
+    rescue => e
+      warn "[Select Tool] Error drawing face highlight: #{e.message}" if $DEBUG
+    end
+
+    # => [mode GL, titik dunia] atau nil
+    def compute_face_fill(view, face, world_tr)
       # Vektor offset ke arah kamera/mata pengamat agar tidak terjadi z-fighting dengan bidang SketchUp
       cam_eye = view.camera.eye rescue nil
       normal = (face.normal.transform(world_tr).normalize rescue nil)
@@ -215,10 +335,7 @@ module BoosokTools::SelectTool5D
         mesh = face.mesh
         if mesh && mesh.respond_to?(:count_polygons) && mesh.count_polygons > 0
           (1..mesh.count_polygons).each do |i|
-            pts = mesh.polygon_points_at(i)
-            pts.each do |pt|
-              mesh_pts << (pt.transform(world_tr) + offset_vec)
-            end
+            mesh.polygon_points_at(i).each { |pt| mesh_pts << (pt.transform(world_tr) + offset_vec) }
           end
         end
       rescue
@@ -227,21 +344,19 @@ module BoosokTools::SelectTool5D
 
       # Fill Permukaan Transparan Pink Bersih Tanpa Garis Tepi
       if mesh_pts.empty? && face.respond_to?(:outer_loop) && face.outer_loop
-        outer_pts = face.outer_loop.vertices.map { |v| (v.position.transform(world_tr) + offset_vec) }
-        view.drawing_color = color_fill
-        view.draw(GL_POLYGON, outer_pts)
+        [GL_POLYGON, face.outer_loop.vertices.map { |v| (v.position.transform(world_tr) + offset_vec) }]
       elsif !mesh_pts.empty?
-        view.drawing_color = color_fill
-        view.draw(GL_TRIANGLES, mesh_pts)
+        [GL_TRIANGLES, mesh_pts]
       end
-    rescue => e
-      warn "[Select Tool] Error drawing face highlight: #{e.message}" if $DEBUG
     end
 
-    # Menggambar highlight garis Edge tebal orange
-    def draw_edge_highlight(view, edge, world_tr)
-      pts = edge.vertices.map { |v| v.position.transform(world_tr) }
-      view.drawing_color = Sketchup::Color.new(255, 153, 0)
+    # Menggambar highlight garis Edge tebal (hijau cerah, sama dengan highlight lainnya)
+    def draw_edge_highlight(view, edge, key)
+      pts = cached(:hl_edge, key) do
+        world_tr = yield
+        edge.vertices.map { |v| v.position.transform(world_tr) }
+      end
+      view.drawing_color = (@hl_outline ||= Sketchup::Color.new(*HIGHLIGHT_RGB))
       view.line_width = 5
       view.line_stipple = ""
       view.draw(GL_LINES, pts)
@@ -255,46 +370,12 @@ module BoosokTools::SelectTool5D
       return if path.nil? || path.empty?
       return unless @tool.cursor_x && @tool.cursor_y
 
-      # Skip jika kursor mengarah ke Axes (Sumbu Koordinat)
-      return if path.any? { |e| (defined?(Sketchup::Axes) && e.is_a?(Sketchup::Axes)) || (e.respond_to?(:typename) && e.typename.to_s.downcase.include?('axes')) }
-
-      # Ekstrak data hierarki dari hover_path
-      rows = path.each_with_index.map do |entity, idx|
-        next unless entity && entity.respond_to?(:valid?) && entity.valid?
-        next if defined?(Sketchup::Axes) && entity.is_a?(Sketchup::Axes)
-        next if entity.respond_to?(:typename) && entity.typename.to_s.downcase.include?('axes')
-
-        type = entity.typename rescue "Entity"
-        # Nama Group/Component dibuat berurutan dengan hashtag # dimulai dari 1 dan seterusnya per level
-        name = if entity.respond_to?(:name) && !entity.name.empty?
-                 entity.name
-               elsif entity.is_a?(Sketchup::Group)
-                 "Group##{idx + 1}"
-               elsif entity.is_a?(Sketchup::ComponentInstance)
-                 (entity.definition && !entity.definition.name.empty?) ? entity.definition.name : "Component##{idx + 1}"
-               else
-                 type
-               end
-
-        # Layer0 otomatis diubah menjadi "Untagged"
-        raw_tag = (entity.respond_to?(:layer) && entity.layer && !entity.layer.name.empty?) ? entity.layer.name : "Untagged"
-        tag = (raw_tag.nil? || raw_tag.empty? || raw_tag.casecmp("Layer0") == 0) ? "Untagged" : raw_tag
-
-        icon = if entity.is_a?(Sketchup::ComponentInstance)
-                 :component
-               elsif entity.is_a?(Sketchup::Group)
-                 :group
-               elsif entity.is_a?(Sketchup::Face)
-                 :face
-               elsif entity.is_a?(Sketchup::Edge)
-                 :edge
-               else
-                 :default
-               end
-        { level: idx, name: name, tag: tag, icon: icon }
-      end.compact
-
-      return if rows.empty?
+      # Data baris (nama/tag/ikon) hanya dihitung ulang kalau objek di path berganti, bukan tiap frame.
+      # nil = path mengandung Axes → kartu tidak digambar.
+      rows = cached(:rows, path_key(path)) do
+        build_hierarchy_rows(path)
+      end
+      return if rows.nil? || rows.empty?
 
       row_h   = 36
       row_gap = 4
@@ -316,38 +397,82 @@ module BoosokTools::SelectTool5D
       margin_left   = 10
       margin_right  = 15
 
-      # Deteksi tema dark/light dari preferensi Boosok Tools
-      theme_val = Sketchup.read_default("BoosokTools", "theme", "").to_s rescue ""
-      is_dark = (theme_val == "dark")
+      # Palet warna card sesuai tema (objek Color dibuat sekali per tema)
+      pal = palette(dark_theme?)
+      card_bg             = pal[:card_bg]
+      card_border         = pal[:card_border]
+      card_shadow         = pal[:card_shadow]
+      row_active_bg       = pal[:row_active_bg]
+      row_active_title    = pal[:row_active_title]
+      row_active_tag      = pal[:row_active_tag]
+      row_active_icon     = pal[:row_active_icon]
+      row_inactive_bg     = pal[:row_inactive_bg]
+      row_inactive_border = pal[:row_inactive_border]
+      row_inactive_title  = pal[:row_inactive_title]
+      row_inactive_tag    = pal[:row_inactive_tag]
+      row_inactive_icon   = pal[:row_inactive_icon]
 
-      # Palet warna tema card
-      if is_dark
-        card_bg       = Sketchup::Color.new(30, 30, 34)      # --surface dark (#1e1e22)
-        card_border   = Sketchup::Color.new(46, 46, 52)      # --line dark (#2e2e34)
-        card_shadow   = Sketchup::Color.new(0, 0, 0, 60)
-        row_active_bg = Sketchup::Color.new(244, 244, 246)   # terang saat dark mode
-        row_active_title = Sketchup::Color.new(24, 24, 27)   # hitam untuk kontras
-        row_active_tag   = Sketchup::Color.new(80, 80, 90)
-        row_active_icon  = Sketchup::Color.new(24, 24, 27)
-        row_inactive_bg  = Sketchup::Color.new(40, 40, 46)   # gray gelap
-        row_inactive_border = Sketchup::Color.new(60, 60, 68)
-        row_inactive_title  = Sketchup::Color.new(200, 200, 210) # teks terang
-        row_inactive_tag    = Sketchup::Color.new(130, 130, 145)
-        row_inactive_icon   = Sketchup::Color.new(130, 130, 145)
-      else
-        card_bg       = Sketchup::Color.new(247, 247, 248)   # --bg light (#f7f7f8)
-        card_border   = Sketchup::Color.new(230, 230, 233)   # --line light (#e6e6e9)
-        card_shadow   = Sketchup::Color.new(24, 24, 27, 22)
-        row_active_bg = Sketchup::Color.new(24, 24, 27)      # --ink hitam elegan
-        row_active_title = Sketchup::Color.new(255, 255, 255)
-        row_active_tag   = Sketchup::Color.new(180, 180, 185)
-        row_active_icon  = Sketchup::Color.new(255, 255, 255)
-        row_inactive_bg  = Sketchup::Color.new(238, 238, 241) # gray muda
-        row_inactive_border = Sketchup::Color.new(222, 222, 226)
-        row_inactive_title  = Sketchup::Color.new(24, 24, 27)  # --ink
-        row_inactive_tag    = Sketchup::Color.new(113, 113, 122) # --muted
-        row_inactive_icon   = Sketchup::Color.new(113, 113, 122)
-      end
+      draw_hierarchy_card(view, rows, active_lvl, row_h, row_gap, pad, card_w, card_h, corner_r,
+                          badge_r, badge_cx, badge_cy, margin_top, margin_bottom, margin_left, margin_right,
+                          card_bg, card_border, card_shadow,
+                          row_active_bg, row_active_title, row_active_tag, row_active_icon,
+                          row_inactive_bg, row_inactive_border, row_inactive_title, row_inactive_tag, row_inactive_icon)
+    end
+
+    # Nama definition dari Group / ComponentInstance ("" kalau tidak tersedia)
+    def definition_name_of(entity)
+      defn = entity.respond_to?(:definition) ? entity.definition : nil
+      defn && defn.respond_to?(:name) ? defn.name.to_s.strip : ""
+    rescue
+      ""
+    end
+
+    # Ekstrak data hierarki dari hover_path → [{level:, name:, tag:, icon:}], atau nil bila ada Axes
+    def build_hierarchy_rows(path)
+      return nil if path.any? { |e| (defined?(Sketchup::Axes) && e.is_a?(Sketchup::Axes)) || (e.respond_to?(:typename) && e.typename.to_s.downcase.include?('axes')) }
+
+      path.each_with_index.map do |entity, idx|
+        next unless entity && entity.respond_to?(:valid?) && entity.valid?
+        next if defined?(Sketchup::Axes) && entity.is_a?(Sketchup::Axes)
+        next if entity.respond_to?(:typename) && entity.typename.to_s.downcase.include?('axes')
+
+        type = entity.typename rescue "Entity"
+        # Nama: nama instance kalau ada; kalau kosong, ambil dari definition-nya (Group maupun
+        # Component) — bukan lagi nomor urut level seperti "Group#1", "Group#2".
+        name = if entity.respond_to?(:name) && !entity.name.empty?
+                 entity.name
+               elsif entity.is_a?(Sketchup::Group) || entity.is_a?(Sketchup::ComponentInstance)
+                 def_name = definition_name_of(entity)
+                 def_name.empty? ? (entity.is_a?(Sketchup::Group) ? "Group" : "Component") : def_name
+               else
+                 type
+               end
+
+        # Layer0 otomatis diubah menjadi "Untagged"
+        raw_tag = (entity.respond_to?(:layer) && entity.layer && !entity.layer.name.empty?) ? entity.layer.name : "Untagged"
+        tag = (raw_tag.nil? || raw_tag.empty? || raw_tag.casecmp("Layer0") == 0) ? "Untagged" : raw_tag
+
+        icon = if entity.is_a?(Sketchup::ComponentInstance)
+                 :component
+               elsif entity.is_a?(Sketchup::Group)
+                 :group
+               elsif entity.is_a?(Sketchup::Face)
+                 :face
+               elsif entity.is_a?(Sketchup::Edge)
+                 :edge
+               else
+                 :default
+               end
+        { level: idx, name: name, tag: tag, icon: icon }
+      end.compact
+    end
+
+    # Menggambar kartu hierarki mengambang (semua nilai sudah dihitung oleh pemanggil)
+    def draw_hierarchy_card(view, rows, active_lvl, row_h, row_gap, pad, card_w, card_h, corner_r,
+                            badge_r, badge_cx, badge_cy, margin_top, margin_bottom, margin_left, margin_right,
+                            card_bg, card_border, card_shadow,
+                            row_active_bg, row_active_title, row_active_tag, row_active_icon,
+                            row_inactive_bg, row_inactive_border, row_inactive_title, row_inactive_tag, row_inactive_icon)
 
       # Horizontal: Posisi card dihitung setelah beak (triangle) + gap
       beak_gap   = 6.0   # space antara tepi lingkaran dan ujung segitiga
@@ -459,19 +584,7 @@ module BoosokTools::SelectTool5D
       # 7. Badge Lingkaran Level Kursor (Center Sempurna, Berubah Pink Saat Level > 0)
       draw_cursor_circle(view, badge_cx, badge_cy, badge_r, active_lvl)
 
-      # 8. Palet Warna Pastel Lembut & Estetik untuk Setiap Level
-      level_colors = [
-        Sketchup::Color.new(126, 142, 196), # Level 0: Pastel Slate Lavender (#7e8ec4)
-        Sketchup::Color.new(79, 182, 237),  # Level 1: Pastel Sky Blue (#4fb6ed)
-        Sketchup::Color.new(77, 195, 190),  # Level 2: Pastel Turquoise Mint (#4dc3be)
-        Sketchup::Color.new(235, 138, 110), # Level 3: Pastel Soft Coral (#eb8a6e)
-        Sketchup::Color.new(176, 125, 196), # Level 4: Pastel Soft Orchid (#b07dc4)
-        Sketchup::Color.new(238, 168, 88),  # Level 5: Pastel Warm Amber (#eea858)
-        Sketchup::Color.new(154, 204, 114), # Level 6: Pastel Sage Green (#9acc72)
-        Sketchup::Color.new(232, 120, 154), # Level 7: Pastel Dusty Rose (#e8789a)
-        Sketchup::Color.new(144, 164, 174), # Level 8: Pastel Soft Blue Grey (#90a4ae)
-        Sketchup::Color.new(121, 134, 203)  # Level 9+: Pastel Soft Indigo (#7986cb)
-      ]
+      # 8. Palet warna pastel per level: lihat LEVEL_COLORS / level_color(idx) (dibuat sekali)
 
       # 9. Gambar Setiap Baris Hierarki
       rows.each_with_index do |item, idx|
@@ -506,13 +619,10 @@ module BoosokTools::SelectTool5D
         r_badge_cx = card_x + pad + 18
         r_badge_cy = ry + rh / 2
         r_badge_r  = 11.5
-        r_badge_pts = (0...28).map do |i|
-          a = i * 2 * Math::PI / 28
-          Geom::Point3d.new(r_badge_cx + r_badge_r * Math.cos(a), r_badge_cy + r_badge_r * Math.sin(a), 0)
-        end
+        r_badge_pts = circle_base(r_badge_r, 28).map { |px, py| Geom::Point3d.new(r_badge_cx + px, r_badge_cy + py, 0) }
 
         # Warna badge nomor baris SELALU konsisten dengan warna pastelnya
-        row_badge_color = level_colors[idx % level_colors.length]
+        row_badge_color = level_color(idx)
         view.drawing_color = row_badge_color
         view.draw2d(GL_POLYGON, r_badge_pts)
 
@@ -545,11 +655,7 @@ module BoosokTools::SelectTool5D
     end
 
     def draw_cursor_circle(view, cx, cy, r, active_lvl)
-      segments = 28
-      badge_pts = (0...segments).map do |i|
-        a = i * 2 * Math::PI / segments
-        Geom::Point3d.new(cx + r * Math.cos(a), cy + r * Math.sin(a), 0)
-      end
+      badge_pts = circle_base(r, 28).map { |px, py| Geom::Point3d.new(cx + px, cy + py, 0) }
 
       if active_lvl == 0
         # Level 0: Lingkaran putih bersih dengan outline gelap tegas (#18181b)
@@ -579,28 +685,7 @@ module BoosokTools::SelectTool5D
     end
 
     def draw_rounded_rect(view, x, y, w, h, r, fill: true)
-      pts = []
-      segments = 6
-      # Top-Right
-      (0..segments).each do |i|
-        a = -Math::PI / 2 + i * (Math::PI / 2) / segments
-        pts << Geom::Point3d.new(x + w - r + r * Math.cos(a), y + r + r * Math.sin(a), 0)
-      end
-      # Bottom-Right
-      (0..segments).each do |i|
-        a = 0 + i * (Math::PI / 2) / segments
-        pts << Geom::Point3d.new(x + w - r + r * Math.cos(a), y + h - r + r * Math.sin(a), 0)
-      end
-      # Bottom-Left
-      (0..segments).each do |i|
-        a = Math::PI / 2 + i * (Math::PI / 2) / segments
-        pts << Geom::Point3d.new(x + r + r * Math.cos(a), y + h - r + r * Math.sin(a), 0)
-      end
-      # Top-Left
-      (0..segments).each do |i|
-        a = Math::PI + i * (Math::PI / 2) / segments
-        pts << Geom::Point3d.new(x + r + r * Math.cos(a), y + r + r * Math.sin(a), 0)
-      end
+      pts = rounded_base(w, h, r).map { |px, py| Geom::Point3d.new(x + px, y + py, 0) }
 
       if fill
         view.draw2d(GL_POLYGON, pts)

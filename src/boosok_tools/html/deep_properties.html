@@ -4,20 +4,22 @@
   <meta charset="UTF-8">
   <title>Deep Properties</title>
   <link rel="stylesheet" href="../css/ui.css">
+  <script src="../js/strings.js"></script>
+  <script src="../js/locale.js"></script>
 </head>
 <body oncontextmenu="return false;">
   <script src="../js/ui.js"></script>
 
   <header class="head">
-    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()">
+    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()" data-i18n-title="back_to_hub" data-i18n-aria="back_aria">
       <svg><use href="#i-arrow-left"/></svg>
     </button>
     <div class="mark"><svg><use href="#i-layers"/></svg></div>
     <div class="txt">
-      <h1>Deep Properties</h1>
-      <p>Scan & kelola tag secara mendalam</p>
+      <h1 data-i18n="deep_title">Deep Properties</h1>
+      <p data-i18n="deep_sub">Scan & kelola tag secara mendalam</p>
     </div>
-    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema"></button>
+    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema" data-i18n-title="theme_toggle" data-i18n-aria="theme_toggle"></button>
   </header>
 
   <section class="step active" id="step1">
@@ -25,25 +27,25 @@
     <div class="dp-bar">
       <div class="with-ic">
         <svg class="lead"><use href="#i-search"/></svg>
-        <input class="input" id="dpSearch" placeholder="Cari tag…" autocomplete="off" spellcheck="false" oninput="filterList()">
+        <input class="input" id="dpSearch" placeholder="Cari tag…" data-i18n-placeholder="deep_search_ph" autocomplete="off" spellcheck="false" oninput="filterList()">
       </div>
 
       <!-- Tombol icon hapus filter jika dipilih filter lebih dari 1 -->
-      <button class="filter-clear-btn" id="btnClearFilter" title="Hapus filter" onclick="resetFilters()" type="button">
+      <button class="filter-clear-btn" id="btnClearFilter" title="Hapus filter" data-i18n-title="filter_clear" onclick="resetFilters()" type="button">
         <svg><use href="#i-x"/></svg>
       </button>
 
       <div class="filter-group" id="globalFilters">
-        <button class="filter-btn" data-type="edge"      title="Filter Edge"      onclick="toggleGlobalFilter(this)" type="button">
+        <button class="filter-btn" data-type="edge"      title="Filter Edge"      data-i18n-title="filter_edge"      onclick="toggleGlobalFilter(this)" type="button">
           <svg><use href="#i-spline"/></svg>
         </button>
-        <button class="filter-btn" data-type="face"      title="Filter Face"      onclick="toggleGlobalFilter(this)" type="button">
+        <button class="filter-btn" data-type="face"      title="Filter Face"      data-i18n-title="filter_face"      onclick="toggleGlobalFilter(this)" type="button">
           <svg><use href="#i-pentagon"/></svg>
         </button>
-        <button class="filter-btn" data-type="group"     title="Filter Group"     onclick="toggleGlobalFilter(this)" type="button">
+        <button class="filter-btn" data-type="group"     title="Filter Group"     data-i18n-title="filter_group"     onclick="toggleGlobalFilter(this)" type="button">
           <svg><use href="#i-box"/></svg>
         </button>
-        <button class="filter-btn" data-type="component" title="Filter Component" onclick="toggleGlobalFilter(this)" type="button">
+        <button class="filter-btn" data-type="component" title="Filter Component" data-i18n-title="filter_component" onclick="toggleGlobalFilter(this)" type="button">
           <svg><use href="#i-component"/></svg>
         </button>
       </div>
@@ -54,14 +56,14 @@
       <!-- Toolbar di atas listbox -->
       <div class="dp-toolbar" id="dpToolbar">
         <!-- Expand/Collapse All -->
-        <button class="tb-icon-btn" id="btnExpandAll" type="button" title="Expand / Collapse semua" onclick="toggleExpandAll()">
+        <button class="tb-icon-btn" id="btnExpandAll" type="button" title="Expand / Collapse semua" data-i18n-title="deep_expand" onclick="toggleExpandAll()">
           <svg><use href="#i-chevrons-down-up"/></svg>
         </button>
 
         <div class="tb-sep"></div>
 
         <!-- Select All checkbox -->
-        <label class="tb-cb-wrap" title="Pilih semua / batal pilih semua">
+        <label class="tb-cb-wrap" title="Pilih semua / batal pilih semua" data-i18n-title="deep_select_all">
           <input type="checkbox" id="cbSelectAll" onchange="toggleSelectAll(this)">
           <span class="box"><svg><use href="#i-check"/></svg></span>
         </label>
@@ -76,7 +78,7 @@
         </div>
 
         <!-- Sort A→Z / Z→A -->
-        <button class="tb-sort-btn asc" id="btnSort" type="button" onclick="toggleSort()">
+        <button class="tb-sort-btn asc" id="btnSort" type="button" title="Urutkan A→Z / Z→A" data-i18n-title="deep_sort_az" onclick="toggleSort()">
           <svg><use href="#i-arrow-up-a-z"/></svg>
           <span class="tb-sort-label"></span>
         </button>
@@ -84,17 +86,17 @@
 
       <!-- Tag listbox -->
       <div class="list dp-list" id="dpList">
-        <div class="dp-empty">Pilih objek di SketchUp lalu klik <b>Scan Objek</b>.</div>
+        <div class="dp-empty" data-i18n="deep_empty">Pilih objek di SketchUp lalu klik <b>Scan Objek</b>.</div>
       </div>
     </div>
 
     <!-- Footer buttons -->
     <div class="actions row">
       <button class="btn ghost sm" id="btnScan" type="button" onclick="doScan(this)">
-        <svg><use href="#i-refresh-cw"/></svg><span>Scan Objek</span>
+        <svg><use href="#i-refresh-cw"/></svg><span data-i18n="scan">Scan Objek</span>
       </button>
       <button class="btn primary sm" type="button" onclick="doSelect()">
-        <svg><use href="#i-mouse-pointer-click"/></svg><span>Seleksi Entitas</span>
+        <svg><use href="#i-mouse-pointer-click"/></svg><span data-i18n="select_entities">Seleksi Entitas</span>
       </button>
     </div>
   </section>

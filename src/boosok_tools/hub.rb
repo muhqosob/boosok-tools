@@ -3,6 +3,7 @@ require 'json'
 require_relative 'titlebar'
 require_relative 'shortcut_sync'
 require_relative 'license'
+require_relative 'locale'
 
 module BoosokTools
   # Satu pintu masuk semua tool (Single Window Architecture).
@@ -30,6 +31,24 @@ module BoosokTools
 
     @current_tool ||= 'hub'
 
+    # Catat callback dialog yang lambat ke Ruby Console, contoh:
+    #   [Boosok perf] dp_scan: 812.4 ms
+    # Supaya sumber jeda/not responding bisa langsung kelihatan tanpa menebak.
+    SLOW_MS = 80 unless defined?(SLOW_MS)
+    module SlowCallbackLog
+      def add_action_callback(name, &blk)
+        super(name) do |*args|
+          t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+          begin
+            blk.call(*args)
+          ensure
+            ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0) * 1000.0
+            puts format('[Boosok perf] %s: %.1f ms', name, ms) if ms >= SLOW_MS
+          end
+        end
+      end
+    end
+
     def self.dialog
       BoosokTools.dialog
     end
@@ -53,7 +72,6 @@ module BoosokTools
     def self.show(custom_page = nil, tool_id = nil)
       dlg = BoosokTools.dialog
       if dlg && dlg.visible?
-        attach_all_callbacks(dlg)
         if tool_id
           open_tool(tool_id)
         elsif custom_page
@@ -66,6 +84,7 @@ module BoosokTools
       end
 
       TitleBar.get_sketchup_hwnd rescue nil
+      BoosokTools::Locale.export_js # murah: hanya menulis ulang kalau ada file bahasa yang berubah
       pos = BoosokTools.get_position(WIDTH, DEFAULT_HEIGHT)
 
       dlg = UI::HtmlDialog.new(
@@ -76,6 +95,7 @@ module BoosokTools
         height: DEFAULT_HEIGHT,
         style: UI::HtmlDialog::STYLE_DIALOG
       )
+      dlg.extend(SlowCallbackLog)
       BoosokTools.dialog = dlg
 
       if pos && pos[0] > 5 && pos[1] > 5
@@ -87,47 +107,72 @@ module BoosokTools
       TitleBar.attach(dlg, TITLE, width: WIDTH)
 
       @current_tool = tool_id ? tool_id.to_s : 'hub'
-      attach_all_callbacks(dlg)
+      # Dibuka langsung ke sebuah tool (menu/hotkey): loader pembuka tidak perlu muncul nanti
+      # saat user menekan Kembali ke Hub.
+      BoosokTools.set_hub_booted(true) if tool_id
+      attach_hub_callbacks(dlg)
+      # Semua callback tool HARUS terdaftar sebelum dlg.show. Callback yang baru ditambah
+      # setelah dialog tampil tidak dikenali `sketchup.*` di halaman tool → "Fungsi belum siap".
+      # File tool di-load sekali per sesi (biasanya sudah di-preload saat SketchUp start).
+      preload_tools
+      attach_all_tool_callbacks(dlg)
+      # attach_callbacks beberapa tool ikut menyalakan timer/observer → matikan yang tidak sedang dibuka
+      TOOL_PAGES.each_key { |tid| deactivate_tool(tid) unless tid == @current_tool }
 
       dlg.set_on_closed do
         BoosokTools.capture_current_position(TITLE)
-        HideOnSceneManager.detach_all_observers rescue nil if defined?(HideOnSceneManager)
-        TheSelectorPlugin.detach_all_observers rescue nil if defined?(TheSelectorPlugin)
+        TOOL_PAGES.each_key { |tid| deactivate_tool(tid) }
+        $cleangroup_dlg = nil
+        $the_replacer_dlg = nil
+        $reset_dlg = nil
+        $untag_dlg = nil
+        DeepProperties.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(DeepProperties)
+        DeepProperties.instance_variable_set(:@dialog_registered_id, nil) rescue nil if defined?(DeepProperties)
+        TheSelectorPlugin.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(TheSelectorPlugin)
+        TheSelectorPlugin.instance_variable_set(:@dialog_registered_id, nil) rescue nil if defined?(TheSelectorPlugin)
+        HideOnSceneManager.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(HideOnSceneManager)
+        HideOnSceneManager.instance_variable_set(:@dialog_registered_id, nil) rescue nil if defined?(HideOnSceneManager)
         # Nonaktifkan Select Tool jika masih aktif
         begin
           model = Sketchup.active_model
           model.select_tool(nil) if model && model.respond_to?(:select_tool)
         rescue
         end
-        BoosokTools.dialog = nil
-        @current_tool = 'hub'
+        # Hanya kosongkan kalau ini memang dialog aktif (bukan dialog baru hasil reload/buka ulang)
+        if BoosokTools.dialog.nil? || BoosokTools.dialog.equal?(dlg)
+          BoosokTools.dialog = nil
+          @current_tool = 'hub'
+        end
       end
 
+      # State dikirim saat halaman memanggil hub_ready/ready — tidak perlu timer di sini.
       dlg.show
+    end
+
+    # Matikan timer/observer milik tool yang sedang tidak dibuka.
+    def self.deactivate_tool(id)
+      case id.to_s
+      when 'replacer' then TheReplacer.stop_cache_timer if defined?(TheReplacer)
+      when 'selector' then TheSelectorPlugin.detach_all_observers if defined?(TheSelectorPlugin)
+      when 'scene'    then HideOnSceneManager.detach_all_observers if defined?(HideOnSceneManager)
+      end
+    rescue => e
+      puts "[Boosok Tools] deactivate_tool '#{id}': #{e.message}"
     end
 
     def self.open_or_show(id)
       cfg = TOOL_PAGES[id.to_s]
       return unless cfg
 
-      # Cek apakah lisensi / trial mengizinkan penggunaan tool
+      # Trial habis & belum berlisensi: cukup beri tahu bahwa tool terkunci (tanpa popup aktivasi)
       if defined?(BoosokTools::License) && !BoosokTools::License.can_use?
-        show
-        dlg = BoosokTools.dialog
-        if dlg && dlg.visible?
-          dlg.execute_script("if (typeof onLicenseExpiredPrompt === 'function') onLicenseExpiredPrompt(); else if (typeof openAbout === 'function') openAbout();") rescue nil
-        end
-        UI.messagebox("Masa uji coba (trial 7 hari) Boosok Tools telah habis.\nSemua tool terkunci.\n\nSilakan masukkan lisensi key di jendela Hub untuk membuka.") rescue nil
+        notify_locked
         return
       end
 
       if id.to_s == 'custom_select'
-        load_tool_file(id.to_s)
+        load_tool_file(id.to_s) unless defined?(BoosokTools::SelectTool5D)
         BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
-        
-        # DIHAPUS agar dialog tidak tertutup
-        # dlg = BoosokTools.dialog
-        # dlg.close rescue nil if dlg && dlg.visible? 
         return
       end
 
@@ -146,8 +191,7 @@ module BoosokTools
 
       # Kunci semua tool jika trial habis dan belum berlisensi
       if defined?(BoosokTools::License) && !BoosokTools::License.can_use?
-        toast("Masa trial 7 hari telah habis. Semua tool terkunci.")
-        dlg.execute_script("if (typeof onLicenseExpiredPrompt === 'function') onLicenseExpiredPrompt(); else if (typeof openAbout === 'function') openAbout();") rescue nil
+        notify_locked
         return
       end
 
@@ -155,23 +199,12 @@ module BoosokTools
       return toast("Tool \"#{id}\" tidak dikenal.") unless cfg
 
       if id.to_s == 'custom_select'
-        load_tool_file(id.to_s)
+        load_tool_file(id.to_s) unless defined?(BoosokTools::SelectTool5D)
         BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
-        
-        # DIHAPUS agar dialog tidak tertutup
-        # dlg.close rescue nil 
         return
       end
 
-      if @current_tool == 'scene' && id.to_s != 'scene'
-        HideOnSceneManager.detach_all_observers rescue nil if defined?(HideOnSceneManager)
-      end
-      if @current_tool == 'selector' && id.to_s != 'selector'
-        TheSelectorPlugin.detach_all_observers rescue nil if defined?(TheSelectorPlugin)
-      end
-      if @current_tool == 'deep' && id.to_s != 'deep'
-        DeepProperties.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(DeepProperties)
-      end
+      deactivate_tool(@current_tool) if @current_tool != id.to_s
       # Nonaktifkan Select Tool jika user berpindah ke tool lain
       begin
         model = Sketchup.active_model
@@ -180,7 +213,8 @@ module BoosokTools
       end
       @current_tool = id.to_s
 
-      load_tool_file(id.to_s)
+      # File tool cukup di-load sekali per sesi (tidak di-parse ulang tiap buka)
+      preload_tools
       attach_tool_callbacks(id.to_s)
       navigate_to(cfg[:page])
     rescue Exception => e
@@ -192,24 +226,28 @@ module BoosokTools
       cfg = TOOL_PAGES[id.to_s]
       return unless cfg && cfg[:file]
       file_path = File.join(__dir__, cfg[:file])
-      load file_path if File.exist?(file_path)
-    rescue => e
+      return false unless File.exist?(file_path)
+      load file_path
+      true
+    rescue Exception => e
       puts "[Boosok Tools] Gagal memuat file tool '#{id}': #{e.class}: #{e.message}"
+      false
+    end
+
+    # Load semua file tool satu kali per sesi supaya modulnya sudah ada saat callback didaftarkan.
+    def self.preload_tools
+      @preloaded ||= {}
+      TOOL_PAGES.each do |id, cfg|
+        next if id == 'custom_select' || @preloaded[id]
+        @preloaded[id] = true if load_tool_file(id)
+      end
     end
 
     def self.back_to_hub
       dlg = BoosokTools.dialog
       return unless dlg && dlg.visible?
 
-      if @current_tool == 'scene'
-        HideOnSceneManager.detach_all_observers rescue nil if defined?(HideOnSceneManager)
-      end
-      if @current_tool == 'selector'
-        TheSelectorPlugin.detach_all_observers rescue nil if defined?(TheSelectorPlugin)
-      end
-      if @current_tool == 'deep'
-        DeepProperties.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(DeepProperties)
-      end
+      deactivate_tool(@current_tool)
       # Nonaktifkan Select Tool saat kembali ke hub
       begin
         model = Sketchup.active_model
@@ -217,7 +255,7 @@ module BoosokTools
       rescue
       end
       @current_tool = 'hub'
-      attach_hub_callbacks(dlg)
+      # Callback hub sudah terdaftar sejak show — tidak perlu didaftarkan ulang tiap kembali
       navigate_to('hub.html')
     end
 
@@ -230,13 +268,28 @@ module BoosokTools
     def self.attach_hub_callbacks(dlg)
       return unless dlg
 
+      # Satu kali render per load halaman hub (state sudah murah karena di-cache).
+      # has_booted TIDAK dipaksa true di sini: false sampai halaman memanggil "boot_done"
+      # (selesai menampilkan loader pembuka). Setelah itu loader tidak muncul lagi di sesi ini.
       dlg.add_action_callback("hub_ready") do |_ctx|
-        push(state)
+        dlg.execute_script("if (typeof render === 'function') render(#{state.to_json});")
+        flush_notice if BoosokTools.hub_booted? # kalau loader pembuka belum selesai, tunggu boot_done
+      end
+
+      # Dipanggil saat jendela hub kembali difokus: hanya angka statistik & lisensi, tanpa redraw penuh.
+      dlg.add_action_callback("hub_refresh") do |_ctx|
+        next unless @current_tool == 'hub'
+        model = Sketchup.active_model
+        lite = {
+          stats: model ? model_stats(model) : { objects: 0, scenes: 0, selected: 0 },
+          license: (defined?(BoosokTools::License) ? BoosokTools::License.status : nil)
+        }
+        dlg.execute_script("if (typeof onHubRefresh === 'function') onHubRefresh(#{lite.to_json});")
       end
 
       dlg.add_action_callback("ready") do |_ctx|
         if @current_tool == 'hub'
-          push(state)
+          dlg.execute_script("if (typeof render === 'function') render(#{state.to_json});")
         elsif @current_tool == 'scene' && defined?(HideOnSceneManager)
           HideOnSceneManager.send_init_data(dlg)
         elsif @current_tool == 'selector' && defined?(TheSelectorPlugin)
@@ -246,8 +299,27 @@ module BoosokTools
         end
       end
 
+      # Select Tool 5D (dipakai Replacer & tab Objek di Hide Scene) — satu pendaftaran saja
+      dlg.add_action_callback("activate_select_tool") do |_ctx|
+        begin
+          load_tool_file('custom_select') unless defined?(BoosokTools::SelectTool5D)
+          BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
+        rescue => e
+          puts "[Boosok Hub] Gagal aktifkan Select Tool: #{e.message}"
+        end
+      end
+
+      dlg.add_action_callback("deactivate_select_tool") do |_ctx|
+        begin
+          Sketchup.active_model.select_tool(nil)
+        rescue => e
+          puts "[Boosok Hub] Gagal nonaktifkan Select Tool: #{e.message}"
+        end
+      end
+
       dlg.add_action_callback("boot_done") do |_ctx|
         BoosokTools.set_hub_booted(true)
+        flush_notice(0.9) # tunggu fade-out loader (0,9 dtk) selesai
       end
 
       dlg.add_action_callback("open") do |_ctx, id, pos_json|
@@ -259,6 +331,8 @@ module BoosokTools
         end
         open_tool(id.to_s)
       end
+
+      # "back_to_hub" & "save_position" sudah didaftarkan oleh TitleBar.attach — jangan dobel.
 
       dlg.add_action_callback("updates") do |_ctx|
         # Push state update inline ke hub (bukan buka dialog baru)
@@ -362,6 +436,7 @@ module BoosokTools
       dlg.add_action_callback("remove_license") do |_ctx|
         begin
           Sketchup.write_default("BoosokTools", "license_key", "") rescue nil
+          BoosokTools::License.clear_cache! if defined?(BoosokTools::License)
           st = defined?(BoosokTools::License) ? BoosokTools::License.status : { status: 'unlicensed' }
           dlg.execute_script("if (typeof onLicenseStatus === 'function') onLicenseStatus(#{st.to_json});")
         rescue => e
@@ -377,20 +452,45 @@ module BoosokTools
           puts "[Boosok Hub] open_external_url error: #{e.message}"
         end
       end
+
+      # ── Pengaturan Bahasa / Locales ───────────────────
+      dlg.add_action_callback("get_languages") do |_ctx|
+        begin
+          locales = BoosokTools::Locale.all_locales(true)
+          # File bahasa baru yang ditambahkan saat SketchUp berjalan ikut diekspor ke js/strings.js
+          # (dipakai halaman tool pada pemuatan berikutnya)
+          BoosokTools::Locale.export_js
+          cur_lang = BoosokTools::Locale.current_language
+          dlg.execute_script("if (typeof onLanguagesLoaded === 'function') onLanguagesLoaded(#{locales.to_json}, #{cur_lang.to_json});")
+        rescue => e
+          puts "[Boosok Hub] get_languages error: #{e.message}"
+        end
+      end
+
+      dlg.add_action_callback("set_language") do |_ctx, lang_code|
+        begin
+          saved = BoosokTools::Locale.set_language(lang_code)
+          dlg.execute_script("if (typeof onLanguageSaved === 'function') onLanguageSaved(#{saved.to_json});")
+        rescue => e
+          puts "[Boosok Hub] set_language error: #{e.message}"
+        end
+      end
+
+      dlg.add_action_callback("open_locales_folder") do |_ctx|
+        begin
+          BoosokTools::Locale.open_locales_folder
+        rescue => e
+          puts "[Boosok Hub] open_locales_folder error: #{e.message}"
+        end
+      end
     end
 
-    def self.attach_all_callbacks(dlg)
+    def self.attach_all_tool_callbacks(dlg)
       return unless dlg
-
-      attach_hub_callbacks(dlg)
-
-      TOOL_PAGES.each do |tid, _cfg|
-        begin
-          load_tool_file(tid)
-          attach_tool_callbacks(tid, dlg)
-        rescue => e
-          puts "[Boosok Tools] Gagal attach callback '#{tid}': #{e.class}: #{e.message}"
-        end
+      # Register callbacks semua tool yang modulnya sudah ter-load (lihat preload_tools).
+      TOOL_PAGES.each_key do |id|
+        next if id.to_s == 'custom_select'
+        attach_tool_callbacks(id.to_s, dlg)
       end
     end
 
@@ -415,29 +515,78 @@ module BoosokTools
       end
     end
 
+    STATS_TTL = 10 unless defined?(STATS_TTL)
+
+    # Jumlah group/component di level atas. Scan entitas mahal di model besar, jadi hasilnya
+    # di-cache dan hanya dihitung ulang kalau jumlah entitas berubah atau cache sudah > 10 detik.
+    def self.model_stats(model)
+      top = model.entities
+      key = [model.object_id, top.length]
+      now = Time.now.to_f
+      if @stats_key != key || !@stats_at || now - @stats_at > STATS_TTL
+        @stats_objects = top.count { |e| e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) }
+        @stats_key = key
+        @stats_at = now
+      end
+      { objects: @stats_objects, scenes: model.pages.size, selected: model.selection.size }
+    end
+
     def self.state
       booted = BoosokTools.hub_booted?
       model = Sketchup.active_model
       return { status: 'error', error: "Tidak ada model yang aktif. Buka atau buat model dulu.", has_booted: booted } unless model
 
-      top = model.entities
       lic_st = defined?(BoosokTools::License) ? BoosokTools::License.status : { status: 'expired', can_use: false, days_left: 0 }
+      cur_lang = BoosokTools::Locale.current_language
       {
         status: 'ready',
         has_booted: booted,
         session_id: (BoosokTools.session_id rescue ''),
         version: MyCustomPlugins::PLUGIN_VERSION,
         theme: Sketchup.read_default("BoosokTools", "theme", "").to_s,
+        language: cur_lang,
         hotkeys: (BoosokTools::ShortcutSync.get_all_shortcuts rescue {}),
         license: lic_st,
-        stats: {
-          objects: top.count { |e| e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) },
-          scenes: model.pages.size,
-          selected: model.selection.size
-        }
+        stats: model_stats(model)
       }
     rescue => e
       { status: 'error', error: "Gagal membaca model: #{e.message}", has_booted: BoosokTools.hub_booted? }
+    end
+
+    # Pesan "terkunci" (ikut bahasa terpilih)
+    def self.locked_message
+      BoosokTools::Locale.t('lic_trial_expired_toast', 'Masa trial 7 hari telah habis. Semua tool terkunci.')
+    end
+
+    # Notifikasi biasa (bukan popup aktivasi). Kalau dialog Hub belum terbuka, buka dulu lalu
+    # tampilkan notifnya setelah halaman siap (lihat flush_notice).
+    def self.notify_locked
+      msg = locked_message
+      begin
+        Sketchup.status_text = msg # juga tampil di status bar SketchUp
+      rescue
+      end
+      dlg = BoosokTools.dialog
+      if dlg && dlg.visible?
+        notify(msg)
+      else
+        @pending_notice = msg
+        show
+      end
+    end
+
+    def self.notify(msg)
+      dlg = BoosokTools.dialog
+      return unless dlg && dlg.visible?
+      dlg.execute_script("if (typeof showToast === 'function') showToast(#{msg.to_json}, 'error');")
+    end
+
+    # Kirim notif yang tertunda. Dipanggil setelah Hub siap (dan setelah loader pembuka selesai).
+    def self.flush_notice(delay = 0.3)
+      return unless @pending_notice
+      msg = @pending_notice
+      @pending_notice = nil
+      UI.start_timer(delay, false) { notify(msg) }
     end
 
     def self.toast(msg)

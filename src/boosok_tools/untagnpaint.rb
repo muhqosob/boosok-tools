@@ -11,19 +11,18 @@ module UntagUnpaintManager
 
   def self.attach_callbacks(dialog)
     return unless dialog
-
-    # Skip jika dialog ini sudah terdaftar — cegah callback stacking dari Hub
-    if $untag_dlg.equal?(dialog)
-      return
-    end
+    return if $untag_dlg.equal?(dialog) # sudah terdaftar di dialog ini (hindari handler bertumpuk)
     $untag_dlg = dialog
 
     # --- CALLBACK PROCESS ---
-    dialog.add_action_callback("prosesAction") do |_context, action_type, deep_process|
-      # deep_process datang dari JS sebagai string "true"/"false"
+    action_cb = lambda do |_context, action_type, deep_process|
       deep = (deep_process.to_s == 'true')
       execute_action(dialog, action_type, deep)
     end
+
+    dialog.add_action_callback("prosesAction", &action_cb)
+    dialog.add_action_callback("proses_untagnpaint", &action_cb)
+    dialog.add_action_callback("untag_unpaint", &action_cb)
   end
 
   def self.execute_action(dialog, action_type, deep_process)

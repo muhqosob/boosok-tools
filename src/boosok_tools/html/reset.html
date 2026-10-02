@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Reset Scale</title>
   <link rel="stylesheet" href="../css/ui.css">
+  <script src="../js/strings.js"></script>
+  <script src="../js/locale.js"></script>
   <style>
     body { gap: 12px; }
     .options { display: flex; flex-direction: column; gap: 8px; }
@@ -40,35 +42,35 @@
   <script src="../js/ui.js"></script>
 
   <header class="head">
-    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()"><svg><use href="#i-arrow-left"/></svg></button>
+    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()" data-i18n-title="back_to_hub" data-i18n-aria="back_aria"><svg><use href="#i-arrow-left"/></svg></button>
     <div class="mark"><svg><use href="#i-scale-3d"/></svg></div>
     <div class="txt">
-      <h1>Reset Scale</h1>
-      <p>Atur ulang skala group / component</p>
+      <h1 data-i18n="reset_title">Reset Scale</h1>
+      <p data-i18n="reset_sub">Atur ulang skala group / component</p>
     </div>
-    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema"></button>
+    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema" data-i18n-title="theme_toggle" data-i18n-aria="theme_toggle"></button>
   </header>
 
   <section class="step active" id="step1">
-    <div class="label">Pilihan Reset Skala</div>
+    <div class="label" data-i18n="reset_options">Pilihan Reset Skala</div>
 
     <div class="options" role="radiogroup">
       <div class="opt-card active" data-mode="preserve" role="radio" aria-checked="true" tabindex="0">
         <div class="opt-radio"></div>
         <div class="opt-txt">
           <div class="opt-title">
-            <span>Pertahankan Ukuran</span>
+            <span data-i18n="reset_preserve">Pertahankan Ukuran</span>
             <span class="pill new">Bake</span>
           </div>
-          <div class="opt-desc">Skala jadi 1:1:1 tanpa mengubah ukuran saat ini (ukuran hasil skala tetap).</div>
+          <div class="opt-desc" data-i18n="reset_preserve_d">Skala jadi 1:1:1 tanpa mengubah ukuran saat ini (ukuran hasil skala tetap).</div>
         </div>
       </div>
 
       <div class="opt-card" data-mode="original" role="radio" aria-checked="false" tabindex="0">
         <div class="opt-radio"></div>
         <div class="opt-txt">
-          <div class="opt-title">Kembalikan ke Ukuran Asli</div>
-          <div class="opt-desc">Skala jadi 1:1:1 dan ukuran kembali ke bentuk awal sebelum diskala.</div>
+          <div class="opt-title" data-i18n="reset_original">Kembalikan ke Ukuran Asli</div>
+          <div class="opt-desc" data-i18n="reset_original_d">Skala jadi 1:1:1 dan ukuran kembali ke bentuk awal sebelum diskala.</div>
         </div>
       </div>
     </div>
@@ -76,8 +78,8 @@
     <div class="toggle" id="deep" role="switch" aria-checked="false" tabindex="0">
       <svg class="ic"><use href="#i-layers"/></svg>
       <div class="txt">
-        <div class="t">Rekursif</div>
-        <div class="s">Ikut proses group & component di dalam</div>
+        <div class="t" data-i18n="reset_recursive">Rekursif</div>
+        <div class="s" data-i18n="reset_recursive_d">Ikut proses group & component di dalam</div>
       </div>
       <div class="switch"></div>
     </div>
@@ -92,16 +94,16 @@
   <section class="step" id="step2">
     <div class="hero">
       <div class="badge ok draw"><svg><use href="#i-check"/></svg></div>
-      <h2>Skala di-reset</h2>
+      <h2 data-i18n="reset_done_title">Skala di-reset</h2>
       <p id="success-message"></p>
     </div>
     <div class="spacer"></div>
     <div class="actions row">
       <button class="btn ghost" onclick="showStep(1); updateButtonText();">
-        <svg><use href="#i-rotate-ccw"/></svg><span>Lagi</span>
+        <svg><use href="#i-rotate-ccw"/></svg><span data-i18n="again">Lagi</span>
       </button>
       <button class="btn primary" onclick="backToHub()">
-        <svg><use href="#i-house"/></svg><span>Tutup</span>
+        <svg><use href="#i-house"/></svg><span data-i18n="close">Tutup</span>
       </button>
     </div>
   </section>
@@ -114,7 +116,9 @@
     function updateButtonText() {
       var btnText = document.getElementById('btnText');
       if (btnText) {
-        btnText.textContent = (currentMode === 'preserve') ? 'Reset Skala (Tetap Ukuran)' : 'Reset ke Ukuran Asli';
+        btnText.textContent = (currentMode === 'preserve')
+          ? t('reset_btn_keep', 'Reset Skala (Tetap Ukuran)')
+          : t('reset_btn_orig', 'Reset ke Ukuran Asli');
       }
     }
 
@@ -161,7 +165,7 @@
           sketchup.reset(currentMode, isDeep);
         } else {
           resetExecButton();
-          showToast('Fungsi Reset Scale belum siap.', 'error');
+          showToast(t('reset_err', 'Fungsi Reset Scale belum siap.'), 'error');
         }
       } catch (err) {
         resetExecButton();
@@ -187,7 +191,8 @@
 
     function showSuccessStep(msg) {
       resetExecButton();
-      document.getElementById('success-message').textContent = msg;
+      var translated = (window.translateMessage ? window.translateMessage(msg) : msg);
+      document.getElementById('success-message').textContent = translated;
       showStep(2);
       autoFitHeight(0);
     }
@@ -198,6 +203,7 @@
       autoFitHeight(0);
     };
 
+    updateButtonText();
     autoFitHeight(0);
   </script>
 </body>

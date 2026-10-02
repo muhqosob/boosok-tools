@@ -34,10 +34,13 @@ module BoosokTools::SelectTool5D
         @tool.hover_path = path
         # Pertahankan target_depth (presisten pada Level 1 / level yang dipilih user)
         @tool.refresh(view)
-      else
-        @tool.update_status_bar if path.empty?
-        view.invalidate rescue nil # Update posisi HUD mengambang di samping kursor secara smooth
+      elsif !path.empty?
+        # Objek sama: kartu HUD mengikuti kursor → harus redraw di setiap gerakan agar mulus.
+        # (Jangan di-throttle: redraw yang dijarangkan membuat kartu terlihat patah-patah.
+        # Kerja berat di draw sudah di-cache di DrawHandler, jadi satu frame murah.)
+        view.invalidate rescue nil
       end
+      # Path kosong & tidak berubah: tidak ada yang bergantung pada posisi kursor → tidak perlu redraw.
     rescue => e
       # Fallback on Error: Reset hover path agar tidak corrupt state
       @tool.hover_path = []

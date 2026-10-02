@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Hide on Scene</title>
   <link rel="stylesheet" href="../css/ui.css">
+  <script src="../js/strings.js"></script>
+  <script src="../js/locale.js"></script>
   <style>
     .bar { display: flex; gap: 6px; flex-shrink: 0; background: transparent; }
     .bar .with-ic { flex: 1; background: transparent; }
@@ -18,60 +20,60 @@
   <script src="../js/ui.js"></script>
 
   <header class="head">
-    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()"><svg><use href="#i-arrow-left"/></svg></button>
+    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()" data-i18n-title="back_to_hub" data-i18n-aria="back_aria"><svg><use href="#i-arrow-left"/></svg></button>
     <div class="mark"><svg><use href="#i-eye-off"/></svg></div>
     <div class="txt">
-      <h1>Hide on Scene</h1>
-      <p>Atur visibilitas tag & objek per scene</p>
+      <h1 data-i18n="scene_title">Hide on Scene</h1>
+      <p data-i18n="scene_sub">Atur visibilitas tag & objek per scene</p>
     </div>
     <span class="pill" id="cur">1 / 2</span>
-    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema"></button>
+    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema" data-i18n-title="theme_toggle" data-i18n-aria="theme_toggle"></button>
   </header>
 
   <!-- Langkah 1: scene -->
   <section class="step active" id="step1" data-label="1 / 2">
-    <div class="sub"><span class="label">Scene</span><span class="count" id="nScene"></span></div>
+    <div class="sub"><span class="label" data-i18n="scene_title_single">Scene</span><span class="count" id="nScene"></span></div>
     <div class="bar">
       <div class="with-ic">
         <svg class="lead"><use href="#i-search"/></svg>
-        <input class="input" placeholder="Cari scene…" data-filter="listScenes" autocomplete="off" spellcheck="false">
+        <input class="input" placeholder="Cari scene…" data-i18n-placeholder="scene_search_ph" data-filter="listScenes" autocomplete="off" spellcheck="false">
       </div>
-      <button class="btn ghost sm" data-all="listScenes">Semua</button>
-      <button class="btn ghost sm icon" data-clear="listScenes" title="Kosongkan pilihan"><svg><use href="#i-x"/></svg></button>
+      <button class="btn ghost sm" data-all="listScenes" data-i18n="scene_all">Semua</button>
+      <button class="btn ghost sm icon" data-clear="listScenes" title="Kosongkan pilihan" data-i18n-title="scene_clear"><svg><use href="#i-x"/></svg></button>
     </div>
     <div class="list" id="listScenes"></div>
     <div class="actions row">
-      <button class="btn ghost sm" id="btnIsolate" title="Isolasi objek terseleksi di scene aktif"
+      <button class="btn ghost sm" id="btnIsolate" title="Isolasi objek terseleksi di scene aktif" data-i18n-title="scene_isolate"
               onclick="executeIsolate(this)">
         <svg><use href="#i-focus"/></svg><span>Isolate</span>
       </button>
-      <button class="btn ghost sm" id="btnEndIsolate" title="Tampilkan semua objek tersembunyi termasuk dalam group"
+      <button class="btn ghost sm" id="btnEndIsolate" title="Tampilkan semua objek tersembunyi termasuk dalam group" data-i18n-title="scene_end_iso"
               onclick="executeEndIsolate(this)">
         <svg><use href="#i-eye"/></svg><span>End Isolate</span>
       </button>
-      <button class="btn primary sm" onclick="goToStep2()"><span>Lanjut</span><svg><use href="#i-arrow-right"/></svg></button>
+      <button class="btn primary sm" onclick="goToStep2()"><span data-i18n="next">Lanjut</span><svg><use href="#i-arrow-right"/></svg></button>
     </div>
   </section>
 
   <!-- Langkah 2: tag / objek -->
   <section class="step" id="step2" data-label="2 / 2">
     <div class="seg" id="tabs" role="tablist">
-      <button role="tab" aria-selected="true" data-tab="TabTag"><svg><use href="#i-tags"/></svg>Tag</button>
-      <button role="tab" aria-selected="false" data-tab="TabObject"><svg><use href="#i-box"/></svg>Objek</button>
+      <button role="tab" aria-selected="true" data-tab="TabTag"><svg><use href="#i-tags"/></svg><span data-i18n="scene_tab_tag">Tag</span></button>
+      <button role="tab" aria-selected="false" data-tab="TabObject"><svg><use href="#i-box"/></svg><span data-i18n="scene_tab_obj">Objek</span></button>
     </div>
 
     <div class="tab active" id="TabTag">
       <div class="bar">
         <div class="with-ic">
           <svg class="lead"><use href="#i-search"/></svg>
-          <input class="input" placeholder="Cari tag…" data-filter="listTags" autocomplete="off" spellcheck="false">
+          <input class="input" placeholder="Cari tag…" data-i18n-placeholder="deep_search_ph" data-filter="listTags" autocomplete="off" spellcheck="false">
         </div>
-        <button class="btn ghost sm" data-all="listTags">Semua</button>
-        <button class="btn ghost sm icon" data-clear="listTags" title="Kosongkan pilihan"><svg><use href="#i-x"/></svg></button>
+        <button class="btn ghost sm" data-all="listTags" data-i18n="scene_all">Semua</button>
+        <button class="btn ghost sm icon" data-clear="listTags" title="Kosongkan pilihan" data-i18n-title="scene_clear"><svg><use href="#i-x"/></svg></button>
       </div>
       <div class="list" id="listTags"></div>
       <div class="actions row">
-        <button class="btn ghost icon" onclick="showStep(1)" title="Kembali ke scene"><svg><use href="#i-arrow-left"/></svg></button>
+        <button class="btn ghost icon" onclick="showStep(1)" title="Kembali ke scene" data-i18n-title="back_to_scene"><svg><use href="#i-arrow-left"/></svg></button>
         <button class="btn danger" id="btnHideTag" onclick="terapkanTag('hide', this)"><svg><use href="#i-eye-off"/></svg><span>Hide</span></button>
         <button class="btn primary" id="btnUnhideTag" onclick="terapkanTag('unhide', this)"><svg><use href="#i-eye"/></svg><span>Unhide</span></button>
       </div>
@@ -79,22 +81,22 @@
 
     <div class="tab" id="TabObject">
       <div class="card">
-        <div class="cap">Alur kerja</div>
+        <div class="cap" data-i18n="scene_workflow">Alur kerja</div>
         <ul class="steps">
           <li>
             <div class="ic"><svg><use href="#i-square-dashed-mouse-pointer"/></svg></div>
-            <div><div class="t">Seleksi objek / group</div><div class="s">Langsung di viewport SketchUp</div></div>
+            <div><div class="t" data-i18n="scene_obj_s1_t">Seleksi objek / group</div><div class="s" data-i18n="scene_obj_s1_s">Langsung di viewport SketchUp</div></div>
           </li>
           <li>
             <div class="ic"><svg><use href="#i-eye"/></svg></div>
-            <div><div class="t">Pilih Hide atau Unhide</div><div class="s">Berlaku di semua scene yang dicentang</div></div>
+            <div><div class="t" data-i18n="scene_obj_s2_t">Pilih Hide atau Unhide</div><div class="s" data-i18n="scene_obj_s2_s">Berlaku di semua scene yang dicentang</div></div>
           </li>
         </ul>
       </div>
-      <div class="note"><svg><use href="#i-square-dashed-mouse-pointer"/></svg><span>Select Tools otomatis aktif saat tab Objek dipilih — gunakan Ctrl+Scroll di viewport untuk seleksi group bertingkat.</span></div>
+      <div class="note"><svg><use href="#i-square-dashed-mouse-pointer"/></svg><span data-i18n="scene_obj_note">Select Tools otomatis aktif saat tab Objek dipilih — gunakan Ctrl+Scroll di viewport untuk seleksi group bertingkat.</span></div>
       <div class="spacer"></div>
       <div class="actions row">
-        <button class="btn ghost icon" onclick="showStep(1)" title="Kembali ke scene"><svg><use href="#i-arrow-left"/></svg></button>
+        <button class="btn ghost icon" onclick="showStep(1)" title="Kembali ke scene" data-i18n-title="back_to_scene"><svg><use href="#i-arrow-left"/></svg></button>
         <button class="btn danger" id="btnHideObj" onclick="terapkanObjek('hide', this)"><svg><use href="#i-eye-off"/></svg><span>Hide</span></button>
         <button class="btn primary" id="btnUnhideObj" onclick="terapkanObjek('unhide', this)"><svg><use href="#i-eye"/></svg><span>Unhide</span></button>
       </div>
@@ -105,13 +107,13 @@
   <section class="step" id="step3">
     <div class="hero">
       <div class="badge ok draw"><svg><use href="#i-check"/></svg></div>
-      <h2>Berhasil</h2>
+      <h2 data-i18n="scene_done_title">Berhasil</h2>
       <p id="success-message"></p>
     </div>
     <div class="spacer"></div>
     <div class="actions row">
-      <button class="btn ghost" onclick="showStep(1)"><svg><use href="#i-rotate-ccw"/></svg><span>Lanjut lagi</span></button>
-      <button class="btn primary" onclick="backToHub()"><svg><use href="#i-house"/></svg><span>Tutup</span></button>
+      <button class="btn ghost" onclick="showStep(1)"><svg><use href="#i-rotate-ccw"/></svg><span data-i18n="again">Lanjut lagi</span></button>
+      <button class="btn primary" onclick="backToHub()"><svg><use href="#i-house"/></svg><span data-i18n="close">Tutup</span></button>
     </div>
   </section>
 
@@ -123,7 +125,7 @@
     }
     function updateCount() {
       var n = checked('listScenes').length;
-      $('nScene').textContent = n ? n + ' dipilih' : '';
+      $('nScene').textContent = n ? n + ' ' + t('selected_count', 'dipilih') : '';
     }
     $('listScenes').addEventListener('change', updateCount);
 
@@ -155,12 +157,12 @@
     }
 
     function updateScenes(scenes) {
-      updateList('listScenes', scenes, 'Model ini belum punya scene.', updateCount);
+      updateList('listScenes', scenes, t('scene_empty', 'Model ini belum punya scene.'), updateCount);
       autoFitHeight(0);
     }
 
     function updateTags(tags) {
-      updateList('listTags', tags, 'Tidak ada tag.');
+      updateList('listTags', tags, t('tag_empty', 'Tidak ada tag.'));
       autoFitHeight(0);
     }
 
@@ -253,7 +255,7 @@
     };
 
     function goToStep2() {
-      if (!checked('listScenes').length) return showToast('Centang minimal 1 scene dulu.');
+      if (!checked('listScenes').length) return showToast(t('scene_min_1', 'Centang minimal 1 scene dulu.'));
       showStep(2);
     }
 
@@ -268,7 +270,7 @@
           sketchup.prosesIsolateActive();
         } else {
           resetIsolateBtn();
-          showToast('Fungsi Isolate belum siap.', 'error');
+          showToast(t('scene_iso_err', 'Fungsi Isolate belum siap.'), 'error');
         }
       } catch (err) {
         resetIsolateBtn();
@@ -283,7 +285,7 @@
           sketchup.prosesEndIsolate();
         } else {
           resetIsolateBtn();
-          showToast('Fungsi End Isolate belum siap.', 'error');
+          showToast(t('scene_end_iso_err', 'Fungsi End Isolate belum siap.'), 'error');
         }
       } catch (err) {
         resetIsolateBtn();
@@ -293,14 +295,14 @@
 
     function terapkanTag(action, btn) {
       var tags = checked('listTags');
-      if (!tags.length) return showToast('Centang minimal 1 tag.');
+      if (!tags.length) return showToast(t('tag_min_1', 'Centang minimal 1 tag.'));
       lock(btn, action === 'hide' ? 'btnUnhideTag' : 'btnHideTag');
       try {
         if (window.sketchup && typeof sketchup.prosesHideTags === 'function') {
           sketchup.prosesHideTags(checked('listScenes'), tags, action);
         } else {
           resetTagButton();
-          showToast('Fungsi Hide Tag belum siap.', 'error');
+          showToast(t('scene_hide_tag_err', 'Fungsi Hide Tag belum siap.'), 'error');
         }
       } catch (err) {
         resetTagButton();
@@ -315,7 +317,7 @@
           sketchup.prosesHideObjects(checked('listScenes'), action);
         } else {
           resetObjButton();
-          showToast('Fungsi Hide Objek belum siap.', 'error');
+          showToast(t('scene_hide_obj_err', 'Fungsi Hide Objek belum siap.'), 'error');
         }
       } catch (err) {
         resetObjButton();
@@ -337,7 +339,8 @@
     function resetObjButton() { unlock('btnHideObj', 'btnUnhideObj'); }
     function showSuccessStep(msg) {
       resetTagButton(); resetObjButton();
-      $('success-message').textContent = msg;
+      var translated = (window.translateMessage ? window.translateMessage(msg) : msg);
+      $('success-message').textContent = translated;
       showStep(3);
     }
 

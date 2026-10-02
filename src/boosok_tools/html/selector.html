@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Selector</title>
   <link rel="stylesheet" href="../css/ui.css">
+  <script src="../js/strings.js"></script>
+  <script src="../js/locale.js"></script>
   <style>
     #attr { display: none; flex-direction: column; gap: 12px; }
     #attr.open { display: flex; animation: rise .25s var(--ease); }
@@ -21,19 +23,19 @@
   <script src="../js/ui.js"></script>
 
   <header class="head">
-    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()"><svg><use href="#i-arrow-left"/></svg></button>
+    <button class="back-btn" type="button" data-i18n-title="back_to_hub" title="Kembali ke Boosok Tools" data-i18n-aria="back_aria" aria-label="Kembali ke Hub" onclick="backToHub()"><svg><use href="#i-arrow-left"/></svg></button>
     <div class="mark"><svg><use href="#i-mouse-pointer-click"/></svg></div>
     <div class="txt">
-      <h1>Selector</h1>
-      <p>Seleksi objek berdasarkan tag, nama & atribut</p>
+      <h1 data-i18n="sel_title">Selector</h1>
+      <p data-i18n="sel_sub">Seleksi objek berdasarkan tag, nama &amp; atribut</p>
     </div>
-    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema"></button>
+    <button class="theme-btn" id="themeToggle" type="button" data-i18n-title="theme_toggle" title="Ganti Tema" data-i18n-aria="theme_toggle" aria-label="Ganti Tema"></button>
   </header>
 
   <!-- Form -->
   <section class="step active" id="step1">
     <div class="field">
-      <label for="tag1">Tag utama (parent)</label>
+      <label for="tag1" data-i18n="sel_tag_main">Tag utama (parent)</label>
       <div class="combo with-ic" id="c1">
         <svg class="lead"><use href="#i-tags"/></svg>
         <input class="input" id="tag1" autocomplete="off" spellcheck="false">
@@ -43,7 +45,7 @@
     </div>
 
     <div class="field">
-      <label for="tag2">Sub-tag (objek)</label>
+      <label for="tag2" data-i18n="sel_tag_sub">Sub-tag (objek)</label>
       <div class="combo with-ic" id="c2">
         <svg class="lead"><use href="#i-tag"/></svg>
         <input class="input" id="tag2" autocomplete="off" spellcheck="false">
@@ -54,17 +56,17 @@
 
     <div class="inline">
       <div class="field" style="flex: none">
-        <label>Nama</label>
+        <label data-i18n="sel_name">Nama</label>
         <div class="seg h34" id="type" role="tablist">
-          <button role="tab" aria-selected="true" data-v="Instance Name" title="Nama instance">Instance</button>
-          <button role="tab" aria-selected="false" data-v="Definition Name" title="Nama definition">Definition</button>
+          <button role="tab" aria-selected="true" data-v="Instance Name" data-i18n-title="sel_instance_title" title="Nama instance" data-i18n="sel_instance">Instance</button>
+          <button role="tab" aria-selected="false" data-v="Definition Name" data-i18n-title="sel_definition_title" title="Nama definition" data-i18n="sel_definition">Definition</button>
         </div>
       </div>
       <div class="field grow">
-        <label for="keyword">Kata kunci</label>
+        <label for="keyword" data-i18n="sel_keyword">Kata kunci</label>
         <div class="with-ic">
           <svg class="lead"><use href="#i-search"/></svg>
-          <input class="input" id="keyword" placeholder="Nama persis…" autocomplete="off" spellcheck="false">
+          <input class="input" id="keyword" data-i18n-placeholder="sel_keyword_ph" placeholder="Nama persis…" autocomplete="off" spellcheck="false">
         </div>
       </div>
     </div>
@@ -72,36 +74,36 @@
     <div class="toggle" id="useAttr" role="switch" aria-checked="false" tabindex="0">
       <svg class="ic"><use href="#i-key-round"/></svg>
       <div class="txt">
-        <div class="t">Filter atribut</div>
-        <div class="s">Cocokkan key / value attribute dictionary</div>
+        <div class="t" data-i18n="sel_attr_filter">Filter atribut</div>
+        <div class="s" data-i18n="sel_attr_desc">Cocokkan key / value attribute dictionary</div>
       </div>
       <div class="switch"></div>
     </div>
 
     <div id="attr">
       <div class="field">
-        <label for="attrKey">Key</label>
+        <label for="attrKey" data-i18n="sel_attr_key">Key</label>
         <div class="inline">
           <div class="combo with-ic grow" id="cAttr">
             <svg class="lead"><use href="#i-key-round"/></svg>
-            <input class="input" id="attrKey" autocomplete="off" spellcheck="false" placeholder="Pilih key atribut…">
+            <input class="input" id="attrKey" autocomplete="off" spellcheck="false" data-i18n-placeholder="sel_attr_key_ph" placeholder="Pilih key atribut…">
             <svg class="trail"><use href="#i-chevron-down"/></svg>
             <div class="menu"></div>
           </div>
-          <button class="btn ghost icon sm" id="manage" title="Kelola key">
+          <button class="btn ghost icon sm" id="manage" data-i18n-title="sel_manage" title="Kelola key">
             <svg><use href="#i-settings-2"/></svg>
           </button>
         </div>
       </div>
       <div class="field">
-        <label for="attrVal">Value <span style="font-weight:400">(kosong = semua)</span></label>
-        <input class="input" id="attrVal" placeholder="Masukkan value…" autocomplete="off" spellcheck="false">
+        <label for="attrVal"><span data-i18n="sel_attr_val">Value</span> <span style="font-weight:400" data-i18n="sel_attr_val_sub">(kosong = semua)</span></label>
+        <input class="input" id="attrVal" data-i18n-placeholder="sel_attr_val_ph" placeholder="Masukkan value…" autocomplete="off" spellcheck="false">
       </div>
     </div>
 
     <div class="spacer"></div>
     <button class="btn primary" id="btnSubmit">
-      <svg><use href="#i-mouse-pointer-click"/></svg><span>Jalankan seleksi</span>
+      <svg><use href="#i-mouse-pointer-click"/></svg><span data-i18n="sel_run">Jalankan seleksi</span>
     </button>
   </section>
 
@@ -109,16 +111,16 @@
   <section class="step" id="step2">
     <div class="hero">
       <div class="badge ok draw"><svg><use href="#i-check"/></svg></div>
-      <h2>Seleksi selesai</h2>
+      <h2 data-i18n="sel_done_title">Seleksi selesai</h2>
       <p id="success-msg"></p>
     </div>
     <div class="spacer"></div>
     <div class="actions row">
       <button class="btn ghost" onclick="showStep(1)">
-        <svg><use href="#i-rotate-ccw"/></svg><span>Seleksi lagi</span>
+        <svg><use href="#i-rotate-ccw"/></svg><span data-i18n="sel_again">Seleksi lagi</span>
       </button>
       <button class="btn primary" onclick="backToHub()">
-        <svg><use href="#i-house"/></svg><span>Tutup</span>
+        <svg><use href="#i-house"/></svg><span data-i18n="close">Tutup</span>
       </button>
     </div>
   </section>
@@ -126,20 +128,28 @@
   <!-- Kelola key atribut -->
   <div class="overlay" id="modal">
     <div class="sheet">
-      <h3>Key atribut</h3>
+      <h3 data-i18n="sel_modal_title">Key atribut</h3>
       <div class="list keys" id="keyList"></div>
       <div class="inline">
-        <input class="input grow" id="newKey" placeholder="Key baru…" autocomplete="off" spellcheck="false">
-        <button class="btn primary sm" id="addKey"><svg><use href="#i-plus"/></svg><span>Tambah</span></button>
+        <input class="input grow" id="newKey" data-i18n-placeholder="sel_new_key_ph" placeholder="Key baru…" autocomplete="off" spellcheck="false">
+        <button class="btn primary sm" id="addKey"><svg><use href="#i-plus"/></svg><span data-i18n="add">Tambah</span></button>
       </div>
-      <button class="btn ghost" id="closeModal">Selesai</button>
+      <button class="btn ghost" id="closeModal" data-i18n="done">Selesai</button>
     </div>
   </div>
 
   <script>
     var ALL = '(Semua Tag / Abaikan)'; // Ruby membandingkan string ini persis
+    // Label yang ditampilkan ke pengguna (bisa diterjemahkan)
+    var ALL_LABEL = t('sel_all_tags', '(Semua Tag / Abaikan)');
     var tags = [], keys = [];
     var $ = function (id) { return document.getElementById(id); };
+
+    // Helper: konversi nilai ALL_LABEL kembali ke ALL untuk pengiriman ke Ruby
+    function resolveTagValue(val) {
+      if (val === ALL_LABEL) return ALL;
+      return val;
+    }
 
     // ---- Combobox (tag & key atribut) ----
     function setupCombo(box, getItems, getFallback, emptyMsg) {
@@ -149,21 +159,28 @@
       function fill(q) {
         q = (q || '').toLowerCase();
         var all = getItems();
-        var items = all.filter(function (t) { return t.toLowerCase().indexOf(q) > -1; });
+        var items = all.filter(function (item) { return item.toLowerCase().indexOf(q) > -1; });
         menu.innerHTML = items.length
-          ? items.map(function (t) {
-              var isSel = (t === (input.dataset.old || input.value));
-              return '<div' + (isSel ? ' class="selected"' : '') + '>' + esc(t) + '</div>';
+          ? items.map(function (item) {
+              // Jika item adalah ALL sentinel, tampilkan ALL_LABEL tapi store ALL sebagai data-value
+              var displayText = (item === ALL) ? ALL_LABEL : item;
+              var isSel = (item === (input.dataset.rawValue || resolveTagValue(input.value)));
+              return '<div' + (isSel ? ' class="selected"' : '') + ' data-raw="' + esc(item) + '">' + esc(displayText) + '</div>';
             }).join('')
-          : '<div class="none">' + (emptyMsg || 'Tidak ditemukan') + '</div>';
+          : '<div class="none">' + (emptyMsg || t('not_found', 'Tidak ditemukan')) + '</div>';
       }
       box._fill = fill;
       function close() {
         box.classList.remove('open');
-        if (!input.value.trim()) input.value = input.dataset.old || getFallback();
+        if (!input.value.trim()) {
+          var fb = getFallback();
+          input.value = (fb === ALL) ? ALL_LABEL : fb;
+          input.dataset.rawValue = fb;
+        }
       }
       function open() {
         input.dataset.old = input.value;
+        input.dataset.rawValue = resolveTagValue(input.value);
         input.placeholder = input.value;
         input.value = '';
         fill('');
@@ -177,25 +194,42 @@
       input.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') {
           var first = menu.querySelector('div:not(.none)');
-          if (first) input.value = first.textContent;
+          if (first) {
+            input.dataset.rawValue = first.dataset.raw || first.textContent;
+            input.value = first.textContent;
+          }
           input.blur();
         } else if (e.key === 'Escape') {
           input.value = input.dataset.old || getFallback();
+          input.dataset.rawValue = resolveTagValue(input.value);
           input.blur();
         }
       });
       input.addEventListener('blur', function () { setTimeout(close, 120); });
       menu.addEventListener('mousedown', function (e) {
-        var it = e.target.closest('div');
+        var it = e.target.closest('[data-raw]');
         if (!it || it.classList.contains('none')) return;
         e.preventDefault();
+        input.dataset.rawValue = it.dataset.raw;
         input.value = it.textContent;
         input.blur();
       });
     }
-    setupCombo($('c1'), function () { return [ALL].concat(tags); }, function () { return ALL; }, 'Tag tidak ditemukan');
-    setupCombo($('c2'), function () { return [ALL].concat(tags); }, function () { return ALL; }, 'Tag tidak ditemukan');
-    setupCombo($('cAttr'), function () { return keys; }, function () { return keys[0] || 'a_posisi'; }, 'Key tidak ditemukan');
+
+    // Fallback getter yang mengembalikan label
+    function getAllLabel() { return ALL_LABEL; }
+
+    // setupCombo menggunakan ALL sentinel secara internal; input menampilkan ALL_LABEL
+    setupCombo($('c1'), function () { return [ALL].concat(tags); }, getAllLabel, t('sel_tag_404','Tag tidak ditemukan'));
+    setupCombo($('c2'), function () { return [ALL].concat(tags); }, getAllLabel, t('sel_tag_404','Tag tidak ditemukan'));
+    setupCombo($('cAttr'), function () { return keys; }, function () { return keys[0] || 'a_posisi'; }, t('sel_key_404','Key tidak ditemukan'));
+
+    // Inisialisasi rawValue untuk c1 dan c2 agar sesuai ALL
+    [$('c1'), $('c2')].forEach(function (box) {
+      if (!box) return;
+      var inp = box.querySelector('input');
+      if (inp) { inp.dataset.rawValue = ALL; }
+    });
 
     // ---- Segmented: tipe nama ----
     $('type').addEventListener('click', function (e) {
@@ -258,9 +292,12 @@
       // Jika tag yang sedang dipilih sudah terhapus di SketchUp, reset ke ALL
       ['tag1', 'tag2'].forEach(function (id) {
         var el = $(id);
-        if (el && el.value !== ALL && tags.indexOf(el.value) === -1) {
-          el.value = ALL;
-          el.dataset.old = ALL;
+        if (!el) return;
+        var rawVal = el.dataset.rawValue !== undefined ? el.dataset.rawValue : resolveTagValue(el.value);
+        if (rawVal !== ALL && tags.indexOf(rawVal) === -1) {
+          el.value = ALL_LABEL;
+          el.dataset.rawValue = ALL;
+          el.dataset.old = ALL_LABEL;
         }
       });
       // Jika dropdown sedang terbuka, perbarui opsinya secara real-time
@@ -289,7 +326,8 @@
     };
 
     function showSuccessStep(msg) {
-      $('success-msg').innerHTML = msg;
+      var translated = (window.translateMessage ? window.translateMessage(msg) : msg);
+      $('success-msg').innerHTML = translated;
       resetSubmitButton();
       showStep(2);
     }
@@ -299,9 +337,14 @@
       busy(this, true);
       try {
         if (window.sketchup && typeof sketchup.perform_selection === 'function') {
+          var t1In = $('tag1');
+          var t2In = $('tag2');
+          // Kirim rawValue agar Ruby selalu menerima sentilel "(Semua Tag / Abaikan)"
+          var tag1Val = (t1In.dataset.rawValue !== undefined ? t1In.dataset.rawValue : resolveTagValue(t1In.value));
+          var tag2Val = (t2In.dataset.rawValue !== undefined ? t2In.dataset.rawValue : resolveTagValue(t2In.value));
           sketchup.perform_selection(JSON.stringify({
-            tag_utama: $('tag1').value,
-            tag_kedua: $('tag2').value,
+            tag_utama: tag1Val,
+            tag_kedua: tag2Val,
             search_type: searchType(),
             keyword: $('keyword').value,
             use_attr: $('useAttr').getAttribute('aria-checked') === 'true',
@@ -311,7 +354,7 @@
           }));
         } else {
           resetSubmitButton();
-          showToast('Fungsi Selector belum siap.', 'error');
+          showToast(t('sel_err_notready','Fungsi Selector belum siap.'), 'error');
         }
       } catch (err) {
         resetSubmitButton();

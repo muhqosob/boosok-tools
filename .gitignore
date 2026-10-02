@@ -1,3 +1,7 @@
 .agents/
 *.rbz
 .DS_Store
+
+# Dibuat otomatis oleh plugin dari locales/*.json (BoosokTools::Locale.export_js)
+src/boosok_tools/js/strings.js
+src/boosok_tools/js/strings.js.tmp

@@ -195,6 +195,7 @@ module BoosokTools
         # Muat ulang semua file modul plugin
         ruby_files = [
           'titlebar.rb',
+          'locale.rb',
           'bootstrap.rb',
           'the_custom_select.rb',
           'main.rb',

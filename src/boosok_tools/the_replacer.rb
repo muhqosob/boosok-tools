@@ -6,17 +6,33 @@ module TheReplacer
   $the_replacer_timer      ||= nil
   $the_replacer_dlg        ||= nil
 
-  # --- Timer sticky cache: poll selection tiap 200ms ---------------
+  # Observer hanya menandai "selection berubah"; penyaringan dilakukan timer, dan hanya kalau berubah.
+  class SelectionDirtyObserver < Sketchup::SelectionObserver
+    def onSelectionBulkChange(*);  TheReplacer.mark_dirty; end
+    def onSelectionAdded(*);       TheReplacer.mark_dirty; end
+    def onSelectionRemoved(*);     TheReplacer.mark_dirty; end
+    def onSelectionCleared(*);     TheReplacer.mark_dirty; end
+  end
+
+  def self.mark_dirty
+    @sel_dirty = true
+  end
+
+  # --- Timer sticky cache ------------------------------------------
+  # Dulu: tiap 200ms seluruh selection di-to_a + filter walau tidak berubah → model berat jadi lag.
+  # Sekarang: timer tetap 200ms (menggabungkan banyak event jadi 1), tapi kerja hanya kalau dirty.
   def self.start_cache_timer
     stop_cache_timer
+    @sel_dirty = true
+    attach_selection_observer(Sketchup.active_model)
     $the_replacer_timer = UI.start_timer(0.2, true) do
       begin
-        next unless $the_replacer_old_items.empty?
         model = Sketchup.active_model
         next unless model
-        current = model.selection.to_a.select { |e|
-          e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
-        }
+        attach_selection_observer(model) if model != @observed_model
+        next unless @sel_dirty && $the_replacer_old_items.empty?
+        @sel_dirty = false
+        current = model.selection.select { |e| e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) }
         # Sticky: jangan timpa cache valid dengan selection kosong
         if !current.empty? || $the_replacer_cache.empty?
           $the_replacer_cache = current
@@ -25,11 +41,42 @@ module TheReplacer
     end
   end
 
+  def self.attach_selection_observer(model)
+    detach_selection_observer
+    return unless model
+    @sel_observer ||= SelectionDirtyObserver.new
+    model.selection.add_observer(@sel_observer)
+    @observed_model = model
+    @sel_dirty = true
+  rescue
+  end
+
+  def self.detach_selection_observer
+    if @observed_model && @sel_observer
+      (@observed_model.selection.remove_observer(@sel_observer) if @observed_model.valid?) rescue nil
+    end
+    @observed_model = nil
+  end
+
   def self.stop_cache_timer
     if $the_replacer_timer
       UI.stop_timer($the_replacer_timer) rescue nil
       $the_replacer_timer = nil
     end
+    detach_selection_observer
+  end
+
+  # Mode "ukuran ikut item baru": ambil posisi (origin) & rotasi dari transformasi item lama,
+  # tapi skalanya dari transformasi item baru. Arah sumbu dinormalisasi supaya skala item lama
+  # tidak ikut terbawa; kalau item lama ter-mirror, orientasi mirror-nya tetap dipertahankan.
+  def self.follow_new_transform(tr_lama, tr_baru)
+    xa = tr_lama.xaxis.normalize
+    ya = tr_lama.yaxis.normalize
+    za = tr_lama.zaxis.normalize
+    base = Geom::Transformation.axes(tr_lama.origin, xa, ya, za)
+    base * Geom::Transformation.scaling(tr_baru.xscale, tr_baru.yscale, tr_baru.zscale)
+  rescue
+    tr_lama
   end
 
   # Bounds lokal entitas dalam definition/entity space (sebelum transformation scale)
@@ -65,31 +112,12 @@ module TheReplacer
   def self.attach_callbacks(dialog)
     return unless dialog
     start_cache_timer
-
-    # Guard: cegah callback stacking dari Hub reload
-    if $the_replacer_dlg.equal?(dialog)
-      return
-    end
+    # Callback cukup didaftarkan sekali per dialog; add_action_callback dengan nama sama
+    # akan bertumpuk (handler jalan 2-3x). Timer di atas tetap dinyalakan tiap tool dibuka.
+    return if $the_replacer_dlg.equal?(dialog)
     $the_replacer_dlg = dialog
 
-    # --- CALLBACK: AKTIFKAN SELECT TOOL ---
-    dialog.add_action_callback("activate_select_tool") do |_action_context|
-      begin
-        load File.join(__dir__, 'the_custom_select.rb') unless defined?(BoosokTools::SelectTool5D)
-        BoosokTools::SelectTool5D.activate_tool if defined?(BoosokTools::SelectTool5D)
-      rescue => e
-        puts "[TheReplacer] Gagal aktifkan Select Tool: #{e.message}"
-      end
-    end
-
-    # --- CALLBACK: NONAKTIFKAN SELECT TOOL (kembali ke Arrow tool bawaan) ---
-    dialog.add_action_callback("deactivate_select_tool") do |_action_context|
-      begin
-        Sketchup.active_model.select_tool(nil) rescue nil
-      rescue => e
-        puts "[TheReplacer] Gagal nonaktifkan Select Tool: #{e.message}"
-      end
-    end
+    # "activate_select_tool"/"deactivate_select_tool" didaftarkan sekali oleh Hub.
 
     # --- CALLBACK 1: CEK ITEM LAMA ---
     dialog.add_action_callback("check_old_items") do |_action_context|
@@ -119,11 +147,12 @@ module TheReplacer
       start_cache_timer
       dialog.execute_script("showStep(1);")
     end
-    dialog.add_action_callback("restart_process",          &restart_cb)
     dialog.add_action_callback("replacer_restart_process", &restart_cb)
 
     # --- CALLBACK 3: PROSES PENGGANTIAN & PENSKALAAN ---
-    dialog.add_action_callback("proses_replace") do |_action_context|
+    # size_mode: 'old' (default) = ukuran ikut item lama, 'new' = ukuran ikut item baru
+    replace_cb = lambda do |_action_context, size_mode = 'old'|
+      follow_new = (size_mode.to_s == 'new')
       model = Sketchup.active_model
       if model.nil?
         dialog.execute_script("resetExecButton(); showToast('Tidak ada model aktif.');")
@@ -167,6 +196,7 @@ module TheReplacer
 
         definition_baru = item_baru.respond_to?(:definition) ? item_baru.definition : item_baru.entities.parent
         dicts_baru      = item_baru.attribute_dictionaries
+        transformasi_baru = item_baru.transformation
 
         replaced = 0
 
@@ -179,8 +209,10 @@ module TheReplacer
             context_lama      = item_lama.parent.entities
             tag_lama          = item_lama.layer
 
-            # 1. Tambahkan instance baru dengan transformasi lama (posisi, rotasi, titik axes 100% sama)
-            new_instance = context_lama.add_instance(definition_baru, transformasi_lama)
+            # 1. Tambahkan instance baru dengan transformasi lama (posisi, rotasi, titik axes 100% sama).
+            #    Mode 'new': posisi & rotasi item lama, tapi skala dari item baru.
+            spawn_tr = follow_new ? follow_new_transform(transformasi_lama, transformasi_baru) : transformasi_lama
+            new_instance = context_lama.add_instance(definition_baru, spawn_tr)
             new_instance.layer = tag_lama
             new_instance.name  = nama_lama unless nama_lama.empty?
 
@@ -190,6 +222,7 @@ module TheReplacer
               end
             end
 
+            unless follow_new
             # 2. Hitung rasio penskalaan agar ukuran bounding LenX, LenY, LenZ mengikuti item lama
             old_lb = local_def_bounds(item_lama)
             new_lb = local_def_bounds(new_instance)
@@ -225,6 +258,7 @@ module TheReplacer
               new_instance.set_attribute("dynamic_attributes", "_leny_nominal", target_len_y)
               new_instance.set_attribute("dynamic_attributes", "_lenz_nominal", target_len_z)
             end
+            end # unless follow_new
 
             item_lama.erase!
             replaced += 1
@@ -238,7 +272,9 @@ module TheReplacer
 
         $the_replacer_old_items = []
         dialog.execute_script("resetExecButton();")
-        dialog.execute_script("showSuccessStep('Sukses mengganti & menyesuaikan ukuran #{replaced} objek.');")
+        done_msg = follow_new ? "Sukses mengganti #{replaced} objek (ukuran ikut item baru)." :
+                                "Sukses mengganti & menyesuaikan ukuran #{replaced} objek."
+        dialog.execute_script("showSuccessStep(#{done_msg.to_json});")
 
       rescue => e
         model.abort_operation rescue nil
@@ -246,5 +282,7 @@ module TheReplacer
         dialog.execute_script("showToast(#{("Gagal: " + e.message).to_json});")
       end
     end
+    dialog.add_action_callback("proses_replace", &replace_cb)
+    dialog.add_action_callback("replace", &replace_cb)
   end
 end

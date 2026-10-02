@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Untag & Unpaint</title>
   <link rel="stylesheet" href="../css/ui.css">
+  <script src="../js/strings.js"></script>
+  <script src="../js/locale.js"></script>
   <style>
     body { gap: 14px; }
     .label { margin-top: 4px; }
@@ -15,43 +17,43 @@
   <script src="../js/ui.js"></script>
 
   <header class="head">
-    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()"><svg><use href="#i-arrow-left"/></svg></button>
+    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()" data-i18n-title="back_to_hub" data-i18n-aria="back_aria"><svg><use href="#i-arrow-left"/></svg></button>
     <div class="mark"><svg><use href="#i-eraser"/></svg></div>
     <div class="txt">
-      <h1>Untag & Unpaint</h1>
-      <p>Bersihkan tag & material dari seleksi</p>
+      <h1 data-i18n="untag_title">Untag & Unpaint</h1>
+      <p data-i18n="untag_sub">Bersihkan tag & material dari seleksi</p>
     </div>
-    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema"></button>
+    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema" data-i18n-title="theme_toggle" data-i18n-aria="theme_toggle"></button>
   </header>
 
   <div class="toggle" id="deep" role="switch" aria-checked="true" tabindex="0">
     <svg class="ic"><use href="#i-layers"/></svg>
     <div class="txt">
-      <div class="t">Rekursif</div>
-      <div class="s">Ikut proses isi group & component</div>
+      <div class="t" data-i18n="untag_recursive">Rekursif</div>
+      <div class="s" data-i18n="untag_recursive_d">Ikut proses isi group & component</div>
     </div>
     <div class="switch"></div>
   </div>
 
-  <div class="label">Aksi</div>
+  <div class="label" data-i18n="untag_actions">Aksi</div>
 
   <div class="grid">
     <button class="tile" data-action="untag">
       <div class="ic"><svg><use href="#i-tag"/></svg></div>
       <div class="t">Untag</div>
-      <div class="s">Set ke Untagged</div>
+      <div class="s" data-i18n="untag_set">Set ke Untagged</div>
     </button>
     <button class="tile" data-action="unpaint">
       <div class="ic"><svg><use href="#i-paint-bucket"/></svg></div>
       <div class="t">Unpaint</div>
-      <div class="s">Hapus material</div>
+      <div class="s" data-i18n="untag_del_mat">Hapus material</div>
     </button>
   </div>
 
   <button class="btn primary" data-action="both">
-    <svg><use href="#i-sparkles"/></svg><span>Untag & Unpaint</span>
+    <svg><use href="#i-sparkles"/></svg><span data-i18n="untag_title">Untag & Unpaint</span>
   </button>
-  <p class="hint">Pilih group / component dulu di model</p>
+  <p class="hint" data-i18n="untag_hint">Pilih group / component dulu di model</p>
 
   <script>
     var deep = document.getElementById('deep');
@@ -90,7 +92,7 @@
             sketchup.prosesAction(el.dataset.action, deep.getAttribute('aria-checked') === 'true');
           } else {
             setBusy(null);
-            showToast('Fungsi Untag & Unpaint belum siap.', 'error');
+            showToast(t('untag_err', 'Fungsi Untag & Unpaint belum siap.'), 'error');
           }
         } catch (err) {
           setBusy(null);
