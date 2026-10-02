@@ -1,6 +1,6 @@
 Sketchup.require 'boosok_tools/titlebar'
 
-module ConvertToCleanGroup
+module BoosokTools::ConvertToCleanGroup
   # --- FUNGSI INTI ---
 
   def self.purge_attributes(entity)
@@ -75,7 +75,10 @@ module ConvertToCleanGroup
 
   # --- UI & DIALOG ---
 
-  $cleangroup_dlg ||= nil
+  # Dipanggil Hub saat dialog ditutup supaya callback didaftarkan lagi di dialog berikutnya
+  def self.release_dialog
+    @dialog = nil
+  end
 
   def self.run
     Sketchup.require 'boosok_tools/hub' unless defined?(BoosokTools::Hub)
@@ -84,8 +87,8 @@ module ConvertToCleanGroup
 
   def self.attach_callbacks(dialog)
     return unless dialog
-    return if $cleangroup_dlg.equal?(dialog) # sudah terdaftar di dialog ini (hindari handler bertumpuk)
-    $cleangroup_dlg = dialog
+    return if @dialog.equal?(dialog) # sudah terdaftar di dialog ini (hindari handler bertumpuk)
+    @dialog = dialog
 
     # --- CALLBACK: MULAI KEMBALI ---
     restart_cb = lambda do |_action_context|

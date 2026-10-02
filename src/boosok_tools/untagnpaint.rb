@@ -1,8 +1,11 @@
 Sketchup.require 'boosok_tools/titlebar'
 
-module UntagUnpaintManager
-  # Guard agar callbacks tidak di-stack oleh Hub reload
-  $untag_dlg ||= nil
+module BoosokTools::UntagUnpaintManager
+  # Guard agar callbacks tidak di-stack oleh Hub reload (@dialog = dialog yang sudah terdaftar).
+  # Dipanggil Hub saat dialog ditutup supaya callback didaftarkan lagi di dialog berikutnya.
+  def self.release_dialog
+    @dialog = nil
+  end
 
   def self.run
     Sketchup.require 'boosok_tools/hub' unless defined?(BoosokTools::Hub)
@@ -11,8 +14,8 @@ module UntagUnpaintManager
 
   def self.attach_callbacks(dialog)
     return unless dialog
-    return if $untag_dlg.equal?(dialog) # sudah terdaftar di dialog ini (hindari handler bertumpuk)
-    $untag_dlg = dialog
+    return if @dialog.equal?(dialog) # sudah terdaftar di dialog ini (hindari handler bertumpuk)
+    @dialog = dialog
 
     # --- CALLBACK PROCESS ---
     action_cb = lambda do |_context, action_type, deep_process|

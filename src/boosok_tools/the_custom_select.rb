@@ -7,6 +7,11 @@ module BoosokTools
     # Handler cuma saling pakai saat tool dibuat, jadi urutan muat tidak berpengaruh.
     HANDLERS = %w[core_tool draw_handler mouse_handler select_handler ui_info_handler].freeze unless defined?(HANDLERS)
 
+    # Nama tipe entity ("Group", "Face", ...). Pengganti Entity#typename yang lambat.
+    def self.type_name(entity)
+      entity.class.name.to_s.split('::').last || 'Entity'
+    end
+
     def self.load_handlers
       HANDLERS.each { |h| BoosokTools.load_module("custom_select/#{h}") }
     end
@@ -46,11 +51,6 @@ module BoosokTools
     # Muat semua handler di dalam folder custom_select
     load_handlers
   end
-end
-
-# Alias untuk kompatibilitas ke belakang (backwards compatibility)
-module CustomTools
-  SelectTool = BoosokTools::SelectTool unless defined?(SelectTool)
 end
 
 file_loaded(__FILE__)

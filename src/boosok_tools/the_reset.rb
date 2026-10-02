@@ -2,8 +2,11 @@ require 'sketchup'
 require 'json'
 Sketchup.require 'boosok_tools/titlebar'
 
-module TheResetScale
-  $reset_dlg ||= nil
+module BoosokTools::TheResetScale
+  # Dipanggil Hub saat dialog ditutup supaya callback didaftarkan lagi di dialog berikutnya
+  def self.release_dialog
+    @dialog = nil
+  end
 
   def self.run
     Sketchup.require 'boosok_tools/hub' unless defined?(BoosokTools::Hub)
@@ -12,8 +15,8 @@ module TheResetScale
 
   def self.attach_callbacks(dialog)
     return unless dialog
-    return if $reset_dlg.equal?(dialog) # sudah terdaftar di dialog ini (hindari handler bertumpuk)
-    $reset_dlg = dialog
+    return if @dialog.equal?(dialog) # sudah terdaftar di dialog ini (hindari handler bertumpuk)
+    @dialog = dialog
 
     reset_cb = lambda do |_action_context, mode, recursive|
       mode_str = mode.to_s.empty? ? "preserve" : mode.to_s

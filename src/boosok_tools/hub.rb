@@ -122,10 +122,10 @@ module BoosokTools
       dlg.set_on_closed do
         BoosokTools.capture_current_position(TITLE)
         TOOL_PAGES.each_key { |tid| deactivate_tool(tid) }
-        $cleangroup_dlg = nil
-        $the_replacer_dlg = nil
-        $reset_dlg = nil
-        $untag_dlg = nil
+        ConvertToCleanGroup.release_dialog if defined?(ConvertToCleanGroup)
+        TheReplacer.release_dialog if defined?(TheReplacer)
+        TheResetScale.release_dialog if defined?(TheResetScale)
+        UntagUnpaintManager.release_dialog if defined?(UntagUnpaintManager)
         DeepProperties.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(DeepProperties)
         DeepProperties.instance_variable_set(:@dialog_registered_id, nil) rescue nil if defined?(DeepProperties)
         TheSelectorPlugin.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(TheSelectorPlugin)
@@ -335,11 +335,11 @@ module BoosokTools
 
       dlg.add_action_callback("updates") do |_ctx|
         # Push state update inline ke hub (bukan buka dialog baru)
-        MyCustomPlugins::Updater.check_inline(dlg)
+        BoosokTools::Updater.check_inline(dlg)
       end
 
       dlg.add_action_callback("update_download") do |_ctx|
-        MyCustomPlugins::Updater.download_inline(dlg)
+        BoosokTools::Updater.download_inline(dlg)
       end
 
       dlg.add_action_callback("get_hotkeys") do |_ctx|
@@ -519,7 +519,7 @@ module BoosokTools
     # Jumlah group/component di level atas. Scan entitas mahal di model besar, jadi hasilnya
     # di-cache dan hanya dihitung ulang kalau jumlah entitas berubah atau cache sudah > 10 detik.
     def self.model_stats(model)
-      top = model.entities
+      top = model.entities # rubocop:disable SketchupSuggestions/ModelEntities -- statistik seluruh model, bukan konteks edit
       key = [model.object_id, top.length]
       now = Time.now.to_f
       if @stats_key != key || !@stats_at || now - @stats_at > STATS_TTL
@@ -541,7 +541,7 @@ module BoosokTools
         status: 'ready',
         has_booted: booted,
         session_id: (BoosokTools.session_id rescue ''),
-        version: MyCustomPlugins::PLUGIN_VERSION,
+        version: BoosokTools::PLUGIN_VERSION,
         theme: Sketchup.read_default("BoosokTools", "theme", "").to_s,
         language: cur_lang,
         hotkeys: (BoosokTools::ShortcutSync.get_all_shortcuts rescue {}),

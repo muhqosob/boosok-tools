@@ -26,7 +26,6 @@ module BoosokTools::SelectTool
       path = raw_path.select do |e|
         next false unless e && e.respond_to?(:valid?) && e.valid?
         next false if defined?(Sketchup::Axes) && e.is_a?(Sketchup::Axes)
-        next false if e.respond_to?(:typename) && e.typename.to_s.downcase.include?('axes')
         true
       end
 

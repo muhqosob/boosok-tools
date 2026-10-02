@@ -333,6 +333,3 @@ module BoosokTools
     end
   end
 end
-
-# Backward-compatibility alias: kode lama yang pakai MyCustomPlugins::Updater tetap jalan
-MyCustomPlugins = BoosokTools unless defined?(MyCustomPlugins)

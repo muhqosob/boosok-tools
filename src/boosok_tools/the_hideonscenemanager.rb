@@ -1,73 +1,73 @@
-module HideOnSceneManager
+module BoosokTools::HideOnSceneManager
   require 'json'
   require 'set'
   Sketchup.require 'boosok_tools/titlebar'
 
   class PagesObserver < Sketchup::PagesObserver
     def onElementAdded(*args)
-      HideOnSceneManager.schedule_sync rescue nil
+      BoosokTools::HideOnSceneManager.schedule_sync rescue nil
     end
 
     def onElementRemoved(*args)
-      HideOnSceneManager.schedule_sync rescue nil
+      BoosokTools::HideOnSceneManager.schedule_sync rescue nil
     end
 
     def onContentsModified(*args)
-      HideOnSceneManager.schedule_sync rescue nil
+      BoosokTools::HideOnSceneManager.schedule_sync rescue nil
     end
   end
 
   class LayersObserver < Sketchup::LayersObserver
     def onLayerAdded(*args)
-      HideOnSceneManager.schedule_sync rescue nil
+      BoosokTools::HideOnSceneManager.schedule_sync rescue nil
     end
 
     def onLayerRemoved(*args)
-      HideOnSceneManager.schedule_sync rescue nil
+      BoosokTools::HideOnSceneManager.schedule_sync rescue nil
     end
 
     def onLayerChanged(*args)
-      HideOnSceneManager.schedule_sync rescue nil
+      BoosokTools::HideOnSceneManager.schedule_sync rescue nil
     end
 
     def onLayerFolderAdded(*args)
-      HideOnSceneManager.schedule_sync rescue nil
+      BoosokTools::HideOnSceneManager.schedule_sync rescue nil
     end
 
     def onLayerFolderRemoved(*args)
-      HideOnSceneManager.schedule_sync rescue nil
+      BoosokTools::HideOnSceneManager.schedule_sync rescue nil
     end
 
     def onLayerFolderChanged(*args)
-      HideOnSceneManager.schedule_sync rescue nil
+      BoosokTools::HideOnSceneManager.schedule_sync rescue nil
     end
   end
 
   class ModelObserver < Sketchup::ModelObserver
     def onTransactionCommit(*args)
-      HideOnSceneManager.schedule_sync rescue nil
+      BoosokTools::HideOnSceneManager.schedule_sync rescue nil
     end
 
     def onTransactionUndo(*args)
-      HideOnSceneManager.schedule_sync rescue nil
+      BoosokTools::HideOnSceneManager.schedule_sync rescue nil
     end
 
     def onTransactionRedo(*args)
-      HideOnSceneManager.schedule_sync rescue nil
+      BoosokTools::HideOnSceneManager.schedule_sync rescue nil
     end
   end
 
   class AppObserver < Sketchup::AppObserver
     def onActivateModel(model)
-      HideOnSceneManager.attach_to_model(model) rescue nil
+      BoosokTools::HideOnSceneManager.attach_to_model(model) rescue nil
     end
 
     def onNewModel(model)
-      HideOnSceneManager.attach_to_model(model) rescue nil
+      BoosokTools::HideOnSceneManager.attach_to_model(model) rescue nil
     end
 
     def onOpenModel(model)
-      HideOnSceneManager.attach_to_model(model) rescue nil
+      BoosokTools::HideOnSceneManager.attach_to_model(model) rescue nil
     end
   end
 
@@ -270,7 +270,7 @@ module HideOnSceneManager
         end
       end
 
-      unhide_recursive.call(model.entities)
+      unhide_recursive.call(model.entities) # rubocop:disable SketchupSuggestions/ModelEntities -- harus mulai dari root model
 
       model.commit_operation
       if dlg
@@ -401,7 +401,7 @@ module HideOnSceneManager
         end
 
         # Eksekusi scan dimulai dari entitas paling atas
-        isolate_recursive.call(model.entities)
+        isolate_recursive.call(model.entities) # rubocop:disable SketchupSuggestions/ModelEntities -- harus mulai dari root model
 
         model.commit_operation
         dialog.execute_script("resetIsolateBtn();")

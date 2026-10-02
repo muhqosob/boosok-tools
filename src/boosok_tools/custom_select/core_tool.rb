@@ -39,7 +39,8 @@ module BoosokTools::SelectTool
       model = Sketchup.active_model
       if model && model.valid?
         # Pengecekan Empty State Model
-        if model.entities.empty?
+        # Sengaja entities root (bukan active_entities): cek model kosong tidak boleh tergantung konteks edit
+        if model.entities.empty? # rubocop:disable SketchupSuggestions/ModelEntities
           Sketchup.status_text = loc('cs_model_empty', 'Select Tool: Model kosong. Buat objek / grup terlebih dahulu.')
         else
           update_status_bar
@@ -48,6 +49,21 @@ module BoosokTools::SelectTool
       end
     rescue => e
       warn "[Select Tool] Error during activate: #{e.message}" if $DEBUG
+    end
+
+    # Tool dijeda (mis. orbit/pan): hapus overlay hover supaya tidak tertinggal di viewport
+    def suspend(view)
+      view.invalidate
+    end
+
+    # Area yang ditempati gambar tool, supaya highlight tidak terpotong (clipped) di viewport
+    def getExtents
+      bb = Geom::BoundingBox.new
+      model = Sketchup.active_model
+      bb.add(model.bounds) if model
+      bb
+    rescue
+      Geom::BoundingBox.new
     end
 
     def deactivate(view)
@@ -136,7 +152,7 @@ module BoosokTools::SelectTool
                    elsif entity.respond_to?(:definition) && !entity.definition.name.empty?
                      entity.definition.name
                    else
-                     entity.typename rescue obj_fallback
+                     ::BoosokTools::SelectTool.type_name(entity)
                    end
         tpl = loc('cs_status_hover', 'Select Tool [Level %{lvl}/%{max}: %{name}]: [Klik] Seleksi | [CTRL + Scroll] Ubah Level | [ESC] Reset')
         Sketchup.status_text = tpl.gsub('%{lvl}', lvl.to_s).gsub('%{max}', (path.length - 1).to_s).gsub('%{name}', ent_name.to_s)

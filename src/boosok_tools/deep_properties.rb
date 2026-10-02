@@ -1,7 +1,7 @@
 require 'sketchup'
 require 'json'
 
-module DeepProperties
+module BoosokTools::DeepProperties
   @dialog = nil
   @callbacks_registered = false
   @dialog_registered_id = nil

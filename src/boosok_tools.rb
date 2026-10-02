@@ -8,7 +8,9 @@ module BoosokTools
 
   # Folder kode plugin. Dihitung di sini (file root tidak dienkripsi) karena __dir__/__FILE__
   # di dalam file .rbe tidak bisa diandalkan. Semua modul memakai konstanta ini untuk path.
-  SUPPORT_DIR = File.join(File.dirname(__FILE__), 'boosok_tools').freeze unless defined?(SUPPORT_DIR)
+  # __FILE__ di Windows bisa ber-encoding salah kalau path memuat karakter non-ASCII (mis. nama user)
+  root_file = __FILE__.dup.force_encoding('UTF-8')
+  SUPPORT_DIR = File.join(File.dirname(root_file), 'boosok_tools').freeze unless defined?(SUPPORT_DIR)
 
   # Satu-satunya pintu untuk memuat file plugin. Sketchup.require (tanpa ekstensi) mengenali
   # .rb/.rbe/.rbs; require_relative, load, atau path ".rb" yang di-hardcode akan gagal setelah
@@ -30,8 +32,7 @@ module BoosokTools
   CHANGELOG_URL = "https://github.com/muhqosob/boosok-tools/blob/main/the_bosok/CHANGELOG.md"
 
   unless file_loaded?(__FILE__)
-    plugin_dir = File.dirname(__FILE__)
-    $LOAD_PATH << plugin_dir unless $LOAD_PATH.include?(plugin_dir)
+    plugin_dir = File.dirname(root_file)
 
     # Migrasi dari versi <= 1.6.0 yang file root-nya bernama boosok_tools_loader.rb. Kalau masih
     # ada, ia mendaftarkan extension yang sama dan menimpa PLUGIN_VERSION dengan angka lama
@@ -53,6 +54,3 @@ module BoosokTools
     file_loaded(__FILE__)
   end
 end
-
-# Backward-compatibility: versi lama yang di-install user masih pakai MyCustomPlugins
-MyCustomPlugins = BoosokTools unless defined?(MyCustomPlugins)
