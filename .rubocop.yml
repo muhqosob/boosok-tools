@@ -1,6 +1,8 @@
 # Pengecekan yang sama dengan Extension Signature Portal SketchUp (RuboCop + rubocop-sketchup).
 # Portal menolak paket yang masih punya offense, jadi jalankan `rubocop` di root repo sebelum
 # membuat .rbz untuk di-upload. Hasil yang diharapkan: "no offenses detected".
+# Lebih lengkap: .\check_sketchup.ps1 (RuboCop + cek require_relative/load yang tidak
+# ditangkap RuboCop tapi merusak paket terenkripsi).
 #
 # Setup sekali (versi dipin supaya tidak butuh MSYS2/kompilasi di Windows):
 #   gem install rubocop-ast -v 1.30.0 --no-document
