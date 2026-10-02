@@ -1,4 +1,4 @@
-load File.join(__dir__, 'titlebar.rb')
+Sketchup.require 'boosok_tools/titlebar'
 
 module TheReplacer
   $the_replacer_old_items  ||= []
@@ -105,7 +105,7 @@ module TheReplacer
   # -----------------------------------------------------------------
 
   def self.run
-    require_relative 'hub' unless defined?(BoosokTools::Hub)
+    Sketchup.require 'boosok_tools/hub' unless defined?(BoosokTools::Hub)
     BoosokTools::Hub.open_or_show('replacer')
   end
 

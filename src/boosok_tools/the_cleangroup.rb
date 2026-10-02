@@ -1,4 +1,4 @@
-load File.join(__dir__, 'titlebar.rb')
+Sketchup.require 'boosok_tools/titlebar'
 
 module ConvertToCleanGroup
   # --- FUNGSI INTI ---
@@ -78,7 +78,7 @@ module ConvertToCleanGroup
   $cleangroup_dlg ||= nil
 
   def self.run
-    require_relative 'hub' unless defined?(BoosokTools::Hub)
+    Sketchup.require 'boosok_tools/hub' unless defined?(BoosokTools::Hub)
     BoosokTools::Hub.open_or_show('clean')
   end
 

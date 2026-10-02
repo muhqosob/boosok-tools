@@ -1,6 +1,6 @@
 require 'sketchup'
 require 'json'
-load File.join(__dir__, 'titlebar.rb')
+Sketchup.require 'boosok_tools/titlebar'
 
 module TheSelectorPlugin
   @dialog = nil
@@ -170,7 +170,7 @@ module TheSelectorPlugin
   end
 
   def self.run_selector
-    require_relative 'hub' unless defined?(BoosokTools::Hub)
+    Sketchup.require 'boosok_tools/hub' unless defined?(BoosokTools::Hub)
     BoosokTools::Hub.open_or_show('selector')
   end
 

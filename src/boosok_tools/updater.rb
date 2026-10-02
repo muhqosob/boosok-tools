@@ -1,7 +1,7 @@
 require 'sketchup'
 require 'json'
 require 'tmpdir'
-load File.join(__dir__, 'titlebar.rb')
+Sketchup.require 'boosok_tools/titlebar'
 
 module BoosokTools
   # Update di dalam SketchUp: cek -> download .rbz -> install -> hot reload langsung aktif.
@@ -140,9 +140,9 @@ module BoosokTools
       rescue ArgumentError
         Sketchup.install_from_archive(path)
       end
-      reload_plugin
-      @state = @state.merge(status: 'done')
-      push_to_hub({ status: 'done', current: PLUGIN_VERSION })
+      restart = !reload_plugin
+      @state = @state.merge(status: 'done', restart: restart)
+      push_to_hub({ status: 'done', current: PLUGIN_VERSION, restart: restart })
     rescue StandardError => e
       push_to_hub({ status: 'error', current: PLUGIN_VERSION, error: "Gagal memasang: #{e.message}" })
     ensure
@@ -173,20 +173,25 @@ module BoosokTools
       end
 
       # Muat ulang semua modul plugin ke memori agar langsung aktif tanpa restart
-      reload_plugin
+      restart = !reload_plugin
 
-      set(status: 'done')
+      set(status: 'done', restart: restart)
     rescue StandardError => e # StandardError: cukup untuk handle kegagalan install biasa
       fail_with("Gagal memasang: #{e.message}")
     ensure
       File.delete(path) rescue nil
     end
 
+    # Return true kalau modul sudah di-load ulang (aktif tanpa restart), false kalau perlu restart.
     def self.reload_plugin
+      base_dir = ::BoosokTools::SUPPORT_DIR
+      # Paket terenkripsi (.rbe) tidak punya file .rb: Sketchup.require cuma memuat sekali per
+      # sesi, jadi kode baru baru dipakai setelah SketchUp di-restart.
+      return false unless File.exist?(File.join(base_dir, 'bootstrap.rb'))
+
       old_verbose = $VERBOSE
       $VERBOSE = nil
       begin
-        base_dir = File.dirname(__FILE__)
 
         # Muat ulang loader utama (memperbarui PLUGIN_VERSION dan konstanta lainnya)
         loader_file = File.expand_path('../boosok_tools_loader.rb', base_dir)
@@ -224,8 +229,10 @@ module BoosokTools
         if defined?(Sketchup.extensions) && Sketchup.extensions['Boosok Tools']
           Sketchup.extensions['Boosok Tools'].version = PLUGIN_VERSION
         end
+        true
       rescue => e
         puts "[Boosok Tools] Gagal reload plugin: #{e.message}"
+        false
       ensure
         $VERBOSE = old_verbose
       end
@@ -312,7 +319,7 @@ module BoosokTools
         width: 380, height: 420,
         style: UI::HtmlDialog::STYLE_DIALOG
       )
-      @dialog.set_file(File.join(__dir__, 'html', 'update.html'))
+      @dialog.set_file(File.join(::BoosokTools::SUPPORT_DIR, 'html', 'update.html'))
       BoosokTools::TitleBar.attach(@dialog, "Boosok Tools Update")
 
       @dialog.add_action_callback("ready")    { push }

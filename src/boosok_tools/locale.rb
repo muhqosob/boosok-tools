@@ -14,9 +14,9 @@ module BoosokTools
   # Ruby membaca file ini langsung (Locale.t). Halaman HTML membacanya lewat js/strings.js yang
   # DIBUAT OTOMATIS dari file-file yang sama (export_js) — jadi menambah bahasa cukup satu file.
   module Locale
-    LOCALES_DIR  = File.join(__dir__, 'locales')
+    LOCALES_DIR  = File.join(::BoosokTools::SUPPORT_DIR, 'locales')
     DEFAULT_LANG = 'id'
-    JS_FILE      = File.join(__dir__, 'js', 'strings.js')
+    JS_FILE      = File.join(::BoosokTools::SUPPORT_DIR, 'js', 'strings.js')
 
     @cached_locales = nil
     @cache_sig = nil

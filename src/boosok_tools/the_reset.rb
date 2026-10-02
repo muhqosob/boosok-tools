@@ -1,12 +1,12 @@
 require 'sketchup'
 require 'json'
-load File.join(__dir__, 'titlebar.rb')
+Sketchup.require 'boosok_tools/titlebar'
 
 module TheResetScale
   $reset_dlg ||= nil
 
   def self.run
-    require_relative 'hub' unless defined?(BoosokTools::Hub)
+    Sketchup.require 'boosok_tools/hub' unless defined?(BoosokTools::Hub)
     BoosokTools::Hub.open_or_show('reset')
   end
 

@@ -1,4 +1,4 @@
-require_relative '../locale' unless defined?(::BoosokTools::Locale)
+Sketchup.require 'boosok_tools/locale' unless defined?(::BoosokTools::Locale)
 
 module BoosokTools::SelectTool5D
   class CoreTool
@@ -13,7 +13,7 @@ module BoosokTools::SelectTool5D
 
       # Load Custom Cursor (panah biru khas Select Tool)
       begin
-        res_dir = File.join(__dir__, 'resources')
+        res_dir = File.join(::BoosokTools::SUPPORT_DIR, 'custom_select', 'resources')
         cursor_path     = File.join(res_dir, 'cursor_select.png')
         cursor_add_path = File.join(res_dir, 'cursor_select_add.png')
         @cursor_select_id = UI.create_cursor(cursor_path, 3, 3) if File.exist?(cursor_path)

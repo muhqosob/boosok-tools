@@ -314,6 +314,7 @@
     "upd_dont_close": "Please do not close SketchUp.",
     "upd_done_title": "Update successful!",
     "upd_done_sub": "updated directly without restarting SketchUp.",
+    "upd_done_sub_restart": "installed. Restart SketchUp to activate the new version.",
     "upd_done_hint": "If any feature windows are currently open, please close and reopen them.",
     "upd_restart_su": "Restart SketchUp",
     "upd_fail_title": "Update failed",

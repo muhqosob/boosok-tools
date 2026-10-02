@@ -800,7 +800,9 @@
         ic.style.background = 'var(--ok-soft)';
         ic.style.color = 'var(--ok)';
         title.textContent = 'Update berhasil dipasang!';
-        msg.textContent = 'Plugin sudah aktif, tidak perlu restart SketchUp.';
+        msg.textContent = st.restart
+          ? 'Update terpasang. Restart SketchUp agar versi baru aktif.'
+          : 'Plugin sudah aktif, tidak perlu restart SketchUp.';
         msg.className = 'upd-msg ok';
         acts.innerHTML = '<button class="btn primary sm" onclick="closeUpdate()">' + icon('check') + '<span>Selesai</span></button>';
         acts.style.display = 'flex';

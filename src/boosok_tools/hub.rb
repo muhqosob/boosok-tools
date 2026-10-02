@@ -1,9 +1,9 @@
 require 'sketchup'
 require 'json'
-require_relative 'titlebar'
-require_relative 'shortcut_sync'
-require_relative 'license'
-require_relative 'locale'
+Sketchup.require 'boosok_tools/titlebar'
+Sketchup.require 'boosok_tools/shortcut_sync'
+Sketchup.require 'boosok_tools/license'
+Sketchup.require 'boosok_tools/locale'
 
 module BoosokTools
   # Satu pintu masuk semua tool (Single Window Architecture).
@@ -19,14 +19,14 @@ module BoosokTools
     # SketchUp akan terus pakai versi lama TOOL_PAGES dari memori → error "tidak dikenal".
     remove_const(:TOOL_PAGES) if defined?(TOOL_PAGES)
     TOOL_PAGES = {
-      'selector'      => { file: 'main.rb',                  page: 'selector.html',        title: 'Selector' },
-      'custom_select' => { file: 'the_custom_select.rb',      page: nil,                    title: 'Select Tools' },
-      'replacer'      => { file: 'the_replacer.rb',           page: 'replacer.html',        title: 'Group Replacer' },
-      'clean'         => { file: 'the_cleangroup.rb',         page: 'cleangroup.html',      title: 'Group Cleaner' },
-      'reset'         => { file: 'the_reset.rb',              page: 'reset.html',           title: 'Reset Scale' },
-      'scene'         => { file: 'the_hideonscenemanager.rb', page: 'hidescene.html',       title: 'Hide on Scene' },
-      'untag'         => { file: 'untagnpaint.rb',            page: 'untagnpaint.html',     title: 'Untag & Unpaint' },
-      'deep'          => { file: 'deep_properties.rb',        page: 'deep_properties.html', title: 'Deep Properties' }
+      'selector'      => { file: 'main',                  page: 'selector.html',        title: 'Selector' },
+      'custom_select' => { file: 'the_custom_select',      page: nil,                    title: 'Select Tools' },
+      'replacer'      => { file: 'the_replacer',           page: 'replacer.html',        title: 'Group Replacer' },
+      'clean'         => { file: 'the_cleangroup',         page: 'cleangroup.html',      title: 'Group Cleaner' },
+      'reset'         => { file: 'the_reset',              page: 'reset.html',           title: 'Reset Scale' },
+      'scene'         => { file: 'the_hideonscenemanager', page: 'hidescene.html',       title: 'Hide on Scene' },
+      'untag'         => { file: 'untagnpaint',            page: 'untagnpaint.html',     title: 'Untag & Unpaint' },
+      'deep'          => { file: 'deep_properties',        page: 'deep_properties.html', title: 'Deep Properties' }
     }.freeze
 
     @current_tool ||= 'hub'
@@ -103,7 +103,7 @@ module BoosokTools
       end
 
       page_file = custom_page || 'hub.html'
-      dlg.set_file(File.join(__dir__, 'html', page_file))
+      dlg.set_file(File.join(::BoosokTools::SUPPORT_DIR, 'html', page_file))
       TitleBar.attach(dlg, TITLE, width: WIDTH)
 
       @current_tool = tool_id ? tool_id.to_s : 'hub'
@@ -225,9 +225,8 @@ module BoosokTools
     def self.load_tool_file(id)
       cfg = TOOL_PAGES[id.to_s]
       return unless cfg && cfg[:file]
-      file_path = File.join(__dir__, cfg[:file])
-      return false unless File.exist?(file_path)
-      load file_path
+      # cfg[:file] = nama modul tanpa ekstensi (di paket terenkripsi file aslinya .rbe)
+      BoosokTools.load_module(cfg[:file])
       true
     rescue Exception => e
       puts "[Boosok Tools] Gagal memuat file tool '#{id}': #{e.class}: #{e.message}"

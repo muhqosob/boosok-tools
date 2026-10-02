@@ -1,4 +1,4 @@
-require_relative '../locale' unless defined?(::BoosokTools::Locale)
+Sketchup.require 'boosok_tools/locale' unless defined?(::BoosokTools::Locale)
 
 module BoosokTools::SelectTool5D
   class SelectHandler

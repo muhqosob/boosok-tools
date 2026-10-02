@@ -59,7 +59,7 @@ module BoosokTools
     end
 
     def self.log(msg)
-      log_file = File.join(File.dirname(__FILE__), 'titlebar.log')
+      log_file = File.join(::BoosokTools::SUPPORT_DIR, 'titlebar.log')
       File.open(log_file, 'a') { |f| f.puts("[#{Time.now.strftime('%H:%M:%S')}] #{msg}") }
     rescue
     end
@@ -218,7 +218,7 @@ module BoosokTools
           BoosokTools.capture_current_position(title)
         end
         HideOnSceneManager.detach_all_observers rescue nil if defined?(HideOnSceneManager)
-        require_relative 'hub' unless defined?(BoosokTools::Hub)
+        Sketchup.require 'boosok_tools/hub' unless defined?(BoosokTools::Hub)
         BoosokTools::Hub.back_to_hub
       end
 
@@ -309,7 +309,7 @@ module BoosokTools
   def self.init_session_file
     @session_id = "#{Time.now.to_i}_#{rand(1000..9999)}"
     @hub_booted = false
-    js_dir = File.join(__dir__, 'js')
+    js_dir = File.join(::BoosokTools::SUPPORT_DIR, 'js')
     Dir.mkdir(js_dir) unless File.directory?(js_dir)
     session_file = File.join(js_dir, 'session.js')
     File.write(session_file, "window.BOOSOK_SESSION_ID = #{@session_id.to_json};\n")

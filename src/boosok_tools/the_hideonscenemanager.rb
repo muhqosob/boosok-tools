@@ -1,7 +1,7 @@
 module HideOnSceneManager
   require 'json'
   require 'set'
-  load File.join(__dir__, 'titlebar.rb')
+  Sketchup.require 'boosok_tools/titlebar'
 
   class PagesObserver < Sketchup::PagesObserver
     def onElementAdded(*args)

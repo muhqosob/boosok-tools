@@ -6,6 +6,22 @@ module BoosokTools
   # Naikkan angka ini lalu push ke main: GitHub Actions otomatis bikin release + update version.json
   PLUGIN_VERSION = "1.6.0"
 
+  # Folder kode plugin. Dihitung di sini (file root tidak dienkripsi) karena __dir__/__FILE__
+  # di dalam file .rbe tidak bisa diandalkan. Semua modul memakai konstanta ini untuk path.
+  SUPPORT_DIR = File.join(File.dirname(__FILE__), 'boosok_tools').freeze unless defined?(SUPPORT_DIR)
+
+  # Satu-satunya pintu untuk memuat file plugin. Sketchup.require (tanpa ekstensi) mengenali
+  # .rb/.rbe/.rbs; require_relative, load, atau path ".rb" yang di-hardcode akan gagal setelah
+  # paket dienkripsi. `name` relatif ke folder boosok_tools, mis. 'custom_select/core_tool'.
+  def self.load_module(name)
+    src = File.join(SUPPORT_DIR, "#{name}.rb")
+    if File.exist?(File.join(SUPPORT_DIR, '.dev_mode')) && File.exist?(src)
+      load src # mode dev: dieksekusi ulang tiap dipanggil supaya hot reload jalan
+    else
+      Sketchup.require("boosok_tools/#{name}")
+    end
+  end
+
   # Semua versi yang sudah dirilis (1.0.10+) membaca URL ini. Jangan dipindah.
   VERSION_URL = "https://raw.githubusercontent.com/muhqosob/boosok-tools/main/the_bosok/version.json"
   # File yang sama lewat API: tidak kena cache CDN raw (~5 menit), tapi limit 60 request/jam per IP.
@@ -17,7 +33,8 @@ module BoosokTools
     plugin_dir = File.dirname(__FILE__)
     $LOAD_PATH << plugin_dir unless $LOAD_PATH.include?(plugin_dir)
 
-    loader_path = File.join('boosok_tools', 'bootstrap.rb')
+    # Tanpa ekstensi: SketchUp mencari bootstrap.rb maupun bootstrap.rbe
+    loader_path = File.join('boosok_tools', 'bootstrap')
     ext = SketchupExtension.new("Boosok Tools", loader_path)
     ext.version     = PLUGIN_VERSION
     ext.creator     = "Muh Qosob"
