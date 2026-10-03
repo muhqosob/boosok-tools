@@ -1047,7 +1047,7 @@ module BoosokTools::Trowel
       view.invalidate
     end
 
-    RIM_PX = 6
+    RIM_PX = 6 unless defined?(RIM_PX)
 
     # Saat Push/Pull berjalan: tepi face yang sedang ditarik yang berada dalam RIM_PX piksel dari kursor.
     # Hasil: [jarak, indeks_loop, indeks_edge] atau nil.
