@@ -91,8 +91,12 @@ module BoosokTools::Void
 
   # ── Operasi solid ─────────────────────────────────────────────────────────
 
+  # ComponentDefinition#manifold? baru ada di SketchUp 2026.2; versi lama memakai Group/ComponentInstance#manifold?
+  # (di 2026.2 dideprekasi). Tanpa respond_to?, NoMethodError di SketchUp <= 2026.1 ditelan rescue dan semua
+  # group dianggap bukan solid, sehingga Slice / Void / Trowel diam-diam gagal.
   def self.solid?(ent)
-    ent.definition.manifold?
+    defn = ent.definition
+    defn.respond_to?(:manifold?) ? defn.manifold? : ent.manifold?
   rescue StandardError
     false
   end
