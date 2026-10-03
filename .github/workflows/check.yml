@@ -1,0 +1,27 @@
+# Hanya cek syntax. Rilis TIDAK lagi dibuat di sini: paket harus dienkripsi + ditandatangani lewat portal
+# Extension Signing dulu, lalu diunggah ke server dengan `node tools\publish-release.js --file <rbz>`.
+name: Check
+
+on:
+  push:
+    branches: [main]
+    paths: ['src/**']
+  pull_request:
+    paths: ['src/**']
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+
+      - name: Cek syntax Ruby
+        run: find src -name '*.rb' -print0 | xargs -0 -n1 ruby -c
