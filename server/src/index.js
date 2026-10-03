@@ -14,7 +14,9 @@
 // Token = {payload, sig}. payload = string JSON; sig = RSA-SHA256 (PKCS#1 v1.5) base64 atas string payload itu persis.
 // Plugin hanya menyimpan KUNCI PUBLIK, jadi tidak ada rahasia di dalam plugin.
 
-const GRACE_DAYS = 14;               // masa toleransi offline (hari) yang tertulis di token
+// Plugin v1.7.3+ mengabaikan exp (aktivasi berlaku offline selamanya). Nilainya tetap diisi jauh ke depan, bukan
+// dibuang: plugin v1.7.0 - v1.7.2 menganggap token tanpa exp sudah kedaluwarsa dan akan mengunci penggunanya.
+const GRACE_DAYS = 3650;
 const KEY_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 const CORS = {

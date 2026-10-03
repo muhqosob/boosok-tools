@@ -72,6 +72,10 @@ module BoosokTools
 
     # Cek otomatis saat SketchUp dibuka, dialog cuma muncul kalau ada update
     Updater.check
+    # Cek lisensi ke server di momen yang sama (butuh internet, offline dilewati diam-diam): key yang dicabut baru
+    # berlaku di sini, selain itu lisensi yang sudah aktif tetap jalan offline tanpa batas waktu.
+    # Ditunda: verifikasi token memuat OpenSSL, jangan memperlambat startup SketchUp.
+    UI.start_timer(5, false) { License.maybe_refresh rescue nil }
 
     file_loaded(__FILE__)
   end

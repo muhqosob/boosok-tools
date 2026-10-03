@@ -2,6 +2,7 @@ require 'sketchup'
 require 'digest'
 require 'json'
 require 'base64'
+require 'fileutils'
 
 module BoosokTools
   module License
@@ -36,7 +37,7 @@ module BoosokTools
       CQIDAQAB
       -----END PUBLIC KEY-----
     PEM
-    REFRESH_INTERVAL = 12 * 3600 unless defined?(REFRESH_INTERVAL) # cek ulang ke server paling sering tiap 12 jam
+    REFRESH_INTERVAL = 12 * 3600 unless defined?(REFRESH_INTERVAL) # cek otomatis saat startup paling sering tiap 12 jam
     HTTP_TIMEOUT     = 20 unless defined?(HTTP_TIMEOUT)
     PREF_SECT       = "BoosokTools"  unless defined?(PREF_SECT)
     remove_const(:TRIAL_DURATION) if defined?(TRIAL_DURATION)
@@ -79,23 +80,59 @@ module BoosokTools
       ["HOST:#{ENV['COMPUTERNAME'] || 'DEFAULT'}"]
     end
 
+    # Sidik jari tiap komponen: {"GUID"=>"ab12cd34", "MB"=>..., "HOST"=>...}. Hanya hash pendek, bukan nilai aslinya.
+    # Label hanya huruf, jadi aman digabung dengan "-" dan "_" (read_default meng-eval string, hindari tanda kutip).
+    def self.component_digests(parts)
+      parts.each_with_object({}) do |p, h|
+        label, = p.split(":", 2)
+        h[label] = Digest::SHA256.hexdigest(p)[0, 8]
+      end
+    end
+
+    def self.encode_digests(digests)
+      digests.map { |k, d| "#{k}-#{d}" }.join("_")
+    end
+
+    def self.decode_digests(str)
+      str.to_s.split("_").map { |e| e.split("-", 2) }.select { |a| a.size == 2 && !a[0].empty? }.to_h
+    end
+
+    # Apakah komponen tersimpan (saved) berasal dari mesin yang sama dengan komponen sekarang (fresh)?
+    # MachineGuid wajib sama bila ada di keduanya (beda PC / Windows diinstal ulang = beda GUID). Sisanya cukup
+    # 2/3 yang cocok, supaya ganti nama komputer atau domain tidak dianggap pindah mesin.
+    def self.same_machine?(saved, fresh)
+      return true if saved.empty? # tidak ada pembanding (pengguna lama): percaya, komponen disimpan sekarang
+      return false if saved["GUID"] && fresh["GUID"] && saved["GUID"] != fresh["GUID"]
+
+      common = saved.keys & fresh.keys
+      return true if common.empty?
+
+      common.count { |k| saved[k] == fresh[k] } * 3 >= common.size * 2
+    end
+
     # 2. Hardware ID = SHA256(sorted_parts)[0,16] diformat XXXX-XXXX-XXXX-XXXX
-    # Disimpan di SketchUp defaults agar pembacaan berikutnya instan 0ms
+    # ID disimpan di SketchUp defaults (stabil walau komponen berubah sedikit, mis. ganti nama PC), tetapi hanya
+    # dipakai bila komponen mesin sekarang cocok dengan yang tersimpan. Registry yang disalin ke PC lain ditolak
+    # dan ID dihitung ulang dari mesin ini, sehingga token lisensi PC asal tidak berlaku di PC baru.
     def self.hardware_id
       return @cached_hardware_id if @cached_hardware_id
 
-      saved = Sketchup.read_default(PREF_SECT, "cached_hwid", "").to_s.strip
-      if !saved.empty? && saved =~ /^[0-9A-Z]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$/i
+      parts  = get_hardware_components
+      fresh  = component_digests(parts)
+      saved  = Sketchup.read_default(PREF_SECT, "cached_hwid", "").to_s.strip
+      saved_parts = decode_digests(Sketchup.read_default(PREF_SECT, "hw_parts", ""))
+
+      if saved =~ /^[0-9A-Z]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$/i && same_machine?(saved_parts, fresh)
         @cached_hardware_id = saved.upcase
+        Sketchup.write_default(PREF_SECT, "hw_parts", encode_digests(fresh)) if saved_parts != fresh
         return @cached_hardware_id
       end
 
-      parts = get_hardware_components
-      raw   = parts.sort.join("|")
-      hex   = Digest::SHA256.hexdigest(raw)[0, 16].upcase
-      hw    = "#{hex[0,4]}-#{hex[4,4]}-#{hex[8,4]}-#{hex[12,4]}"
+      hex = Digest::SHA256.hexdigest(parts.sort.join("|"))[0, 16].upcase
+      hw  = "#{hex[0,4]}-#{hex[4,4]}-#{hex[8,4]}-#{hex[12,4]}"
       @cached_hardware_id = hw
       Sketchup.write_default(PREF_SECT, "cached_hwid", hw) rescue nil
+      Sketchup.write_default(PREF_SECT, "hw_parts", encode_digests(fresh)) rescue nil
       hw
     rescue => e
       "UNKNOWN-HWID"
@@ -209,20 +246,15 @@ module BoosokTools
       verified_payload(saved_token)
     end
 
-    # Token sah bila: tanda tangan benar, untuk key dan Hardware ID ini, belum lewat masa toleransi (exp), dan jam
-    # sistem tidak dimundurkan.
+    # Token sah bila tanda tangannya benar dan untuk key + Hardware ID ini. Tidak ada masa kedaluwarsa dan tidak ada
+    # cek jam: setelah aktivasi, plugin dipakai offline selamanya. "exp" di token (diisi server jauh ke depan) hanya
+    # ada demi plugin v1.7.0 - v1.7.2 yang masih mengeceknya; sengaja diabaikan di sini. Pencabutan key baru
+    # berlaku saat perangkat online lagi (cek saat startup / tombol Cek update, lihat maybe_refresh).
     def self.online_valid?(key)
       p = saved_payload
       return false unless p
-      return false unless compact_id(p["k"]) == compact_id(key) && compact_id(p["hw"]) == compact_id(hardware_id)
 
-      now = Time.now.to_i
-      return false if now >= p["exp"].to_i
-
-      last_seen = Sketchup.read_default(PREF_SECT, "last_seen", 0).to_i
-      return false if last_seen > 0 && now < (last_seen - 3600)
-
-      true
+      compact_id(p["k"]) == compact_id(key) && compact_id(p["hw"]) == compact_id(hardware_id)
     rescue => e
       false
     end
@@ -310,16 +342,17 @@ module BoosokTools
       end
     end
 
-    # Cek ulang ke server (dipanggil saat Hub difokus). Hanya untuk lisensi online dan paling sering tiap
-    # REFRESH_INTERVAL. Tanpa internet: tidak terjadi apa-apa (masa toleransi di token yang berlaku). Key dicabut /
-    # perangkat dilepas di server: lisensi lokal dihapus. Blok dipanggil dengan true bila status lisensi berubah.
-    def self.maybe_refresh(&callback)
+    # Cek ulang ke server, dipanggil bersamaan dengan cek update (saat SketchUp dibuka dan tombol Cek update).
+    # Hanya untuk lisensi online; tanpa force paling sering tiap REFRESH_INTERVAL. Tanpa internet tidak terjadi apa-apa
+    # dan lisensi tetap berlaku. Key dicabut / perangkat dilepas di server: lisensi lokal dihapus. Blok dipanggil
+    # dengan true bila status lisensi berubah.
+    def self.maybe_refresh(force = false, &callback)
       return unless online_configured? && saved_mode == "online" && !saved_key.empty? && !@refreshing
 
       last = Sketchup.read_default(PREF_SECT, PREF_CHECKED, "").to_i
       # Token dari versi server lama belum memuat nama / nomor HP terdaftar: perbarui segera
       stale = (p = saved_payload) && !p.key?("nm")
-      return if !stale && last > 0 && (Time.now.to_i - last) < REFRESH_INTERVAL
+      return if !force && !stale && last > 0 && (Time.now.to_i - last) < REFRESH_INTERVAL
 
       @refreshing = true
       key = saved_key
@@ -367,9 +400,10 @@ module BoosokTools
         return 0 if @last_seen_mem && now < (@last_seen_mem - 3600)
         if now > @last_seen_mem
           @last_seen_mem = now
-          # Tulis registry paling sering 1x per menit, bukan tiap panggilan
+          # Tulis registry + salinan file paling sering 1x per menit, bukan tiap panggilan
           if now - @last_seen_written >= 60
             Sketchup.write_default(PREF_SECT, "last_seen", now.to_s) rescue nil
+            write_trial_files(@trial_start_cache, trial_signature(@trial_start_cache, hardware_id), now)
             @last_seen_written = now
           end
         end
@@ -384,36 +418,78 @@ module BoosokTools
       start
     end
 
+    def self.trial_signature(start, hw)
+      Digest::SHA256.hexdigest("#{start}:#{hw}:#{SECRET}")[0, 16]
+    end
+
+    # Salinan kedua data trial di file, di luar registry SketchUp. Registry itu per versi SketchUp dan gampang dihapus
+    # lewat regedit; file di sini dipakai bersama semua versi SketchUp, jadi menghapus registry saja tidak mengulang
+    # trial. Dua lokasi (APPDATA dan LOCALAPPDATA) supaya menghapus satu file juga tidak cukup.
+    def self.trial_file_paths
+      %w[APPDATA LOCALAPPDATA].map { |v| ENV[v].to_s.dup.force_encoding('UTF-8') }.reject(&:empty?)
+                              .map { |d| File.join(d, "BoosokTools", "cache.dat") }.uniq
+    rescue
+      []
+    end
+
+    # Hash {start:, seen:} bila file ada dan tanda tangannya cocok untuk perangkat ini; selain itu nil (dianggap tidak ada)
+    def self.read_trial_file(path, hw)
+      data = JSON.parse(File.read(path))
+      start = data["s"].to_i
+      return nil unless start > 0 && data["g"].to_s == trial_signature(start, hw)
+
+      { start: start, seen: data["l"].to_i }
+    rescue StandardError
+      nil
+    end
+
+    def self.write_trial_files(start, sig, seen)
+      body = JSON.generate({ "s" => start, "g" => sig, "l" => seen })
+      trial_file_paths.each do |path|
+        begin
+          FileUtils.mkdir_p(File.dirname(path))
+          File.write(path, body)
+        rescue StandardError
+          nil # satu lokasi gagal (izin / disk): lokasi lain dan registry tetap jalan
+        end
+      end
+    end
+
+    # Tulis data trial ke registry dan semua salinan file
+    def self.write_trial_stores(start, seen)
+      sig = trial_signature(start, hardware_id)
+      Sketchup.write_default(PREF_SECT, "trial_start", start.to_s)
+      Sketchup.write_default(PREF_SECT, "trial_sig", sig)
+      Sketchup.write_default(PREF_SECT, "last_seen", seen.to_s)
+      write_trial_files(start, sig, seen)
+    end
+
     def self.trial_start_time_uncached
       raw = Sketchup.read_default(PREF_SECT, "trial_start", "").to_s.strip
       sig = Sketchup.read_default(PREF_SECT, "trial_sig", "").to_s.strip
       hw  = hardware_id
+      now = Time.now.to_i
 
-      if raw.empty?
-        # Pertama kali plugin dipasang / dijalankan
-        now = Time.now.to_i
-        signature = Digest::SHA256.hexdigest("#{now}:#{hw}:#{SECRET}")[0, 16]
-        Sketchup.write_default(PREF_SECT, "trial_start", now.to_s)
-        Sketchup.write_default(PREF_SECT, "trial_sig", signature)
-        Sketchup.write_default(PREF_SECT, "last_seen", now.to_s)
-        return now
+      files = trial_file_paths.map { |p| read_trial_file(p, hw) }.compact
+      last_seen = ([Sketchup.read_default(PREF_SECT, "last_seen", 0).to_i] + files.map { |f| f[:seen] }).max
+
+      reg_start = nil
+      unless raw.empty?
+        # Validasi integritas signature anti-tamper
+        return 0 if sig != trial_signature(raw, hw) # Manipulasi terdeteksi, kunci trial
+
+        reg_start = raw.to_i
       end
 
-      # Validasi integritas signature anti-tamper
-      expected_sig = Digest::SHA256.hexdigest("#{raw}:#{hw}:#{SECRET}")[0, 16]
-      if sig != expected_sig
-        return 0 # Manipulasi terdeteksi, kunci trial
-      end
+      # Mulai trial = yang paling awal dari semua salinan. Registry dihapus tapi file masih ada (atau sebaliknya):
+      # trial tetap berlanjut dari tanggal asli, dan salinan yang hilang dipulihkan di bawah.
+      start = ([reg_start] + files.map { |f| f[:start] }).compact.min || now # nil = pertama kali plugin dijalankan
 
       # Anti-clock rollback: jika jam sistem dimundurkan > 1 jam
-      last_seen = Sketchup.read_default(PREF_SECT, "last_seen", 0).to_i
-      now = Time.now.to_i
-      if last_seen > 0 && now < (last_seen - 3600)
-        return 0 # Jam dimundurkan, kunci trial
-      end
+      return 0 if last_seen > 0 && now < (last_seen - 3600) # Jam dimundurkan, kunci trial
 
-      Sketchup.write_default(PREF_SECT, "last_seen", now.to_s) if now > last_seen
-      raw.to_i
+      write_trial_stores(start, [now, last_seen].max)
+      start
     rescue => e
       0
     end
@@ -449,11 +525,7 @@ module BoosokTools
     # Helper untuk reset masa uji coba ke 7 hari lagi (untuk developer / testing)
     def self.reset_trial!
       now = Time.now.to_i
-      hw  = hardware_id
-      sig = Digest::SHA256.hexdigest("#{now}:#{hw}:#{SECRET}")[0, 16]
-      Sketchup.write_default(PREF_SECT, "trial_start", now.to_s)
-      Sketchup.write_default(PREF_SECT, "trial_sig", sig)
-      Sketchup.write_default(PREF_SECT, "last_seen", now.to_s)
+      write_trial_stores(now, now)
       clear_cache!
       puts "[Boosok Tools] Trial di-reset! 7 hari tersisa."
       status
@@ -462,11 +534,7 @@ module BoosokTools
     # Helper untuk simulasi trial habis (untuk testing keadaan terkunci)
     def self.expire_trial!
       past = Time.now.to_i - (8 * 86400) # 8 hari yang lalu
-      hw   = hardware_id
-      sig  = Digest::SHA256.hexdigest("#{past}:#{hw}:#{SECRET}")[0, 16]
-      Sketchup.write_default(PREF_SECT, "trial_start", past.to_s)
-      Sketchup.write_default(PREF_SECT, "trial_sig", sig)
-      Sketchup.write_default(PREF_SECT, "last_seen", past.to_s)
+      write_trial_stores(past, past)
       clear_cache!
       puts "[Boosok Tools] Trial di-set KADALUARSA (expired)! Semua tool terkunci."
       status
@@ -506,7 +574,6 @@ module BoosokTools
         is_valid:    is_valid,
         saved_key:   saved.empty? ? "" : saved,
         mode:        saved_mode,
-        grace_days:  (saved_mode == "online" && is_valid && saved_payload ? [((saved_payload["exp"].to_i - Time.now.to_i) / 86400.0).ceil, 0].max : nil),
         devices:     (saved_mode == "online" && saved_payload ? { used: saved_payload["used"], max: saved_payload["max"] } : nil),
         name:        (saved_mode == "online" && is_valid && saved_payload ? saved_payload["nm"].to_s : ""),
         phone:       (saved_mode == "online" && is_valid && saved_payload ? saved_payload["ph"].to_s : ""),

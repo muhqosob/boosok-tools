@@ -310,15 +310,6 @@ module BoosokTools
           license: (defined?(BoosokTools::License) ? BoosokTools::License.status : nil)
         }
         dlg.execute_script("if (typeof onHubRefresh === 'function') onHubRefresh(#{lite.to_json});")
-        # Cek ulang lisensi online ke server (async, jarang: paling cepat tiap 12 jam). Bila key dicabut: perbarui tampilan.
-        if defined?(BoosokTools::License)
-          BoosokTools::License.maybe_refresh do |changed|
-            next unless changed && dlg.visible?
-
-            dlg.execute_script("if (typeof onHubRefresh === 'function') onHubRefresh(#{{ license: BoosokTools::License.status }.to_json});")
-            dlg.execute_script("if (typeof onLicenseStatus === 'function') onLicenseStatus(#{BoosokTools::License.status.to_json});")
-          end
-        end
       end
 
       dlg.add_action_callback("ready") do |_ctx|
@@ -384,6 +375,13 @@ module BoosokTools
       dlg.add_action_callback("updates") do |_ctx|
         # Push state update inline ke hub (bukan buka dialog baru)
         BoosokTools::Updater.check_inline(dlg)
+        # Tombol Cek update juga memeriksa lisensi ke server (butuh internet). Bila key dicabut: perbarui tampilan.
+        BoosokTools::License.maybe_refresh(true) do |changed|
+          next unless changed && dlg.visible?
+
+          dlg.execute_script("if (typeof onHubRefresh === 'function') onHubRefresh(#{{ license: BoosokTools::License.status }.to_json});")
+          dlg.execute_script("if (typeof onLicenseStatus === 'function') onLicenseStatus(#{BoosokTools::License.status.to_json});")
+        end
       end
 
       dlg.add_action_callback("update_download") do |_ctx|
