@@ -10,6 +10,10 @@
 //                  dan versinya harus sama dengan PLUGIN_VERSION di src)
 //   --dry-run      tanpa --file: bangun .rbz mentah di dist\. Dengan --file: hanya memeriksa, tidak mengunggah
 //   --plain        izinkan mengunggah paket tidak terenkripsi (bangun dari src\ atau --file yang masih .rb)
+//   --github       setelah server, terbitkan juga ke GitHub Release + perbarui the_bosok\version.json supaya pengguna lama
+//                  (v1.6.x ke bawah, yang hanya membaca GitHub) tetap mendapat update. Wajib dengan --file, tidak boleh
+//                  dengan --plain. Menjalankan `git push` (commit yang belum terkirim ikut), membuat release, lalu commit
+//                  + push version.json. Token GitHub: env GITHUB_TOKEN, atau `gh auth token`, atau kredensial git.
 //
 // Catatan perubahan opsional; kalau kosong dipakai pesan commit terakhir. Versi diambil dari PLUGIN_VERSION di
 // src\boosok_tools.rb. Pengguna yang berlisensi aktif akan melihat update ini lewat tombol "Cek update" di Boosok Tools.
@@ -27,6 +31,7 @@ function die(msg) { console.error('\n' + msg); process.exit(1); }
 
 let dry = false;
 let plain = false;
+let github = false;
 let filePath = null;
 const args = [];
 const argv = process.argv.slice(2);
@@ -34,10 +39,14 @@ for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
   if (a === '--dry-run') dry = true;
   else if (a === '--plain') plain = true;
+  else if (a === '--github') github = true;
   else if (a === '--file') { filePath = argv[++i]; if (!filePath) die('--file butuh path ke .rbz'); }
   else if (a.startsWith('--')) die('Opsi tidak dikenal: ' + a);
   else args.push(a);
 }
+
+if (github && !filePath) die('--github hanya bisa bersama --file (paket hasil portal).');
+if (github && plain) die('--github tidak boleh bersama --plain: GitHub bersifat publik, jangan mengunggah kode terbuka ke sana.');
 
 const main = fs.readFileSync(path.join(root, 'src', 'boosok_tools.rb'), 'utf8');
 const version = (main.match(/PLUGIN_VERSION\s*=\s*"([^"]+)"/) || [])[1];
@@ -103,12 +112,89 @@ console.log(`Changelog  : ${changelog || '(kosong)'}`);
 if (dry) {
   console.log(filePath ? '\n--dry-run: paket lolos pemeriksaan, tidak diunggah.'
     : '\n--dry-run: tidak diunggah. File mentah ini dikirim ke portal untuk dienkripsi, JANGAN dipublikasikan.');
+  if (github) console.log(`Dengan --github (tanpa --dry-run): git push, release v${version} di ${repoSlug()}, lalu version.json di-commit + push.`);
   process.exit(0);
 }
 
 const tokenFile = path.join(root, 'server', '.secrets', 'admin_token.txt');
 if (!fs.existsSync(tokenFile)) die('Token admin tidak ditemukan: ' + tokenFile);
 const token = fs.readFileSync(tokenFile, 'utf8').trim();
+
+// ── GitHub (untuk pengguna lama yang hanya membaca version.json di GitHub) ──
+function git(gitArgs, opts = {}) {
+  return execFileSync('git', gitArgs, { cwd: root, encoding: 'utf8', ...opts }).trim();
+}
+
+function repoSlug() {
+  try {
+    const m = git(['remote', 'get-url', 'origin']).match(/github\.com[:/]+([^/]+\/[^/]+?)(?:\.git)?$/);
+    if (m) return m[1];
+  } catch (e) { /* pakai bawaan */ }
+  return 'muhqosob/boosok-tools';
+}
+
+function githubToken() {
+  if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN.trim();
+  try { const t = execFileSync('gh', ['auth', 'token'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); if (t) return t; } catch (e) { /* gh tidak ada */ }
+  try {
+    const out = execFileSync('git', ['credential', 'fill'], { cwd: root, encoding: 'utf8', input: 'protocol=https\nhost=github.com\n\n', stdio: ['pipe', 'pipe', 'ignore'], env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
+    const m = out.match(/^password=(.+)$/m);
+    if (m) return m[1].trim();
+  } catch (e) { /* tidak ada kredensial tersimpan */ }
+  return null;
+}
+
+async function ghApi(method, apiUrl, token, body, headers) {
+  const res = await fetch(apiUrl, {
+    method,
+    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'boosok-publish-release', ...headers },
+    body
+  });
+  const text = await res.text();
+  let data = null;
+  try { data = JSON.parse(text); } catch (e) { /* bukan JSON */ }
+  if (!res.ok) { const err = new Error(`${method} ${apiUrl} -> ${res.status} ${(data && data.message) || text.slice(0, 200)}`); err.status = res.status; throw err; }
+  return data;
+}
+
+async function publishGithub() {
+  const ghToken = githubToken();
+  if (!ghToken) die('Token GitHub tidak ditemukan. Isi env GITHUB_TOKEN (PAT dengan akses repo), pasang gh lalu `gh auth login`, atau login git ke github.com.');
+  if (git(['status', '--porcelain', '--untracked-files=no'])) die('Ada perubahan yang belum di-commit. Commit dulu, supaya tag release menunjuk ke kode yang benar.');
+
+  const slug = repoSlug();
+  const api = `https://api.github.com/repos/${slug}`;
+  const tag = 'v' + version;
+  const assetName = `boosok_tools_v${version}.rbz`;
+
+  console.log('\n[GitHub] git push ...');
+  execFileSync('git', ['push'], { cwd: root, stdio: 'inherit' });
+  const head = git(['rev-parse', 'HEAD']);
+
+  // Release sudah ada (mis. mengulang setelah gagal di tengah jalan): dipakai ulang, aset lama diganti
+  let rel = null;
+  try { rel = await ghApi('GET', `${api}/releases/tags/${tag}`, ghToken); } catch (e) { if (e.status !== 404) throw e; }
+  if (!rel) {
+    rel = await ghApi('POST', `${api}/releases`, ghToken, JSON.stringify({ tag_name: tag, target_commitish: head, name: tag, body: changelog }), { 'Content-Type': 'application/json' });
+    console.log(`[GitHub] release ${tag} dibuat.`);
+  } else {
+    console.log(`[GitHub] release ${tag} sudah ada, dipakai ulang.`);
+  }
+  for (const a of rel.assets || []) {
+    if (a.name === assetName) await ghApi('DELETE', `${api}/releases/assets/${a.id}`, ghToken);
+  }
+  const asset = await ghApi('POST', `https://uploads.github.com/repos/${slug}/releases/${rel.id}/assets?name=${encodeURIComponent(assetName)}`, ghToken, buf, { 'Content-Type': 'application/octet-stream' });
+  console.log(`[GitHub] aset diunggah: ${asset.browser_download_url}`);
+
+  // version.json diperbarui SETELAH aset ada, supaya pengguna tidak mendapat link 404. Path & bentuknya dibaca
+  // semua versi yang sudah terpasang, jangan diubah.
+  fs.writeFileSync(path.join(root, 'the_bosok', 'version.json'),
+    JSON.stringify({ version, download_url: asset.browser_download_url, changelog, sha256: sha }, null, 2));
+  git(['add', 'the_bosok/version.json']);
+  git(['commit', '-m', `chore(release): bump ${tag} [skip ci]`]);
+  execFileSync('git', ['push'], { cwd: root, stdio: 'inherit' });
+  console.log(`[GitHub] version.json diperbarui ke ${version}.`);
+}
 
 (async () => {
   const res = await fetch(`${url}/admin/release?version=${encodeURIComponent(version)}&changelog=${encodeURIComponent(changelog)}`, {
@@ -120,4 +206,5 @@ const token = fs.readFileSync(tokenFile, 'utf8').trim();
   if (!res.ok || !out.ok) die('GAGAL mengunggah: ' + res.status + ' ' + JSON.stringify(out));
   console.log(out.sha256 === sha ? '\nBERHASIL diunggah. Checksum di server cocok.' : '\nDiunggah, tetapi checksum berbeda dari lokal!');
   console.log('Versi terbaru di server: ' + out.version);
-})();
+  if (github) await publishGithub();
+})().catch((e) => die('GAGAL: ' + e.message));
