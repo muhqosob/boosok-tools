@@ -5,6 +5,14 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.7.2] — 2026-10-03
+
+### ✨ Fitur Baru
+
+- **QR DANA** di dialog Tentang untuk pembayaran lisensi (klik QR untuk memperbesar).
+
+---
+
 ## [1.7.1] — 2026-10-03
 
 ### ✨ Fitur Baru

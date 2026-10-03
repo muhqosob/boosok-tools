@@ -4,7 +4,7 @@ require 'json'
 
 module BoosokTools
   # Naikkan angka ini lalu push ke main: GitHub Actions otomatis bikin release + update version.json
-  PLUGIN_VERSION = "1.7.1"
+  PLUGIN_VERSION = "1.7.2"
 
   # Folder kode plugin. Dihitung di sini (file root tidak dienkripsi) karena __dir__/__FILE__
   # di dalam file .rbe tidak bisa diandalkan. Semua modul memakai konstanta ini untuk path.
