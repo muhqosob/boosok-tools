@@ -11,9 +11,15 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 - **Lisensi aktif berlaku offline tanpa batas waktu.** Internet hanya dibutuhkan saat aktivasi, saat melepas lisensi untuk pindah PC, dan saat cek update. Masa toleransi 14 hari dihapus.
 - **Cek lisensi ikut saat cek update** (saat SketchUp dibuka dan lewat tombol Cek update). Bila sedang offline, pengecekan dilewati.
+- **Versi yang didukung: SketchUp 2021 ke atas di Windows.** Di versi atau platform lain, plugin menampilkan pesan dan tidak dimuat.
+
+### 🗑️ Dihapus
+
+- **Pengaturan Hotkey di Hub.** Atur shortcut langsung lewat SketchUp (Window → Preferences → Shortcuts, cari "Boosok Tools"). Shortcut yang sudah pernah dibuat tetap berlaku.
 
 ### 🔧 Perbaikan
 
+- **Slice dan Trowel tidak berfungsi di SketchUp 2025** (dan versi sebelum 2026.2): deteksi solid memakai method yang baru ada di SketchUp 2026.2.
 - **Masa trial lebih sulit di-reset:** data trial kini juga disimpan di luar registry SketchUp dan dipakai bersama semua versi SketchUp.
 - **Lisensi terikat ke komputer:** pengaturan lisensi yang disalin ke PC lain tidak berlaku. Mengganti nama komputer tidak berpengaruh.
 - Perbaikan peringatan konstanta pada Trowel saat plugin dimuat ulang.

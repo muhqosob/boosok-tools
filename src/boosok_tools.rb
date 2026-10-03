@@ -31,7 +31,17 @@ module BoosokTools
   RELEASES_URL = "https://github.com/muhqosob/boosok-tools/releases/latest"
   CHANGELOG_URL = "https://github.com/muhqosob/boosok-tools/blob/main/the_bosok/CHANGELOG.md"
 
-  unless file_loaded?(__FILE__)
+  # Lingkungan yang didukung: SketchUp 2021 ke atas (Ruby 2.7+) di Windows. Versi lama tidak punya fitur Ruby yang
+  # dipakai plugin dan tampilannya (CSS modern) tidak terjamin; Mac belum didukung (title bar, registry, path APPDATA).
+  # Dicek di file root ini (tidak dienkripsi, dan hanya memakai sintaks Ruby lama) supaya pesannya tetap muncul
+  # di SketchUp lama, bukan error sintaks di modul yang dimuat sesudahnya.
+  MIN_SKETCHUP_VERSION = 21 unless defined?(MIN_SKETCHUP_VERSION)
+
+  def self.supported_environment?
+    Sketchup.version.to_i >= MIN_SKETCHUP_VERSION && Sketchup.platform == :platform_win
+  end
+
+  unless file_loaded?(__FILE__) || !supported_environment?
     plugin_dir = File.dirname(root_file)
 
     # Migrasi dari versi <= 1.6.0 yang file root-nya bernama boosok_tools_loader.rb. Kalau masih
@@ -48,9 +58,18 @@ module BoosokTools
     ext.creator     = "Muh Qosob"
     ext.author      = "Muh Qosob" if ext.respond_to?(:author=)
     ext.copyright   = "2026"
-    ext.description = "Plugin Bosok ini hanya untuk yang membutuhkannya saja."
+    ext.description = "Plugin Bosok ini hanya untuk yang membutuhkannya saja. Membutuhkan SketchUp 2021 atau lebih baru (Windows)."
 
     Sketchup.register_extension(ext, true)
     file_loaded(__FILE__)
+  end
+
+  unless supported_environment? || file_loaded?(__FILE__)
+    file_loaded(__FILE__) # satu pesan per sesi
+    UI.start_timer(1.0, false) do
+      UI.messagebox("Boosok Tools membutuhkan SketchUp 2021 atau lebih baru di Windows.\n" \
+                    "Boosok Tools requires SketchUp 2021 or newer on Windows.\n\n" \
+                    "Terdeteksi / Detected: SketchUp #{Sketchup.version} (#{Sketchup.platform})")
+    end
   end
 end
