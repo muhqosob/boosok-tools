@@ -9,7 +9,6 @@ module BoosokTools
     # Buat js/strings.js dari locales/*.json sebelum dialog mana pun dimuat
     BoosokTools::Locale.export_js
     Sketchup.require 'boosok_tools/updater'
-    Sketchup.require 'boosok_tools/ruby/shortcut_sync'
     Sketchup.require 'boosok_tools/license'
     Sketchup.require 'boosok_tools/hub'
     Sketchup.require 'boosok_tools/ruby/paid/select_tool'
@@ -33,7 +32,20 @@ module BoosokTools
       end
     end
 
-    BoosokTools::ShortcutSync.init
+    # Fitur Hotkey di Hub dihapus: shortcut diatur lewat SketchUp (Preferences > Shortcuts). Bersihkan sisa lama:
+    # file modul & .dat dari versi sebelumnya, serta data hotkey tersimpan (dulu ditulis ulang ke preferensi
+    # SketchUp tiap SketchUp ditutup, sehingga bisa menimpa pengaturan shortcut bawaan).
+    begin
+      %w[rb rbe].each do |ext|
+        stale = File.join(BoosokTools::SUPPORT_DIR, 'ruby', "shortcut_sync.#{ext}")
+        File.delete(stale) if File.exist?(stale)
+      end
+      stale_dat = File.join(BoosokTools::SUPPORT_DIR, 'BoosokTools_Shortcuts.dat')
+      File.delete(stale_dat) if File.exist?(stale_dat)
+      Sketchup.write_default('BoosokTools', 'saved_hotkeys', '')
+    rescue StandardError
+      nil
+    end
 
     # ── Menu Extensions utama: submenu Boosok Tools ──
     ext_menu   = UI.menu('Extensions')

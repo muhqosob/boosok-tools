@@ -60,8 +60,6 @@
       var tBtn = document.getElementById('themeToggle');
       if (tBtn) { tBtn.title = ht('theme_toggle', 'Ganti Tema'); tBtn.setAttribute('aria-label', ht('theme_toggle', 'Ganti Tema')); }
 
-      var mHk = document.getElementById('menuHkLabel');
-      if (mHk) mHk.textContent = ht('menu_hotkey', 'Hotkey');
       var mLang = document.getElementById('menuLangLabel');
       if (mLang) mLang.textContent = ht('menu_language', 'Bahasa');
       var mAb = document.getElementById('menuAboutLabel');
@@ -76,10 +74,6 @@
       var lOpenText = document.getElementById('btnOpenLocalesText');
       if (lOpenText) lOpenText.textContent = ht('lang_open_folder', 'Buka Folder Bahasa');
 
-      var hkTitle = document.querySelector('.hk-title');
-      if (hkTitle) hkTitle.textContent = ht('menu_hotkey', 'Hotkey');
-      var hkApplyText = document.querySelector('#btnApplyHk span');
-      if (hkApplyText) hkApplyText.textContent = ht('hk_apply', 'Terapkan di SketchUp');
 
       // About & License modal translations
       var abLblCreated = document.getElementById('aboutLblCreated');
@@ -225,41 +219,6 @@
       { id: 'trowel', icon: 'shovel', t: 'Trowel', s: 'Push/Pull & Offset dalam group', needs: 'objects' }
     ];
 
-    /* ═══════════════════════════════════════════════
-       Hotkey Definitions & Storage
-    ═══════════════════════════════════════════════ */
-    var LS_HOTKEYS = 'boosok_hotkeys';
-    var DEFAULT_HOTKEYS = [
-      { id: 'hub', label: 'Buka Hub', key: '' },
-      { id: 'selector', label: 'Selector', key: '' },
-      { id: 'custom_select', label: 'Select Tools', key: '' },
-      { id: 'replacer', label: 'Replacer', key: '' },
-      { id: 'clean', label: 'Grp Cleaner', key: '' },
-      { id: 'reset', label: 'Reset Scale', key: '' },
-      { id: 'scene', label: 'Hide Scene', key: '' },
-      { id: 'untag', label: 'Untag', key: '' },
-      { id: 'deep', label: 'Deep Props', key: '' },
-      { id: 'purge', label: 'Purge', key: '' },
-      { id: 'void', label: 'Void', key: '' },
-      { id: 'slice', label: 'Slice', key: '' },
-      { id: 'trowel', label: 'Trowel', key: '' }
-    ];
-    function loadHotkeys() {
-      try {
-        var saved = JSON.parse(localStorage.getItem(LS_HOTKEYS)) || [];
-        var activeMap = (S.data && S.data.hotkeys) || {};
-        return DEFAULT_HOTKEYS.map(function (def) {
-          var fromSaved = saved.filter(function (s) { return s.id === def.id; })[0];
-          var key = (activeMap[def.id] !== undefined && activeMap[def.id] !== null)
-            ? activeMap[def.id]
-            : (fromSaved ? fromSaved.key : '');
-          return { id: def.id, label: def.label, key: key || '' };
-        });
-      } catch (e) { return DEFAULT_HOTKEYS.map(function (h) { return Object.assign({}, h); }); }
-    }
-    function saveHotkeys(hotkeys) {
-      try { localStorage.setItem(LS_HOTKEYS, JSON.stringify(hotkeys)); } catch (e) { }
-    }
     var TOOL_MAP = {};
     TOOLS.forEach(function (t) { TOOL_MAP[t.id] = t; });
 
@@ -917,7 +876,7 @@
       if (menu) menu.classList.remove('open');
     }
 
-    /* Kunci / buka tombol Settings (Hotkey & Tentang) saat model kosong */
+    /* Kunci / buka tombol Settings (Bahasa & Tentang) saat model kosong */
     function updateSettingsLock(locked) {
       var wrap = document.getElementById('settingsWrap');
       var btn = document.getElementById('settingsBtn');
@@ -933,178 +892,6 @@
         btn.disabled = false;
         btn.title = 'Pengaturan';
       }
-    }
-
-    /* ═══════════════════════════════════════════════
-       Hotkey Panel
-    ═══════════════════════════════════════════════ */
-    var _recordingInput = null;
-
-    function openHotkeyPanel() {
-      closeSettingsMenu();
-      if (window.sketchup && typeof sketchup.get_hotkeys === 'function') {
-        sketchup.get_hotkeys();
-      }
-      renderHotkeyList();
-      var panel = document.getElementById('hotkeyPanel');
-      if (panel) panel.classList.add('open');
-      autoFitHeight(0);
-    }
-
-    function closeHotkeyPanel() {
-      if (_recordingInput) { stopRecording(_recordingInput); }
-      var panel = document.getElementById('hotkeyPanel');
-      if (panel) panel.classList.remove('open');
-    }
-
-    function onHotkeysLoaded(shortcuts) {
-      if (!shortcuts || typeof shortcuts !== 'object') return;
-      var hotkeys = loadHotkeys();
-      hotkeys.forEach(function (h) {
-        if (shortcuts[h.id] !== undefined) {
-          h.key = shortcuts[h.id] || '';
-        }
-      });
-      saveHotkeys(hotkeys);
-      renderHotkeyList();
-    }
-
-    function renderHotkeyList() {
-      var hotkeys = loadHotkeys();
-      var list = document.getElementById('hkList');
-      if (!list) return;
-      // Menu path di SketchUp untuk setiap tool
-      var menuPath = {
-        'hub': 'Buka Hub',
-        'selector': 'Selector',
-        'custom_select': 'Select Tools',
-        'replacer': 'Replacer',
-        'clean': 'Cleaner',
-        'reset': 'Reset Scale',
-        'scene': 'Hide Scene',
-        'untag': 'Untag',
-        'deep': 'Deep Props',
-        'purge': 'Purge',
-        'void': 'Void',
-        'slice': 'Slice',
-        'trowel': 'Trowel'
-      };
-      list.innerHTML = hotkeys.map(function (h) {
-        var path = 'Extensions › Boosok Tools › ' + (menuPath[h.id] || h.label);
-        return '<div class="hk-row" data-id="' + h.id + '">' +
-          '<div class="hk-name-wrap">' +
-          '<span class="hk-name">' + esc(h.label) + '</span>' +
-          '<span class="hk-path">' + esc(path) + '</span>' +
-          '</div>' +
-          '<input class="hk-input" type="text" readonly placeholder="— kosong —"' +
-          ' value="' + esc(h.key) + '"' +
-          ' data-hk-id="' + h.id + '"' +
-          ' onclick="startRecording(this)"' +
-          '>' +
-          '<button class="hk-clear" title="Hapus shortcut" onclick="clearHotkey(\'' + h.id + '\')">' +
-          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
-          '</button>' +
-          '</div>';
-      }).join('');
-    }
-
-    function openSketchUpShortcuts() {
-      if (window.sketchup && typeof sketchup.open_shortcut_prefs === 'function') {
-        sketchup.open_shortcut_prefs();
-      }
-    }
-
-    function applyHotkeysToSketchUp(btn) {
-      var hotkeys = loadHotkeys();
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><span>Menerapkan…</span>';
-      }
-      if (window.sketchup && typeof sketchup.apply_hotkeys_to_sketchup === 'function') {
-        sketchup.apply_hotkeys_to_sketchup(JSON.stringify(hotkeys));
-      }
-      setTimeout(function () {
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg><span>Tersinkron!</span>';
-          setTimeout(function () {
-            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Terapkan di SketchUp</span>';
-          }, 2500);
-        }
-      }, 700);
-    }
-
-    function onHotkeysApplied(success, msg) {
-      if (success) {
-        showToast('Hotkey berhasil disinkronkan ke preferensi SketchUp!');
-      } else {
-        showToast('Gagal sinkronisasi: ' + (msg || ''));
-      }
-    }
-
-    function onHotkeysSaved(success, msg) {
-      if (success) {
-        showToast('Hotkey tersimpan!');
-      }
-    }
-
-    function startRecording(input) {
-      if (_recordingInput && _recordingInput !== input) stopRecording(_recordingInput);
-      _recordingInput = input;
-      input.value = 'Tekan kombinasi…';
-      input.classList.add('recording');
-      input.addEventListener('keydown', onHotkeyKeydown);
-    }
-
-    function stopRecording(input) {
-      if (!input) return;
-      input.classList.remove('recording');
-      input.removeEventListener('keydown', onHotkeyKeydown);
-      if (_recordingInput === input) _recordingInput = null;
-      // Restore nilai tersimpan jika masih "Tekan kombinasi…"
-      if (input.value === 'Tekan kombinasi…') {
-        var hotkeys = loadHotkeys();
-        var id = input.getAttribute('data-hk-id');
-        var found = hotkeys.filter(function (h) { return h.id === id; })[0];
-        input.value = found ? (found.key || '') : '';
-      }
-    }
-
-    function onHotkeyKeydown(e) {
-      e.preventDefault();
-      if (e.key === 'Escape') { stopRecording(e.target); return; }
-      if (['Control', 'Shift', 'Alt', 'Meta'].indexOf(e.key) !== -1) return;
-
-      var parts = [];
-      if (e.ctrlKey) parts.push('Ctrl');
-      if (e.altKey) parts.push('Alt');
-      if (e.shiftKey) parts.push('Shift');
-      var k = e.key.length === 1 ? e.key.toUpperCase() : e.key;
-      parts.push(k);
-      var combo = parts.join('+');
-
-      var id = e.target.getAttribute('data-hk-id');
-      var hotkeys = loadHotkeys();
-      hotkeys.forEach(function (h) { if (h.id === id) h.key = combo; });
-      saveHotkeys(hotkeys);
-      // Kirim ke Ruby agar langsung update SharedPreferences.json
-      if (window.sketchup && typeof sketchup.save_hotkeys === 'function') {
-        sketchup.save_hotkeys(JSON.stringify(hotkeys));
-      }
-      e.target.value = combo;
-      stopRecording(e.target);
-      showToast('Shortcut ' + combo + ' disimpan');
-    }
-
-    function clearHotkey(id) {
-      var hotkeys = loadHotkeys();
-      hotkeys.forEach(function (h) { if (h.id === id) h.key = ''; });
-      saveHotkeys(hotkeys);
-      if (window.sketchup && typeof sketchup.save_hotkeys === 'function') {
-        sketchup.save_hotkeys(JSON.stringify(hotkeys));
-      }
-      renderHotkeyList();
-      showToast('Shortcut dihapus');
     }
 
     /* ═══════════════════════════════════════════════
@@ -1433,11 +1220,10 @@
       document.body.appendChild(ov);
     }
 
-    /* Escape menutup hotkey panel, language panel, atau about overlay */
+    /* Escape menutup language panel, atau about overlay */
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
       if (document.getElementById('aboutOverlay').classList.contains('open')) { closeAbout(); return; }
-      if (document.getElementById('hotkeyPanel').classList.contains('open')) { closeHotkeyPanel(); return; }
       if (document.getElementById('languagePanel') && document.getElementById('languagePanel').classList.contains('open')) { closeLanguagePanel(); return; }
       closeSettingsMenu();
     });

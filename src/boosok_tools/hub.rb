@@ -1,7 +1,6 @@
 require 'sketchup'
 require 'json'
 Sketchup.require 'boosok_tools/ruby/titlebar'
-Sketchup.require 'boosok_tools/ruby/shortcut_sync'
 Sketchup.require 'boosok_tools/license'
 Sketchup.require 'boosok_tools/ruby/locale'
 
@@ -388,65 +387,6 @@ module BoosokTools
         BoosokTools::Updater.download_inline(dlg)
       end
 
-      dlg.add_action_callback("get_hotkeys") do |_ctx|
-        begin
-          shortcuts = BoosokTools::ShortcutSync.get_all_shortcuts
-          dlg.execute_script("if (typeof onHotkeysLoaded === 'function') onHotkeysLoaded(#{shortcuts.to_json});")
-        rescue => e
-          puts "[Boosok Hub] get_hotkeys error: #{e.message}"
-        end
-      end
-
-      dlg.add_action_callback("save_hotkeys") do |_ctx, hotkeys_json|
-        begin
-          data = JSON.parse(hotkeys_json) rescue {}
-          clean_hash = {}
-          if data.is_a?(Array)
-            data.each { |item| clean_hash[item['id']] = item['key'] }
-          elsif data.is_a?(Hash)
-            clean_hash = data
-          end
-
-          success = BoosokTools::ShortcutSync.save_shortcuts_to_file(clean_hash)
-          dat_path = BoosokTools::ShortcutSync.generate_dat_file(clean_hash)
-          dlg.execute_script("if (typeof onHotkeysSaved === 'function') onHotkeysSaved(#{success.to_json}, #{dat_path.to_json});")
-        rescue => e
-          puts "[Boosok Hub] save_hotkeys error: #{e.message}"
-          dlg.execute_script("if (typeof onHotkeysSaved === 'function') onHotkeysSaved(false, #{e.message.to_json});")
-        end
-      end
-
-      dlg.add_action_callback("apply_hotkeys_to_sketchup") do |_ctx, hotkeys_json|
-        begin
-          data = JSON.parse(hotkeys_json) rescue {}
-          clean_hash = {}
-          if data.is_a?(Array)
-            data.each { |item| clean_hash[item['id']] = item['key'] }
-          elsif data.is_a?(Hash)
-            clean_hash = data
-          end
-
-          dat_path = BoosokTools::ShortcutSync.apply_to_sketchup(clean_hash)
-          dlg.execute_script("if (typeof onHotkeysApplied === 'function') onHotkeysApplied(true, #{dat_path.to_json});")
-        rescue => e
-          puts "[Boosok Hub] apply_hotkeys_to_sketchup error: #{e.message}"
-          dlg.execute_script("if (typeof onHotkeysApplied === 'function') onHotkeysApplied(false, #{e.message.to_json});")
-        end
-      end
-
-      dlg.add_action_callback("open_shortcut_prefs") do |_ctx|
-        # Buka SketchUp Preferences > Shortcuts
-        begin
-          if UI.respond_to?(:show_preferences)
-            UI.show_preferences('Shortcuts') rescue UI.show_preferences
-          else
-            Sketchup.send_action("showPreferences:") rescue Sketchup.send_action(21022) rescue nil
-          end
-        rescue => e
-          puts "[Boosok Hub] open_shortcut_prefs error: #{e.message}"
-        end
-      end
-
       # ── Lisensi Callbacks ──────────────────────────────
       dlg.add_action_callback("get_license_status") do |_ctx|
         begin
@@ -610,7 +550,6 @@ module BoosokTools
         version: BoosokTools::PLUGIN_VERSION,
         theme: Sketchup.read_default("BoosokTools", "theme", "").to_s,
         language: cur_lang,
-        hotkeys: (BoosokTools::ShortcutSync.get_all_shortcuts rescue {}),
         license: lic_st,
         free_tools: FREE_TOOLS,
         stats: model_stats(model)

@@ -1,9 +1,0 @@
-[Accelerator]
-Count=7
-0 0 1 T Extensions/Boosok Tools/Selector
-0 0 1 R Extensions/Boosok Tools/Replacer
-1 0 1 G Extensions/Boosok Tools/Cleaner
-1 0 1 R Extensions/Boosok Tools/Reset Scale
-0 0 0 H Extensions/Boosok Tools/Hide Scene
-1 0 1 U Extensions/Boosok Tools/Untag
-0 0 1 B Extensions/Boosok Tools/Buka Hub

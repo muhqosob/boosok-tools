@@ -56,9 +56,6 @@
         </svg>
       </button>
       <div class="settings-menu" id="settingsMenu" role="menu">
-        <button role="menuitem" onclick="openHotkeyPanel()"><svg>
-            <use href="#i-key-round" />
-          </svg><span id="menuHkLabel">Hotkey</span></button>
         <button role="menuitem" onclick="openLanguagePanel()"><svg>
             <use href="#i-languages" />
           </svg><span id="menuLangLabel">Bahasa</span></button>
@@ -70,68 +67,6 @@
   </header>
 
   <main id="app" aria-live="polite"></main>
-
-  <!-- ════════════════════════════════════════════
-       Hotkey Panel (slide-up sheet)
-  ═══════════════════════════════════════════════ -->
-  <div id="hotkeyPanel" role="dialog" aria-modal="true" aria-label="Pengaturan Hotkey">
-    <div style="position:absolute;inset:0;" onclick="closeHotkeyPanel()"></div>
-    <div id="hotkeySheet">
-      <div class="hk-head">
-        <div class="hk-ic"><svg>
-            <use href="#i-key-round" />
-          </svg></div>
-        <span class="hk-title">Hotkey</span>
-        <button class="hk-close" onclick="closeHotkeyPanel()" title="Tutup">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      </div>
-      <div class="hk-list" id="hkList"></div>
-      <div class="hk-footer">
-        <div
-          style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:10.5px;line-height:1.45;color:var(--muted);">
-          <div style="font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:3px;color:var(--accent);">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="16" x2="12" y2="12" />
-              <line x1="12" y1="8" x2="12.01" y2="8" />
-            </svg>
-            <span style="color:var(--ink);">Cara Terapkan ke SketchUp:</span>
-          </div>
-          1. Klik tombol <b>Import...</b> di jendela Preferences.<br>
-          2. Pilih file <b>BoosokTools_Shortcuts.dat</b> di <b>Desktop</b>.<br>
-          3. Klik <b>Open</b> &rarr; Semua shortcut langsung aktif!
-        </div>
-        <div style="display:flex;gap:6px;margin-top:6px;">
-          <button class="btn primary" id="btnApplyHk" style="flex:1;font-size:11px;height:32px;"
-            onclick="applyHotkeysToSketchUp(this)">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            <span>Terapkan di SketchUp</span>
-          </button>
-          <button class="btn ghost" style="font-size:11px;height:32px;padding:0 10px;" onclick="openSketchUpShortcuts()"
-            title="Buka Preferences Shortcuts SketchUp">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px">
-              <circle cx="12" cy="12" r="3" />
-              <path
-                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-            <span>Preferences</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- ════════════════════════════════════════════
        Language Panel (slide-up sheet)

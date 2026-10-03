@@ -17,7 +17,7 @@ module BoosokTools
     IGNORE     = %w[session.js strings.js].freeze unless defined?(IGNORE)
     SKIP_RELOAD = %w[bootstrap.rb dev_reload.rb].freeze unless defined?(SKIP_RELOAD)
     # Urutan penting: pondasi dulu, baru yang bergantung padanya
-    CORE_ORDER = %w[ruby/titlebar.rb ruby/locale.rb updater.rb ruby/shortcut_sync.rb license.rb hub.rb].freeze unless defined?(CORE_ORDER)
+    CORE_ORDER = %w[ruby/titlebar.rb ruby/locale.rb updater.rb license.rb hub.rb].freeze unless defined?(CORE_ORDER)
     INTERVAL   = 1.0 unless defined?(INTERVAL)
 
     @timer    = nil
