@@ -221,6 +221,8 @@
     "lic_err_network": "Tidak bisa terhubung ke server lisensi. Periksa koneksi internet lalu coba lagi.",
     "lic_err_bad_response": "Jawaban server tidak valid. Coba lagi nanti.",
     "lic_err_invalid": "Key tidak valid.",
+    "about_reg_name": "Nama terdaftar",
+    "about_reg_phone": "Nomor HP terdaftar",
     "about_enter_key": "Masukkan Lisensi Key",
     "about_activate": "Aktifkan Lisensi",
     "about_remove_lic": "Hapus Aktivasi",

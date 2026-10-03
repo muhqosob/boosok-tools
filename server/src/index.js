@@ -50,9 +50,9 @@ async function signingKey(env) {
   return cachedKey;
 }
 
-async function makeToken(env, key, hwid, used, max) {
+async function makeToken(env, key, hwid, used, max, name, phone) {
   const now = Math.floor(Date.now() / 1000);
-  const payload = JSON.stringify({ v: 1, k: key, hw: hwid, iat: now, exp: now + GRACE_DAYS * 86400, used: used, max: max });
+  const payload = JSON.stringify({ v: 1, k: key, hw: hwid, iat: now, exp: now + GRACE_DAYS * 86400, used: used, max: max, nm: name || '', ph: phone || '' });
   const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', await signingKey(env), new TextEncoder().encode(payload));
   return { payload: payload, sig: bytesToB64(sig) };
 }
@@ -92,7 +92,7 @@ async function handleClient(path, request, env) {
   const hwid = normHw(body.hwid);
   if (!key || !hwid) return json({ ok: false, error: 'bad_request' }, 400);
 
-  const row = await env.DB.prepare('SELECT key, max_devices, revoked FROM keys WHERE key = ?').bind(key).first();
+  const row = await env.DB.prepare('SELECT key, max_devices, revoked, name, phone FROM keys WHERE key = ?').bind(key).first();
   if (!row) return json({ ok: false, error: 'invalid_key' }, 404);
   if (row.revoked) return json({ ok: false, error: 'revoked' }, 403);
 
@@ -108,7 +108,7 @@ async function handleClient(path, request, env) {
     if (!bound) return json({ ok: false, error: 'not_bound' }, 403);
     await env.DB.prepare('UPDATE devices SET last_seen = ? WHERE key = ? AND hwid = ?').bind(now, key, hwid).run();
     const used = await deviceCount(env, key);
-    return json({ ok: true, token: await makeToken(env, key, hwid, used, row.max_devices) });
+    return json({ ok: true, token: await makeToken(env, key, hwid, used, row.max_devices, row.name, row.phone) });
   }
 
   // /activate
@@ -120,7 +120,7 @@ async function handleClient(path, request, env) {
     await env.DB.prepare('UPDATE devices SET last_seen = ? WHERE key = ? AND hwid = ?').bind(now, key, hwid).run();
   }
   const used = await deviceCount(env, key);
-  return json({ ok: true, token: await makeToken(env, key, hwid, used, row.max_devices) });
+  return json({ ok: true, token: await makeToken(env, key, hwid, used, row.max_devices, row.name, row.phone) });
 }
 
 // ── Update plugin (file .rbz disimpan di Workers KV) ──

@@ -106,6 +106,10 @@
       if (licNoticeSuffix) licNoticeSuffix.textContent = ht('about_send_hwid_suffix', 'untuk mendapatkan lisensi key. Harga = Rp25.000.');
       var licMailLink = document.getElementById('licMailLink');
       if (licMailLink) licMailLink.title = ht('about_open_wa', 'Buka WhatsApp');
+      var abLblRegName = document.getElementById('aboutLblRegName');
+      if (abLblRegName) abLblRegName.textContent = ht('about_reg_name', 'Nama terdaftar');
+      var abLblRegPhone = document.getElementById('aboutLblRegPhone');
+      if (abLblRegPhone) abLblRegPhone.textContent = ht('about_reg_phone', 'Nomor HP terdaftar');
       var abLblEnterKey = document.getElementById('aboutLblEnterKey');
       if (abLblEnterKey) abLblEnterKey.textContent = ht('about_enter_key', 'Masukkan Lisensi Key');
       var licActText = document.getElementById('licActivateBtnText');
@@ -1125,6 +1129,16 @@
       document.getElementById('aboutOverlay').classList.remove('open');
     }
 
+    // Nomor HP disamarkan di tampilan: 081234567890 -> 0812-****-7890
+    function maskPhone(p) {
+      var raw = String(p || '').trim();
+      if (!raw) return '';
+      var plus = raw.charAt(0) === '+' ? '+' : '';
+      var d = raw.replace(/[^0-9]/g, '');
+      if (d.length < 8) return plus + d.charAt(0) + '***';
+      return plus + d.slice(0, 4) + '-****-' + d.slice(-4);
+    }
+
     // Dipanggil oleh Ruby setelah get_license_status
     function onLicenseStatus(st) {
       var badge = document.getElementById('licBadge');
@@ -1154,6 +1168,15 @@
       }
 
       var isActive = (st.status === 'active');
+      // Nama & nomor HP terdaftar di server (hanya saat aktif dan datanya ada)
+      [['licNameRow', 'licNameVal', st.name], ['licPhoneRow', 'licPhoneVal', maskPhone(st.phone)]].forEach(function (r) {
+        var row = document.getElementById(r[0]), val = document.getElementById(r[1]);
+        if (!row || !val) return;
+        var txt = isActive ? String(r[2] || '').trim() : '';
+        val.textContent = txt;
+        val.title = txt;
+        row.style.display = txt ? 'flex' : 'none';
+      });
       if (isActive) {
         badge.textContent = ht('lic_active', '✓ AKTIF');
         badge.style.background = 'var(--ok-soft, #e6f9ee)';

@@ -317,7 +317,9 @@ module BoosokTools
       return unless online_configured? && saved_mode == "online" && !saved_key.empty? && !@refreshing
 
       last = Sketchup.read_default(PREF_SECT, PREF_CHECKED, "").to_i
-      return if last > 0 && (Time.now.to_i - last) < REFRESH_INTERVAL
+      # Token dari versi server lama belum memuat nama / nomor HP terdaftar: perbarui segera
+      stale = (p = saved_payload) && !p.key?("nm")
+      return if !stale && last > 0 && (Time.now.to_i - last) < REFRESH_INTERVAL
 
       @refreshing = true
       key = saved_key
@@ -506,6 +508,8 @@ module BoosokTools
         mode:        saved_mode,
         grace_days:  (saved_mode == "online" && is_valid && saved_payload ? [((saved_payload["exp"].to_i - Time.now.to_i) / 86400.0).ceil, 0].max : nil),
         devices:     (saved_mode == "online" && saved_payload ? { used: saved_payload["used"], max: saved_payload["max"] } : nil),
+        name:        (saved_mode == "online" && is_valid && saved_payload ? saved_payload["nm"].to_s : ""),
+        phone:       (saved_mode == "online" && is_valid && saved_payload ? saved_payload["ph"].to_s : ""),
         status:      st_code,
         days_left:   (rem_sec > 0 ? (rem_sec / 86400.0).ceil : 0),
         mins_left:   mins_left,

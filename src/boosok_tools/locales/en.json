@@ -221,6 +221,8 @@
     "lic_err_network": "Cannot reach the license server. Check your internet connection and try again.",
     "lic_err_bad_response": "Invalid server response. Try again later.",
     "lic_err_invalid": "Invalid key.",
+    "about_reg_name": "Registered name",
+    "about_reg_phone": "Registered phone",
     "about_enter_key": "Enter License Key",
     "about_activate": "Activate License",
     "about_remove_lic": "Remove Activation",

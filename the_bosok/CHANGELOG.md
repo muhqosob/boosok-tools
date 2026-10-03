@@ -5,6 +5,18 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.7.1] — 2026-10-03
+
+### ✨ Fitur Baru
+
+- **Dialog Tentang** menampilkan nama dan nomor HP terdaftar di server (nomor HP disamarkan).
+
+### 🔧 Perbaikan
+
+- Perbaikan sistem lisensi dan update lewat server.
+
+---
+
 ## [1.7.0] — 2026-10-03
 
 ### ✨ Fitur Baru
