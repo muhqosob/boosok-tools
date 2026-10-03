@@ -277,6 +277,7 @@ input[type="checkbox"] { accent-color: var(--dark-gray); }
 
 /* Notif modal — overlay centered untuk pesan error / sukses dengan tombol OK */
 #notif-overlay {
+  z-index: 200; /* di atas panel Tentang (95), update panel, dan overlay lain di hub */
   align-items: center;
   justify-content: center;
   padding: 16px;
@@ -986,3 +987,21 @@ input[type="checkbox"] { accent-color: var(--dark-gray); }
 
 /* Empty state */
 .dp-empty { padding: 24px 16px; text-align: center; color: var(--muted); font-size: 12px; }
+
+/* Deep Properties: pemilih material pengganti */
+.dp-swap svg { width: 14px; height: 14px; }
+.dp-mat-pop {
+  position: fixed; z-index: 1000; display: flex; flex-direction: column; gap: 6px; padding: 8px;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.18);
+}
+.dp-mat-search { height: 30px; font-size: 12px; }
+.dp-mat-list { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.dp-mat-item {
+  display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 6px; cursor: pointer;
+  font-size: 12px; user-select: none;
+}
+.dp-mat-item:hover { background: var(--accent-soft); }
+.dp-mat-sw { width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--line-strong); flex-shrink: 0; }
+.dp-mat-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dp-mat-empty { padding: 10px 6px; color: var(--muted); font-size: 12px; text-align: center; }

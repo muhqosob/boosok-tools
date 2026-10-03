@@ -1,4 +1,4 @@
-Sketchup.require 'boosok_tools/locale' unless defined?(::BoosokTools::Locale)
+Sketchup.require 'boosok_tools/ruby/locale' unless defined?(::BoosokTools::Locale)
 
 module BoosokTools::SelectTool
   class DrawHandler
@@ -118,15 +118,13 @@ module BoosokTools::SelectTool
     def draw_centered_text(view, y, text, size: 10, bold: false, color: nil)
       return if text.nil? || text.empty?
 
-      # Estimasi lebar piksel karakter font Segoe UI
-      char_w = case size
-               when 12 then bold ? 8.2 : 7.0
-               when 10 then bold ? 6.8 : 5.8
-               when 9  then bold ? 6.0 : 5.0
-               else 5.5
-               end
-      text_w = text.length * char_w
-      x = (view.vpwidth - text_w) / 2.0 
+      # Lebar teks sebenarnya lewat View#text_bounds (perkiraan per karakter kalau tidak tersedia)
+      text_w = begin
+        view.text_bounds(Geom::Point3d.new(0, 0, 0), text, font: "Segoe UI", size: size, bold: bold).width
+      rescue StandardError
+        text.length * size * (bold ? 0.62 : 0.56)
+      end
+      x = (view.vpwidth - text_w) / 2.0
       view.draw_text(Geom::Point3d.new(x, y, 0), text, color: color, font: "Segoe UI", size: size, bold: bold)
     end
 
@@ -135,28 +133,37 @@ module BoosokTools::SelectTool
     end
 
     def draw_hud_instructions(view)
-      bottom_y = view.vpheight - 70
-
       path = @tool.respond_to?(:valid_hover_path) ? @tool.valid_hover_path : @tool.hover_path
       is_hovering = path && !path.empty?
 
+      # Ukuran subtitle disamakan dengan Slice (judul 14, baris 12, baris kecil 11), rata bawah menurut jumlah baris
+      dragging = @tool.respond_to?(:area_dragging?) && @tool.area_dragging?
+      rows = is_hovering && !dragging ? 2 : 1
+      bottom_y = view.vpheight - 22 - (24 + (rows * 20))
+
       # Judul Center Sempurna
       title = loc('cs_title', 'SELECT TOOL')
-      draw_centered_text(view, bottom_y, title, size: 12, bold: true, color: Sketchup::Color.new(24, 24, 27))
+      draw_centered_text(view, bottom_y, title, size: 14, bold: true, color: Sketchup::Color.new(24, 24, 27))
 
       # Subtitle 1 Center Sempurna
-      sub1 = if is_hovering
-               loc('cs_sub1_hover', 'Klik untuk seleksi Level | Tahan klik & seret untuk geser')
+      sub1 = if dragging
+               if @tool.area_window?
+                 loc('cs_sub1_window', 'Window: hanya objek yang seluruhnya di dalam kotak | Seret ke kiri untuk Crossing')
+               else
+                 loc('cs_sub1_crossing', 'Crossing: semua objek yang tersentuh kotak | Seret ke kanan untuk Window')
+               end
+             elsif is_hovering
+               loc('cs_sub1_hover', 'Klik untuk seleksi Level | Tahan klik & seret untuk seleksi area')
              else
-               loc('cs_sub1_exit', 'ESC : Exit')
+               loc('cs_sub1_exit', 'Tahan klik & seret: seleksi area | ESC : Exit')
              end
-      draw_centered_text(view, bottom_y + 18, sub1, size: 10, bold: false, color: Sketchup::Color.new(70, 70, 75))
+      draw_centered_text(view, bottom_y + 26, sub1, size: 12, bold: false, color: Sketchup::Color.new(60, 60, 66))
 
       # Subtitle 2 Center Sempurna
-      sub2 = if is_hovering
+      sub2 = if is_hovering && !dragging
                loc('cs_sub2_hover', '(Tahan) CTRL + Scroll: Untuk ubah kedalaman Level grup | ESC: Exit')
              end
-      draw_centered_text(view, bottom_y + 35, sub2, size: 9, bold: false, color: Sketchup::Color.new(120, 120, 130))
+      draw_centered_text(view, bottom_y + 46, sub2, size: 11, bold: false, color: Sketchup::Color.new(105, 105, 115))
     rescue
       # Safe fallback
     end

@@ -1,4 +1,4 @@
-Sketchup.require 'boosok_tools/titlebar'
+Sketchup.require 'boosok_tools/ruby/titlebar'
 
 module BoosokTools::TheReplacer
   @old_items  ||= []

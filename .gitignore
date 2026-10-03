@@ -5,3 +5,15 @@
 # Dibuat otomatis oleh plugin dari locales/*.json (BoosokTools::Locale.export_js)
 src/boosok_tools/js/strings.js
 src/boosok_tools/js/strings.js.tmp
+
+# Server lisensi: rahasia JANGAN pernah di-commit
+server/.secrets/
+server/node_modules/
+server/.wrangler/
+server/.dev.vars
+tools/keygen/
+tools/license-admin.config.json
+
+# Hasil build update (.rbz)
+dist/
+tools/keygen.rb

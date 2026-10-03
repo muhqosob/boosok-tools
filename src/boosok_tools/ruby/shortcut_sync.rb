@@ -14,7 +14,11 @@ module BoosokTools
       'reset'         => { label: 'Reset Scale',  path: 'Extensions/Boosok Tools/Reset Scale',  legacy: ['Extensions/Boosok Tools/Reset The Group Scale'] },
       'scene'         => { label: 'Hide Scene',   path: 'Extensions/Boosok Tools/Hide Scene',   legacy: ['Extensions/Boosok Tools/Hide on Scene Manager'] },
       'untag'         => { label: 'Untag',        path: 'Extensions/Boosok Tools/Untag',        legacy: ['Extensions/Boosok Tools/Untag and Paint'] },
-      'deep'          => { label: 'Deep Props',   path: 'Extensions/Boosok Tools/Deep Props',   legacy: [] }
+      'deep'          => { label: 'Deep Props',   path: 'Extensions/Boosok Tools/Deep Props',   legacy: [] },
+      'purge'         => { label: 'Purge',        path: 'Extensions/Boosok Tools/Purge',        legacy: [] },
+      'void'          => { label: 'Void',         path: 'Extensions/Boosok Tools/Void',         legacy: [] },
+      'slice'         => { label: 'Slice',        path: 'Extensions/Boosok Tools/Slice',        legacy: [] },
+      'trowel'        => { label: 'Trowel',       path: 'Extensions/Boosok Tools/Trowel',       legacy: [] }
     }.freeze
 
     class << self

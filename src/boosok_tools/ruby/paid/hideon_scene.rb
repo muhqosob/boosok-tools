@@ -1,7 +1,7 @@
 module BoosokTools::HideOnSceneManager
   require 'json'
   require 'set'
-  Sketchup.require 'boosok_tools/titlebar'
+  Sketchup.require 'boosok_tools/ruby/titlebar'
 
   class PagesObserver < Sketchup::PagesObserver
     def onElementAdded(*args)
@@ -215,23 +215,28 @@ module BoosokTools::HideOnSceneManager
     dlg.execute_script("if (typeof init === 'function') init(#{data.to_json});")
   end
 
-  def self.is_component_or_dc?(ent)
-    return false unless ent
+  ISOLATE_DICT = 'BoosokTools_Isolate'.freeze unless defined?(ISOLATE_DICT)
 
-    # 1. Seluruh ComponentInstance adalah component (termasuk Dynamic Component)
-    return true if ent.is_a?(Sketchup::ComponentInstance)
-
-    # 2. Cek apakah Group merupakan Dynamic Component
-    if ent.is_a?(Sketchup::Group)
-      return true if ent.attribute_dictionary('dynamic_attributes')
-
-      defn = ent.respond_to?(:definition) ? ent.definition : (ent.entities.parent rescue nil)
-      return true if defn && defn.attribute_dictionary('dynamic_attributes')
-    end
-
-    false
+  # Kunci penyimpanan per scene (tanpa scene aktif = 'model'). Disimpan di attribute dictionary model
+  # supaya ikut tersimpan di file, dan ikut ter-undo bersama operasi isolate.
+  def self.isolate_key(page)
+    page ? "page_#{page.persistent_id}" : 'model'
   end
 
+  def self.load_isolated_ids(model, key)
+    model.get_attribute(ISOLATE_DICT, key, '').to_s.split(',').map(&:to_i)
+  end
+
+  def self.save_isolated_ids(model, key, ids)
+    if ids.empty?
+      dict = model.attribute_dictionary(ISOLATE_DICT)
+      dict.delete_key(key) if dict && dict.keys.include?(key)
+    else
+      model.set_attribute(ISOLATE_DICT, key, ids.uniq.join(','))
+    end
+  end
+
+  # End Isolate: hanya menampilkan kembali objek yang disembunyikan oleh Isolate (bukan semua yang hidden).
   def self.execute_end_isolate(dialog = nil)
     dlg = dialog || @dialog || (defined?(BoosokTools) && BoosokTools.dialog)
     model = Sketchup.active_model
@@ -241,42 +246,35 @@ module BoosokTools::HideOnSceneManager
     end
 
     page = model.pages.selected_page
-    model.start_operation("End Isolate (Unhide All)", true)
+    key = isolate_key(page)
+    ids = load_isolated_ids(model, key)
+    nama_scene = page ? page.name : "Model Global"
+
+    if ids.empty?
+      if dlg
+        dlg.execute_script("resetIsolateBtn();")
+        dlg.execute_script("showToast(#{("Tidak ada data isolate di: " + nama_scene).to_json}, 'error');")
+      end
+      return
+    end
+
+    model.start_operation("End Isolate", true)
     begin
-      if page
-        page.use_hidden_objects = true if page.respond_to?(:use_hidden_objects=)
-        page.use_hidden_geometry = true if page.respond_to?(:use_hidden_geometry=)
-        page.use_hidden = true if page.respond_to?(:use_hidden=)
+      restored = 0
+      ids.each do |id|
+        ent = model.find_entity_by_persistent_id(id)
+        next unless ent && ent.valid? && ent.is_a?(Sketchup::Drawingelement)
+
+        page.set_drawingelement_visibility(ent, true) if page
+        ent.hidden = false if ent.hidden?
+        restored += 1
       end
-
-      # 1. Tampilkan semua objek pada tingkat root dan rekursif masuk ke dalam grup biasa.
-      # Skip penelusuran ke dalam jika objek merupakan component / dynamic component,
-      # agar sub-group/bagian internal di dalam component tidak dibuka secara paksa.
-      unhide_recursive = lambda do |entities|
-        entities.each do |ent|
-          next unless ent.is_a?(Sketchup::Drawingelement)
-
-          page.set_drawingelement_visibility(ent, true) if page
-          ent.hidden = false if ent.hidden?
-
-          # Jika objek adalah Component atau Dynamic Component,
-          # skip kedalamannya (jangan buka group dalam group di dalamnya)
-          next if is_component_or_dc?(ent)
-
-          # Jika grup biasa, telusuri kedalaman grup di dalamnya
-          if ent.is_a?(Sketchup::Group)
-            unhide_recursive.call(ent.entities)
-          end
-        end
-      end
-
-      unhide_recursive.call(model.entities) # rubocop:disable SketchupSuggestions/ModelEntities -- harus mulai dari root model
+      save_isolated_ids(model, key, [])
 
       model.commit_operation
       if dlg
         dlg.execute_script("resetIsolateBtn();")
-        nama_scene = page ? page.name : "Model Global"
-        dlg.execute_script("showToast(#{("Sukses menampilkan semua objek di: " + nama_scene).to_json}, 'success');")
+        dlg.execute_script("showToast(#{("Mengembalikan #{restored} objek di: " + nama_scene).to_json}, 'success');")
       end
     rescue => e
       model.abort_operation
@@ -359,6 +357,11 @@ module BoosokTools::HideOnSceneManager
           end
         end
 
+        # Catat objek yang disembunyikan OLEH isolate ini (yang sebelumnya sudah hidden tidak dicatat),
+        # supaya End Isolate hanya mengembalikan objek-objek tersebut.
+        isolate_key_now = isolate_key(page)
+        hidden_by_isolate = load_isolated_ids(model, isolate_key_now)
+
         # ALGORITMA PEMINDAI HIRARKI (Recursive Scanner):
         isolate_recursive = nil
         isolate_recursive = lambda do |entities|
@@ -390,6 +393,7 @@ module BoosokTools::HideOnSceneManager
               end
             else
               # Jika bukan objek yang dipilih & bukan grup induknya, Sembunyikan (Hide)
+              hidden_by_isolate << ent.persistent_id unless ent.hidden?
               if page
                 page.set_drawingelement_visibility(ent, false)
                 ent.hidden = true # UPDATE VIEWPORT SECARA INSTAN!
@@ -402,6 +406,7 @@ module BoosokTools::HideOnSceneManager
 
         # Eksekusi scan dimulai dari entitas paling atas
         isolate_recursive.call(model.entities) # rubocop:disable SketchupSuggestions/ModelEntities -- harus mulai dari root model
+        save_isolated_ids(model, isolate_key_now, hidden_by_isolate)
 
         model.commit_operation
         dialog.execute_script("resetIsolateBtn();")

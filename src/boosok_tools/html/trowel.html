@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Trowel</title>
+  <link rel="stylesheet" href="../css/ui.css">
+  <script src="../js/strings.js"></script>
+  <script src="../js/locale.js"></script>
+  <style>
+    .opt { display: flex; flex-direction: column; gap: 6px; }
+    .opt .seg button { flex: 1; }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+  <script src="../js/ui.js"></script>
+
+  <header class="head">
+    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()" data-i18n-title="back_to_hub" data-i18n-aria="back_aria"><svg><use href="#i-arrow-left"/></svg></button>
+    <div class="mark"><svg><use href="#i-shovel"/></svg></div>
+    <div class="txt">
+      <h1 data-i18n="trowel_title">Trowel</h1>
+      <p data-i18n="trowel_sub">Push/Pull &amp; Offset di dalam group tanpa membukanya</p>
+    </div>
+    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema" data-i18n-title="theme_toggle" data-i18n-aria="theme_toggle"></button>
+  </header>
+
+  <section class="step active" id="step1">
+    <div class="opt">
+      <label class="label" data-i18n="trowel_output">Hasil</label>
+      <div class="seg h34" id="segOutput" role="tablist">
+        <button role="tab" aria-selected="true" data-v="inplace" data-i18n="trowel_out_in">Dalam group</button>
+        <button role="tab" aria-selected="false" data-v="newgroup" data-i18n="trowel_out_new">Group baru</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cap" data-i18n="scene_workflow">Alur kerja</div>
+      <ul class="steps">
+        <li>
+          <div class="ic"><svg><use href="#i-mouse-pointer-click"/></svg></div>
+          <div><div class="t" data-i18n="trowel_s1_t">Arahkan ke face atau edge lalu klik</div><div class="s" data-i18n="trowel_s1_s">Face = Push/Pull, edge = Offset. Bisa di dalam group atau component tersarang, tanpa membukanya</div></div>
+        </li>
+        <li>
+          <div class="ic"><svg><use href="#i-spline"/></svg></div>
+          <div><div class="t" data-i18n="trowel_s2_t">Gerakkan mouse atau ketik jarak</div><div class="s" data-i18n="trowel_s2_s">Lalu klik lagi (atau Enter) untuk menerapkan</div></div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="note"><svg><use href="#i-info"/></svg><span id="outHint"></span></div>
+
+    <div class="spacer"></div>
+    <div class="actions">
+      <button class="btn primary" id="btnStart" onclick="doStart()">
+        <svg><use href="#i-shovel"/></svg><span data-i18n="trowel_start">Mulai Trowel</span>
+      </button>
+    </div>
+  </section>
+
+  <script>
+    var $ = function (id) { return document.getElementById(id); };
+    var opts = { output: 'inplace' };
+
+    function selected(segId) { return $(segId).querySelector('[aria-selected="true"]').dataset.v; }
+    function setSeg(segId, value) {
+      $(segId).querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.v === value); });
+    }
+
+    function refresh() {
+      $('outHint').textContent = opts.output === 'newgroup'
+        ? t('trowel_hint_new', 'Geometri asli tidak berubah; hasilnya dibuat sebagai group baru di konteks aktif.')
+        : t('trowel_hint_in', 'Geometri di dalam group diubah langsung. Component yang punya banyak salinan ikut berubah semuanya.');
+      autoFitHeight(0);
+    }
+
+    function send(name) {
+      if (window.sketchup && typeof sketchup[name] === 'function') sketchup[name](JSON.stringify(opts));
+    }
+
+    ['segOutput'].forEach(function (id) {
+      $(id).addEventListener('click', function (e) {
+        var b = e.target.closest('button');
+        if (!b) return;
+        setSeg(id, b.dataset.v);
+        opts.output = selected('segOutput');
+        refresh();
+        send('trowel_options'); // langsung berlaku di tool yang sedang aktif
+      });
+    });
+
+    function doStart() {
+      if (window.sketchup && typeof sketchup.trowel_start === 'function') {
+        send('trowel_start');
+      } else {
+        showToast(t('trowel_err_notready', 'Fungsi Trowel belum siap.'), 'error');
+      }
+    }
+
+    // ---- Dipanggil dari Ruby ----
+    function init(data) {
+      if (data) {
+        opts.output = data.output === 'newgroup' ? 'newgroup' : 'inplace';
+
+        setSeg('segOutput', opts.output);
+      }
+      refresh();
+    }
+
+    function requestInit() {
+      function tryReady() {
+        if (window.sketchup && typeof sketchup.ready === 'function') { sketchup.ready(); return true; }
+        return false;
+      }
+      if (!tryReady()) {
+        var retries = 0;
+        var iv = setInterval(function () {
+          retries++;
+          if (tryReady() || retries > 30) clearInterval(iv);
+        }, 50);
+      }
+    }
+
+    refresh();
+    requestInit();
+  </script>
+</body>
+</html>

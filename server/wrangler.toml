@@ -1,0 +1,14 @@
+name = "boosok-license"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Isi database_id setelah menjalankan: wrangler d1 create boosok-license
+[[d1_databases]]
+binding = "DB"
+database_name = "boosok-license"
+database_id = "2c982a76-ad4c-432a-9b57-0b0eea407a8f"
+
+# Penyimpanan file update plugin (.rbz): wrangler kv namespace create RELEASES
+[[kv_namespaces]]
+binding = "RELEASES"
+id = "009914e2fa474de59d128b5f70df1d51"

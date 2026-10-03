@@ -35,6 +35,15 @@ Get-ChildItem -Path $src -Recurse -File | ForEach-Object {
     $changed++
 }
 
+# Nama file/folder lama (sebelum rename): hapus dari plugin supaya tidak dimuat dobel oleh auto-reload
+$staleNames = @('main.rb', 'the_cleangroup.rb', 'the_replacer.rb', 'the_reset.rb', 'the_hideonscenemanager.rb', 'the_custom_select.rb', 'custom_select',
+    'cleangroup.rb', 'purge.rb', 'replacer.rb', 'reset.rb', 'selector.rb', 'deep_properties.rb', 'hideon_scene.rb', 'select_tool.rb', 'slice.rb', 'void.rb', 'select_tool',
+    'untagnpaint.rb', 'locale.rb', 'shortcut_sync.rb', 'titlebar.rb', 'bootstrap.rb', 'titlebar.log')
+foreach ($n in $staleNames) {
+    $p = Join-Path $dst $n
+    if (Test-Path $p) { Remove-Item $p -Recurse -Force; Write-Host "  [DEL] $n (nama lama)" -ForegroundColor Yellow }
+}
+
 # File root (registrasi extension + SUPPORT_DIR + load_module) ada di luar folder boosok_tools
 $loaderSrc = Join-Path (Split-Path $src -Parent) "boosok_tools.rb"
 $loaderDst = Join-Path (Split-Path $dst -Parent) "boosok_tools.rb"

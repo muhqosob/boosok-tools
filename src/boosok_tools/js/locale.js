@@ -81,19 +81,19 @@
 
   window.applyPageTranslations = function () {
     document.querySelectorAll('[data-i18n]').forEach(function (el) {
-      var v = window.t(el.getAttribute('data-i18n'));
+      var v = window.t(el.getAttribute('data-i18n'), null); // null: kunci belum ada → pertahankan teks bawaan HTML
       if (v) el.textContent = v;
     });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
-      var v = window.t(el.getAttribute('data-i18n-placeholder'));
+      var v = window.t(el.getAttribute('data-i18n-placeholder'), null);
       if (v) el.placeholder = v;
     });
     document.querySelectorAll('[data-i18n-title]').forEach(function (el) {
-      var v = window.t(el.getAttribute('data-i18n-title'));
+      var v = window.t(el.getAttribute('data-i18n-title'), null);
       if (v) el.title = v;
     });
     document.querySelectorAll('[data-i18n-aria]').forEach(function (el) {
-      var v = window.t(el.getAttribute('data-i18n-aria'));
+      var v = window.t(el.getAttribute('data-i18n-aria'), null);
       if (v) el.setAttribute('aria-label', v);
     });
   };

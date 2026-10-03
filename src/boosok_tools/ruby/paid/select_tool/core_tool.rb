@@ -1,4 +1,4 @@
-Sketchup.require 'boosok_tools/locale' unless defined?(::BoosokTools::Locale)
+Sketchup.require 'boosok_tools/ruby/locale' unless defined?(::BoosokTools::Locale)
 
 module BoosokTools::SelectTool
   class CoreTool
@@ -13,7 +13,7 @@ module BoosokTools::SelectTool
 
       # Load Custom Cursor (panah biru khas Select Tool)
       begin
-        res_dir = File.join(::BoosokTools::SUPPORT_DIR, 'custom_select', 'resources')
+        res_dir = File.join(::BoosokTools::SUPPORT_DIR, 'ruby', 'paid', 'select_tool', 'resources')
         cursor_path     = File.join(res_dir, 'cursor_select.png')
         cursor_add_path = File.join(res_dir, 'cursor_select_add.png')
         @cursor_select_id = UI.create_cursor(cursor_path, 3, 3) if File.exist?(cursor_path)
@@ -28,6 +28,16 @@ module BoosokTools::SelectTool
       @draw_handler   = DrawHandler.new(self)
       @select_handler = SelectHandler.new(self)
       @mouse_handler  = MouseHandler.new(self)
+      @area_handler   = AreaHandler.new(self)
+    end
+
+    # Sedang menyeret kotak seleksi area? (dipakai HUD)
+    def area_dragging?
+      @area_handler.dragging?
+    end
+
+    def area_window?
+      @area_handler.dragging? && @area_handler.window?
     end
 
     def loc(key, fallback)
@@ -83,6 +93,7 @@ module BoosokTools::SelectTool
 
     # Reset state tool ke kondisi bersih
     def reset_state!
+      @area_handler.reset if @area_handler
       @hover_path = []
       @ctrl_pressed = false
       @cursor_x = nil
@@ -164,6 +175,7 @@ module BoosokTools::SelectTool
     # Delegate Callback Events ke Sub-Handlers dengan Fallback on Error
     def draw(view)
       @draw_handler.draw(view)
+      @area_handler.draw(view)
     rescue => e
       # Safe Fallback: Mencegah error viewport loop di SketchUp
       warn "[Select Tool] Fallback on draw error: #{e.message}" if $DEBUG
@@ -178,6 +190,16 @@ module BoosokTools::SelectTool
     end
 
     def onMouseMove(flags, x, y, view)
+      # Tombol kiri ditahan & bergeser: sedang menyeret kotak seleksi → sembunyikan highlight hover
+      if @area_handler.pressed? && @area_handler.move(x, y)
+        @cursor_x = x
+        @cursor_y = y
+        @hover_path = []
+        update_status_bar
+        view.invalidate
+        return
+      end
+
       @mouse_handler.onMouseMove(flags, x, y, view)
     rescue => e
       warn "[Select Tool] Fallback on onMouseMove error: #{e.message}" if $DEBUG
@@ -190,10 +212,28 @@ module BoosokTools::SelectTool
       false
     end
 
+    # Klik tanpa seret = seleksi level seperti biasa (diproses saat tombol dilepas); tahan & seret = seleksi area
     def onLButtonDown(flags, x, y, view)
-      @select_handler.process_selection(flags)
+      @area_handler.press(x, y, flags)
     rescue => e
       warn "[Select Tool] Fallback on onLButtonDown error: #{e.message}" if $DEBUG
+    end
+
+    def onLButtonUp(flags, x, y, view)
+      return unless @area_handler.pressed?
+
+      if @area_handler.dragging?
+        n = @area_handler.select_area(view, flags)
+        mode = @area_handler.window? ? 'Window' : 'Crossing'
+        Sketchup.status_text = loc('cs_status_area', 'Select Tool: %{n} objek terseleksi (%{mode}).').gsub('%{n}', n.to_s).gsub('%{mode}', mode)
+      else
+        @select_handler.process_selection(@area_handler.down_flags)
+      end
+      @area_handler.reset
+      view.invalidate
+    rescue => e
+      @area_handler.reset
+      warn "[Select Tool] Fallback on onLButtonUp error: #{e.message}" if $DEBUG
     end
 
     def onKeyDown(key, repeat, flags, view)
@@ -201,8 +241,13 @@ module BoosokTools::SelectTool
         @ctrl_pressed = true
         onSetCursor
         view.invalidate rescue nil
-      elsif key == 27 # ESC key: keluar dari select tool
-        Sketchup.active_model.select_tool(nil) rescue nil
+      elsif key == 27 # ESC: batalkan seret kotak kalau sedang menyeret, selain itu keluar dari select tool
+        if @area_handler.pressed?
+          @area_handler.reset
+          view.invalidate rescue nil
+        else
+          Sketchup.active_model.select_tool(nil) rescue nil
+        end
       end
     rescue => e
       warn "[Select Tool] Fallback on onKeyDown error: #{e.message}" if $DEBUG

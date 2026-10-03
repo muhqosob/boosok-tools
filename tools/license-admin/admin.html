@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boosok License Admin</title>
+<!--
+  Panel admin server lisensi Boosok Tools. PRIBADI: jangan dibagikan. Satu file mandiri, buka dengan klik dua kali.
+  Isi "Alamat server" (hasil wrangler deploy) dan "Token admin" (isi file server/.secrets/admin_token.txt).
+  Keduanya hanya disimpan di browser ini (localStorage). Folder ini bebas dipindahkan.
+-->
+<style>
+  :root { --bg:#f7f7f8; --surface:#fff; --line:#e6e6e9; --line-strong:#d4d4d8; --ink:#18181b; --muted:#71717a; --ok:#16a34a; --ok-soft:#ecfdf3; --err:#dc2626; --err-soft:#fef2f2; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#141416; --surface:#1e1e22; --line:#2e2e34; --line-strong:#42424a; --ink:#f4f4f6; --muted:#94949e; --ok:#22c55e; --ok-soft:rgba(34,197,94,.18); --err:#ef4444; --err-soft:rgba(239,68,68,.18); }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 "Segoe UI", system-ui, sans-serif; padding:24px 16px; }
+  .app { max-width:980px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+  h1 { margin:0; font-size:17px; }
+  .sub { color:var(--muted); font-size:12px; margin-top:2px; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:10px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; align-items:end; }
+  label.f { display:flex; flex-direction:column; gap:5px; font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  input, select { height:34px; padding:0 10px; border-radius:8px; border:1px solid var(--line-strong); background:var(--bg); color:var(--ink); font:inherit; font-size:13px; outline:none; width:100%; }
+  input:focus, select:focus { border-color:var(--ink); }
+  button { height:34px; border-radius:8px; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink); font:inherit; font-size:12.5px; font-weight:600; cursor:pointer; padding:0 12px; white-space:nowrap; }
+  button:hover { border-color:var(--ink); }
+  button.primary { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+  button.sm { height:26px; font-size:11.5px; padding:0 9px; }
+  button.danger { color:var(--err); }
+  .newkey { display:none; align-items:center; gap:10px; flex-wrap:wrap; background:var(--ok-soft); border:1px solid var(--ok); border-radius:10px; padding:10px 12px; }
+  .newkey.show { display:flex; }
+  .newkey b { font:700 18px Consolas, monospace; letter-spacing:.07em; color:var(--ok); user-select:all; }
+  .msg { font-size:12px; border-radius:8px; padding:7px 10px; display:none; }
+  .msg.show { display:block; }
+  .msg.err { color:var(--err); background:var(--err-soft); }
+  .msg.ok { color:var(--ok); background:var(--ok-soft); }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th { text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding:6px 8px; border-bottom:1px solid var(--line-strong); }
+  td { padding:8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .mono { font-family:Consolas, monospace; font-size:12.5px; user-select:all; }
+  .dev { display:flex; align-items:center; gap:6px; margin:2px 0; font-size:11.5px; color:var(--muted); }
+  .dev .mono { color:var(--ink); }
+  .tag { display:inline-block; padding:1px 8px; border-radius:99px; font-size:11px; font-weight:700; }
+  .tag.on { background:var(--ok-soft); color:var(--ok); }
+  .tag.off { background:var(--err-soft); color:var(--err); }
+  .acts { display:flex; gap:6px; flex-wrap:wrap; }
+  .empty { color:var(--muted); padding:14px 8px; font-size:12.5px; }
+  .toolbar { display:flex; gap:8px; align-items:center; }
+  .toolbar input { max-width:260px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div>
+    <h1>Boosok License Admin</h1>
+    <div class="sub">Kelola key lisensi, perangkat yang terikat, dan pencabutan.</div>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <label class="f">Alamat server<input id="url" type="text" placeholder="https://boosok-license.xxx.workers.dev" spellcheck="false"></label>
+      <label class="f">Token admin<input id="token" type="password" placeholder="isi dari server/.secrets/admin_token.txt" spellcheck="false"></label>
+      <button id="save" class="primary" type="button">Simpan &amp; muat</button>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <label class="f">Nama pembeli<input id="name" type="text" placeholder="mis. Budi" spellcheck="false"></label>
+      <label class="f">Nomor WhatsApp<input id="phone" type="text" placeholder="mis. 0812-3456-7890" inputmode="tel" spellcheck="false"></label>
+      <label class="f">Batas perangkat
+        <select id="max"><option selected>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+      </label>
+      <button id="create" class="primary" type="button">Buat key baru</button>
+    </div>
+    <div class="newkey" id="newkey">
+      <b id="newkeyVal"></b>
+      <button class="sm" type="button" id="copyNew">Salin key</button>
+      <button class="sm" type="button" id="copyMsg">Salin pesan balasan</button>
+      <button class="sm" type="button" id="sendWa">Kirim via WhatsApp</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="toolbar">
+      <input id="search" type="text" placeholder="Cari key / catatan / Hardware ID" spellcheck="false">
+      <button type="button" id="reload">Muat ulang</button>
+      <span class="sub" id="count"></span>
+    </div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Key</th><th>Pembeli</th><th>Perangkat</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="5" class="empty">Isi alamat server dan token admin, lalu klik "Simpan &amp; muat".</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var LS = function (k, v) { try { if (v === undefined) return localStorage.getItem(k) || ''; localStorage.setItem(k, v); } catch (e) { return ''; } };
+var DATA = [], lastNew = null;
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function show(text, kind) { var m = $('msg'); m.textContent = text || ''; m.className = 'msg' + (text ? ' show ' + (kind || 'err') : ''); }
+function fmt(ts) { if (!ts) return '-'; var d = new Date(ts * 1000); return d.toLocaleDateString('id-ID') + ' ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }); }
+
+function api(method, path, body) {
+  var base = $('url').value.trim().replace(/\/+$/, '');
+  if (!base || !$('token').value) return Promise.reject(new Error('Isi alamat server dan token admin dulu.'));
+  return fetch(base + path, {
+    method: method,
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + $('token').value.trim() },
+    body: body ? JSON.stringify(body) : undefined
+  }).then(function (r) { return r.json().catch(function () { return { ok: false, error: 'bad_response' }; }); })
+    .then(function (j) { if (!j.ok) throw new Error(j.error === 'unauthorized' ? 'Token admin salah.' : (j.error || 'gagal')); return j; });
+}
+function fail(e) { show(e && e.message === 'Failed to fetch' ? 'Tidak bisa terhubung ke server. Periksa alamat server / internet.' : (e.message || String(e)), 'err'); }
+
+function load() {
+  show('');
+  api('GET', '/admin/keys').then(function (j) { DATA = j.keys || []; render(); }).catch(fail);
+}
+
+function render() {
+  var q = $('search').value.toLowerCase().trim();
+  var rows = DATA.filter(function (k) {
+    if (!q) return true;
+    return k.key.toLowerCase().indexOf(q) >= 0 || (k.name || '').toLowerCase().indexOf(q) >= 0 ||
+      (k.phone || '').indexOf(q.replace(/[^0-9+]/g, '') || '\u0000') >= 0 || (k.note || '').toLowerCase().indexOf(q) >= 0 ||
+      k.devices.some(function (d) { return d.hwid.toLowerCase().indexOf(q) >= 0; });
+  });
+  $('count').textContent = rows.length + ' dari ' + DATA.length + ' key';
+  if (!rows.length) { $('rows').innerHTML = '<tr><td colspan="5" class="empty">Belum ada key.</td></tr>'; return; }
+  $('rows').innerHTML = rows.map(function (k, i) {
+    var devs = k.devices.length ? k.devices.map(function (d) {
+      return '<div class="dev"><span class="mono">' + esc(d.hwid) + '</span><span>(terakhir ' + fmt(d.last_seen) + ')</span>' +
+        '<button class="sm danger" data-unbind="' + esc(k.key) + '|' + esc(d.hwid) + '" type="button">Lepas</button></div>';
+    }).join('') : '<span class="sub">belum dipakai</span>';
+    return '<tr><td><span class="mono">' + esc(k.key) + '</span><div class="sub">dibuat ' + fmt(k.created_at) + '</div></td>' +
+      '<td><b>' + esc(k.name || '-') + '</b><div class="sub">' + (k.phone ? '<a href="' + waLink(k.phone, '') + '" target="_blank" rel="noopener" style="color:inherit">' + esc(k.phone) + '</a>' : 'tanpa nomor') + '</div>' +
+        '<div class="acts" style="margin-top:4px"><button class="sm" data-edit="' + esc(k.key) + '" type="button">Ubah</button>' +
+        (k.phone ? '<button class="sm" data-wa="' + esc(k.key) + '" type="button">Kirim via WA</button>' : '') + '</div></td>' +
+      '<td><div class="sub">' + k.devices.length + ' / ' + k.max_devices + ' perangkat</div>' + devs + '</td>' +
+      '<td><span class="tag ' + (k.revoked ? 'off' : 'on') + '">' + (k.revoked ? 'Dicabut' : 'Aktif') + '</span></td>' +
+      '<td><div class="acts"><button class="sm" data-copy="' + esc(k.key) + '" type="button">Salin</button>' +
+      '<button class="sm" data-revoke="' + esc(k.key) + '|' + (k.revoked ? '0' : '1') + '" type="button">' + (k.revoked ? 'Pulihkan' : 'Cabut') + '</button>' +
+      '<button class="sm" data-max="' + esc(k.key) + '|' + k.max_devices + '" type="button">Batas</button></div></td></tr>';
+  }).join('');
+}
+
+// Nomor WhatsApp -> format internasional (0812… -> 62812…)
+function waNumber(p) { var d = String(p || '').replace(/[^0-9]/g, ''); if (d.indexOf('0') === 0) d = '62' + d.slice(1); return d; }
+function waLink(phone, text) { return 'https://wa.me/' + waNumber(phone) + (text ? '?text=' + encodeURIComponent(text) : ''); }
+// Pesan balasan ke pembeli (nama dipakai untuk sapaan kalau diisi)
+function replyText(key, name, max) {
+  return 'Halo' + (name ? ' ' + name : '') + ',\n\n' +
+    'Terima kasih, pembayaran sudah saya terima. Berikut License Key Boosok Tools kamu:\n\n' +
+    '*' + key + '*\n\n' +
+    'Cara aktivasi:\n' +
+    '1. Buka Boosok Tools di SketchUp, klik menu (ikon pengaturan) lalu Tentang.\n' +
+    '2. Isi License Key di atas, lalu klik Aktifkan Lisensi (perlu internet saat aktivasi).\n\n' +
+    'Catatan:\n' +
+    '- Key ini bisa dipakai di maksimal ' + (max || 1) + ' komputer.\n' +
+    '- Kalau pindah komputer, klik Hapus Aktivasi di komputer lama (perlu internet), lalu aktivasi lagi di komputer baru.\n' +
+    '- Kalau komputer lama sudah rusak atau hilang dan tidak bisa Hapus Aktivasi, kabari saya, nanti saya lepaskan dari sini.\n' +
+    '- Simpan key ini baik-baik dan jangan dibagikan ke orang lain.\n\n' +
+    'Kalau ada kendala, kabari saya di chat ini ya. Selamat berkarya!\n\nSalam,\nMuh Qosob';
+}
+
+function copy(text, btn) {
+  function done() { var o = btn.textContent; btn.textContent = 'Tersalin!'; setTimeout(function () { btn.textContent = o; }, 1100); }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fb); else fb();
+  function fb() { var t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch (e) { } document.body.removeChild(t); done(); }
+}
+
+$('rows').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.copy) return copy(b.dataset.copy, b);
+  if (b.dataset.wa) {
+    var kw = DATA.filter(function (x) { return x.key === b.dataset.wa; })[0];
+    if (kw) window.open(waLink(kw.phone, replyText(kw.key, kw.name, kw.max_devices)), '_blank');
+    return;
+  }
+  if (b.dataset.edit) {
+    var ke = DATA.filter(function (x) { return x.key === b.dataset.edit; })[0]; if (!ke) return;
+    var nm = prompt('Nama pembeli:', ke.name || ''); if (nm === null) return;
+    var ph = prompt('Nomor WhatsApp:', ke.phone || ''); if (ph === null) return;
+    api('POST', '/admin/update', { key: ke.key, name: nm.trim(), phone: ph.trim() }).then(load).catch(fail);
+    return;
+  }
+  if (b.dataset.unbind) {
+    var p = b.dataset.unbind.split('|');
+    if (confirm('Lepas perangkat ' + p[1] + ' dari key ini? Perangkat itu harus aktivasi lagi.')) api('POST', '/admin/unbind', { key: p[0], hwid: p[1] }).then(load).catch(fail);
+  }
+  if (b.dataset.revoke) {
+    var r = b.dataset.revoke.split('|'), cabut = r[1] === '1';
+    if (confirm((cabut ? 'Cabut' : 'Pulihkan') + ' key ' + r[0] + '?' + (cabut ? '\nPlugin di komputer user akan terkunci saat berikutnya terhubung ke server.' : ''))) api('POST', '/admin/revoke', { key: r[0], revoked: !cabut }).then(load).catch(fail);
+  }
+  if (b.dataset.max) {
+    var m = b.dataset.max.split('|'), n = prompt('Batas perangkat untuk key ini (1-10):', m[1]);
+    if (n) api('POST', '/admin/update', { key: m[0], max_devices: parseInt(n, 10) }).then(load).catch(fail);
+  }
+});
+
+$('save').onclick = function () { LS('lic_admin_url', $('url').value.trim()); LS('lic_admin_token', $('token').value.trim()); load(); };
+$('reload').onclick = load;
+$('search').addEventListener('input', render);
+$('create').onclick = function () {
+  api('POST', '/admin/keys', { name: $('name').value.trim(), phone: $('phone').value.trim(), max_devices: parseInt($('max').value, 10) }).then(function (j) {
+    lastNew = { key: j.key, phone: $('phone').value.trim(), name: $('name').value.trim(), max: j.max_devices };
+    $('newkeyVal').textContent = j.key; $('newkey').classList.add('show'); $('name').value = ''; $('phone').value = ''; load();
+  }).catch(fail);
+};
+$('copyNew').onclick = function () { if (lastNew) copy(lastNew.key, $('copyNew')); };
+$('copyMsg').onclick = function () { if (lastNew) copy(replyText(lastNew.key, lastNew.name, lastNew.max), $('copyMsg')); };
+$('sendWa').onclick = function () { if (lastNew && lastNew.phone) window.open(waLink(lastNew.phone, replyText(lastNew.key, lastNew.name, lastNew.max)), '_blank'); else alert('Nomor WhatsApp belum diisi untuk key ini.'); };
+
+$('url').value = LS('lic_admin_url'); $('token').value = LS('lic_admin_token');
+if ($('url').value && $('token').value) load();
+</script>
+</body>
+</html>

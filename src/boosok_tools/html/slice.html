@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Slice</title>
+  <link rel="stylesheet" href="../css/ui.css">
+  <script src="../js/strings.js"></script>
+  <script src="../js/locale.js"></script>
+  <style>
+    .opt { display: flex; flex-direction: column; gap: 6px; }
+    .opt .seg button { flex: 1; }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+  <script src="../js/ui.js"></script>
+
+  <header class="head">
+    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()" data-i18n-title="back_to_hub" data-i18n-aria="back_aria"><svg><use href="#i-arrow-left"/></svg></button>
+    <div class="mark"><svg><use href="#i-scissors"/></svg></div>
+    <div class="txt">
+      <h1 data-i18n="slice_title">Slice</h1>
+      <p data-i18n="slice_sub">Potong group / component dengan garis</p>
+    </div>
+    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema" data-i18n-title="theme_toggle" data-i18n-aria="theme_toggle"></button>
+  </header>
+
+  <section class="step active" id="step1">
+    <div class="opt">
+      <label class="label" data-i18n="slice_line">Garis potong</label>
+      <div class="seg h34" id="segLine" role="tablist">
+        <button role="tab" aria-selected="true" data-v="single" data-i18n="slice_line_single">Satu garis</button>
+        <button role="tab" aria-selected="false" data-v="multi" data-i18n="slice_line_multi">Banyak garis</button>
+      </div>
+    </div>
+
+    <div class="opt">
+      <label class="label" data-i18n="slice_result">Hasil potongan</label>
+      <div class="seg h34" id="segResult" role="tablist">
+        <button role="tab" aria-selected="true" data-v="split" data-i18n="slice_result_split">2 group</button>
+        <button role="tab" aria-selected="false" data-v="keep" data-i18n="slice_result_keep">1 group</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cap" data-i18n="scene_workflow">Alur kerja</div>
+      <ul class="steps">
+        <li>
+          <div class="ic"><svg><use href="#i-square-dashed-mouse-pointer"/></svg></div>
+          <div><div class="t" data-i18n="slice_s1_t">Seleksi objek yang dipotong</div><div class="s" data-i18n="slice_s1_s">Kosong = semua group/component solid</div></div>
+        </li>
+        <li>
+          <div class="ic"><svg><use href="#i-scissors"/></svg></div>
+          <div><div class="t" data-i18n="slice_s2_t">Tarik garis di viewport</div><div class="s" id="lineHint"></div></div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="actions">
+      <button class="btn ghost" id="btnAlign" title="Luruskan tampilan tegak lurus terhadap sebuah face" data-i18n-title="slice_align_title" onclick="doAlign()">
+        <svg><use href="#i-focus"/></svg><span data-i18n="slice_align">Align View ke Face</span>
+      </button>
+      <button class="btn primary" id="btnStart" onclick="doStart()">
+        <svg><use href="#i-scissors"/></svg><span data-i18n="slice_start">Mulai Slice</span>
+      </button>
+    </div>
+  </section>
+
+  <script>
+    var $ = function (id) { return document.getElementById(id); };
+    var opts = { line: 'single', result: 'split' };
+
+    function selected(segId) {
+      return $(segId).querySelector('[aria-selected="true"]').dataset.v;
+    }
+    function setSeg(segId, value) {
+      $(segId).querySelectorAll('button').forEach(function (b) {
+        b.setAttribute('aria-selected', b.dataset.v === value);
+      });
+    }
+
+    // Petunjuk & tombol pintas yang relevan dengan pilihan sekarang
+    function refresh() {
+      $('lineHint').textContent = opts.line === 'multi'
+        ? t('slice_hint_multi', 'Klik beberapa titik untuk membentuk garis')
+        : t('slice_hint_single', 'Klik titik awal lalu titik akhir');
+      autoFitHeight(0);
+    }
+
+    function send(name) {
+      if (window.sketchup && typeof sketchup[name] === 'function') sketchup[name](JSON.stringify(opts));
+    }
+
+    ['segLine', 'segResult'].forEach(function (id) {
+      $(id).addEventListener('click', function (e) {
+        var b = e.target.closest('button');
+        if (!b) return;
+        setSeg(id, b.dataset.v);
+        opts.line = selected('segLine');
+        opts.result = selected('segResult');
+        refresh();
+        send('slice_options'); // ubah opsi langsung berlaku di tool yang sedang aktif
+      });
+    });
+
+    function doAlign() {
+      if (window.sketchup && typeof sketchup.slice_align === 'function') {
+        sketchup.slice_align();
+      } else {
+        showToast(t('slice_err_notready', 'Fungsi Slice belum siap.'), 'error');
+      }
+    }
+
+    function doStart() {
+      if (window.sketchup && typeof sketchup.slice_start === 'function') {
+        send('slice_start');
+      } else {
+        showToast(t('slice_err_notready', 'Fungsi Slice belum siap.'), 'error');
+      }
+    }
+
+    // ---- Dipanggil dari Ruby ----
+    function init(data) {
+      if (data) {
+        opts.line = data.line === 'multi' ? 'multi' : 'single';
+        opts.result = data.result === 'keep' ? 'keep' : 'split';
+        setSeg('segLine', opts.line);
+        setSeg('segResult', opts.result);
+      }
+      refresh();
+    }
+    function onSliced(st) {
+      var parts = [];
+      if (st.cut) parts.push(t('slice_done', '%{n} objek dipotong → %{p} bagian.').replace('%{n}', st.cut).replace('%{p}', st.pieces));
+      if (st.notcut) parts.push(t('slice_notcut', '%{n} tidak terkena garis.').replace('%{n}', st.notcut));
+      if (st.skipped) parts.push(t('slice_skipped', '%{n} dilewati (bukan solid).').replace('%{n}', st.skipped));
+      if (st.failed) parts.push(t('slice_failed', '%{n} gagal.').replace('%{n}', st.failed));
+      if (!parts.length) parts.push(t('slice_none', 'Tidak ada yang dipotong.'));
+      showToast(parts.join(' '), st.cut ? 'success' : undefined);
+    }
+
+    function requestInit() {
+      function tryReady() {
+        if (window.sketchup && typeof sketchup.ready === 'function') { sketchup.ready(); return true; }
+        return false;
+      }
+      if (!tryReady()) {
+        var retries = 0;
+        var iv = setInterval(function () {
+          retries++;
+          if (tryReady() || retries > 30) clearInterval(iv);
+        }, 50);
+      }
+    }
+
+    refresh();
+    requestInit();
+  </script>
+</body>
+</html>

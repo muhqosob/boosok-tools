@@ -4,7 +4,7 @@ require 'json'
 
 module BoosokTools
   # Naikkan angka ini lalu push ke main: GitHub Actions otomatis bikin release + update version.json
-  PLUGIN_VERSION = "1.6.0"
+  PLUGIN_VERSION = "1.7.0"
 
   # Folder kode plugin. Dihitung di sini (file root tidak dienkripsi) karena __dir__/__FILE__
   # di dalam file .rbe tidak bisa diandalkan. Semua modul memakai konstanta ini untuk path.
@@ -14,7 +14,7 @@ module BoosokTools
 
   # Satu-satunya pintu untuk memuat file plugin. Sketchup.require (tanpa ekstensi) mengenali
   # .rb/.rbe/.rbs; require_relative, load, atau path ".rb" yang di-hardcode akan gagal setelah
-  # paket dienkripsi. `name` relatif ke folder boosok_tools, mis. 'custom_select/core_tool'.
+  # paket dienkripsi. `name` relatif ke folder boosok_tools, mis. 'ruby/paid/select_tool/core_tool'.
   def self.load_module(name)
     src = File.join(SUPPORT_DIR, "#{name}.rb")
     if File.exist?(File.join(SUPPORT_DIR, '.dev_mode')) && File.exist?(src)
@@ -42,7 +42,7 @@ module BoosokTools
     (File.delete(old_root) if File.exist?(old_root)) rescue nil
 
     # Tanpa ekstensi: SketchUp mencari bootstrap.rb maupun bootstrap.rbe
-    loader_path = File.join('boosok_tools', 'bootstrap')
+    loader_path = File.join('boosok_tools', 'ruby', 'bootstrap')
     ext = SketchupExtension.new("Boosok Tools", loader_path)
     ext.version     = PLUGIN_VERSION
     ext.creator     = "Muh Qosob"

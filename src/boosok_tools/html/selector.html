@@ -71,6 +71,15 @@
       </div>
     </div>
 
+    <div class="toggle" id="useGeo" role="switch" aria-checked="true" tabindex="0">
+      <svg class="ic"><use href="#i-tag"/></svg>
+      <div class="txt">
+        <div class="t" data-i18n="sel_geo_filter">Sertakan edge &amp; face</div>
+        <div class="s" data-i18n="sel_geo_desc">Ikut pilih edge / face yang punya tag</div>
+      </div>
+      <div class="switch"></div>
+    </div>
+
     <div class="toggle" id="useAttr" role="switch" aria-checked="false" tabindex="0">
       <svg class="ic"><use href="#i-key-round"/></svg>
       <div class="txt">
@@ -251,6 +260,15 @@
       if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleAttr(); }
     });
 
+    // ---- Switch edge & face ----
+    function toggleGeo() {
+      $('useGeo').setAttribute('aria-checked', $('useGeo').getAttribute('aria-checked') !== 'true');
+    }
+    $('useGeo').addEventListener('click', toggleGeo);
+    $('useGeo').addEventListener('keydown', function (e) {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleGeo(); }
+    });
+
     // ---- Key atribut ----
     function renderKeys(selected) {
       var input = $('attrKey');
@@ -347,6 +365,7 @@
             tag_kedua: tag2Val,
             search_type: searchType(),
             keyword: $('keyword').value,
+            include_geo: $('useGeo').getAttribute('aria-checked') === 'true',
             use_attr: $('useAttr').getAttribute('aria-checked') === 'true',
             attr_key: $('attrKey').value,
             attr_val: $('attrVal').value,

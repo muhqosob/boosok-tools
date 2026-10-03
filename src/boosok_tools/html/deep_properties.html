@@ -17,12 +17,22 @@
     <div class="mark"><svg><use href="#i-layers"/></svg></div>
     <div class="txt">
       <h1 data-i18n="deep_title">Deep Properties</h1>
-      <p data-i18n="deep_sub">Scan & kelola tag secara mendalam</p>
+      <p data-i18n="deep_sub">Scan & kelola tag / material secara mendalam</p>
     </div>
     <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema" data-i18n-title="theme_toggle" data-i18n-aria="theme_toggle"></button>
   </header>
 
   <section class="step active" id="step1">
+    <!-- Pilih dasar scan: Tag atau Material -->
+    <div class="seg h34" id="dpMode" role="tablist">
+      <button role="tab" aria-selected="true" data-mode="tag" onclick="setDpMode('tag')" type="button">
+        <svg><use href="#i-tags"/></svg><span data-i18n="deep_mode_tag">Tag</span>
+      </button>
+      <button role="tab" aria-selected="false" data-mode="material" onclick="setDpMode('material')" type="button">
+        <svg><use href="#i-paint-bucket"/></svg><span data-i18n="deep_mode_material">Material</span>
+      </button>
+    </div>
+
     <!-- Search + global filter (Edge, Face, Group, Component) -->
     <div class="dp-bar">
       <div class="with-ic">

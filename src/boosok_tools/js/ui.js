@@ -6,6 +6,7 @@
     '<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>' +
     '<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>' +
     '<symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>' +
+    '<symbol id="i-message-circle" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>' +
     '<symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>' +
     '<symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>' +
     '<symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>' +
@@ -17,6 +18,9 @@
     '<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>' +
     '<symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>' +
     '<symbol id="i-settings-2" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>' +
+    '<symbol id="i-square-minus" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 12h8"/></symbol>' +
+    '<symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></symbol>' +
+    '<symbol id="i-shovel" viewBox="0 0 24 24"><path d="M2 22v-5l5-5 5 5-5 5z"/><path d="M9.5 14.5 16 8"/><path d="m17 2 5 5-.5.5a3.53 3.53 0 0 1-5 0s0 0 0 0a3.53 3.53 0 0 1 0-5L17 2Z"/></symbol>' +
     '<symbol id="i-trash-2" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></symbol>' +
     '<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>' +
     '<symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>' +
@@ -430,6 +434,35 @@ var _dpTotalEnts = 0;
 var _dpSortDir = 'asc';    // 'asc' | 'desc'
 var _dpAllExpanded = false; // track state expand all
 var _dpScanTimer = null;   // timer pengaman tombol scan
+var _dpMode = 'tag';       // 'tag' | 'material': dasar pengelompokan scan
+var _dpMaterials = [];     // material yang ada di model (untuk ganti material)
+
+function dpUnit() {
+  return _dpMode === 'material'
+    ? (window.t ? window.t('material_unit', 'material') : 'material')
+    : (window.t ? window.t('tag_unit', 'tag') : 'tag');
+}
+
+// Tampilkan mode di segmen & placeholder pencarian
+function applyDpModeUi() {
+  document.querySelectorAll('#dpMode button').forEach(function (b) {
+    b.setAttribute('aria-selected', b.dataset.mode === _dpMode ? 'true' : 'false');
+  });
+  var s = document.getElementById('dpSearch');
+  if (s) {
+    s.placeholder = _dpMode === 'material'
+      ? (window.t ? window.t('deep_search_material_ph', 'Cari material…') : 'Cari material…')
+      : (window.t ? window.t('deep_search_ph', 'Cari tag…') : 'Cari tag…');
+  }
+}
+
+// Klik segmen Tag / Material: hitung ulang objek hasil scan sebelumnya dengan dasar yang baru
+function setDpMode(mode) {
+  if (mode === _dpMode) return;
+  _dpMode = mode;
+  applyDpModeUi();
+  if (window.sketchup && typeof sketchup.dp_mode === 'function') sketchup.dp_mode(mode);
+}
 
 // Filter type global (edge, face, group, component) mati secara default
 var _dpGlobalTypes = { edge: false, face: false, group: false, component: false };
@@ -648,7 +681,7 @@ function updateToolbar() {
 
   var el = document.getElementById('tbTagCount');
   if (el) {
-    var tagUnit = (window.t ? window.t('tag_unit', 'tag') : 'tag');
+    var tagUnit = dpUnit();
     if (visibleTags.length > 0) {
       el.textContent = checkedTagCount + '/' + visibleTags.length + ' ' + tagUnit;
     } else {
@@ -745,6 +778,8 @@ function toggleSort() {
 function initData(data, fromScan) {
   clearTimeout(_dpScanTimer);
   busy('btnScan', false);
+  if (data && data.mode) _dpMode = data.mode;
+  applyDpModeUi();
 
   if (data && data.error) {
     if (fromScan) showToast(data.error, 'error');
@@ -759,6 +794,7 @@ function initData(data, fromScan) {
     return;
   }
 
+  _dpMaterials = (data && data.materials) ? data.materials : [];
   _dpTags = (data && data.tags) ? data.tags : [];
   _dpCtxName = (data && data.ctx_name) ? data.ctx_name : null;
   _dpTotalEnts = (data && data.total_ents) ? data.total_ents : 0;
@@ -821,6 +857,8 @@ function renderList() {
     if (cVis) total += cCount;
 
     var hasChildren = (eCount + fCount + gCount + cCount) > 0;
+    var isMat = _dpMode === 'material';
+    var onThis = isMat ? 'material' : 'tag';
     var eyeClass = t.visible ? '' : ' hidden';
     var eyeIcon = t.visible ? '#i-eye' : '#i-eye-off';
     var safeTagAttr = esc(t.name).replace(/'/g, "\\'");
@@ -829,7 +867,7 @@ function renderList() {
     if (eCount > 0) {
       var hidEdge = eVis ? '' : ' hidden-sub';
       subEdge = '<div class="dp-sub-row' + hidEdge + '" data-parent="' + esc(t.name) + '" data-subtype="edge" ' +
-        'onclick="selectSubtype(\'' + safeTagAttr + '\',\'edge\')" title="Klik untuk seleksi Edge pada tag ini">' +
+        'onclick="selectSubtype(\'' + safeTagAttr + '\',\'edge\')" title="Klik untuk seleksi Edge pada ' + onThis + ' ini">' +
         iconEdge() + '<span>edge</span>' +
         '<span class="sub-count">(' + eCount + ')</span>' +
       '</div>';
@@ -838,7 +876,7 @@ function renderList() {
     if (fCount > 0) {
       var hidFace = fVis ? '' : ' hidden-sub';
       subFace = '<div class="dp-sub-row' + hidFace + '" data-parent="' + esc(t.name) + '" data-subtype="face" ' +
-        'onclick="selectSubtype(\'' + safeTagAttr + '\',\'face\')" title="Klik untuk seleksi Face pada tag ini">' +
+        'onclick="selectSubtype(\'' + safeTagAttr + '\',\'face\')" title="Klik untuk seleksi Face pada ' + onThis + ' ini">' +
         iconFace() + '<span>face</span>' +
         '<span class="sub-count">(' + fCount + ')</span>' +
       '</div>';
@@ -847,7 +885,7 @@ function renderList() {
     if (gCount > 0) {
       var hidGroup = gVis ? '' : ' hidden-sub';
       subGroup = '<div class="dp-sub-row' + hidGroup + '" data-parent="' + esc(t.name) + '" data-subtype="group" ' +
-        'onclick="selectSubtype(\'' + safeTagAttr + '\',\'group\')" title="Klik untuk seleksi Group pada tag ini">' +
+        'onclick="selectSubtype(\'' + safeTagAttr + '\',\'group\')" title="Klik untuk seleksi Group pada ' + onThis + ' ini">' +
         iconGroup() + '<span>group</span>' +
         '<span class="sub-count">(' + gCount + ')</span>' +
       '</div>';
@@ -856,7 +894,7 @@ function renderList() {
     if (cCount > 0) {
       var hidComp = cVis ? '' : ' hidden-sub';
       subComp = '<div class="dp-sub-row' + hidComp + '" data-parent="' + esc(t.name) + '" data-subtype="component" ' +
-        'onclick="selectSubtype(\'' + safeTagAttr + '\',\'component\')" title="Klik untuk seleksi Component pada tag ini">' +
+        'onclick="selectSubtype(\'' + safeTagAttr + '\',\'component\')" title="Klik untuk seleksi Component pada ' + onThis + ' ini">' +
         iconComp() + '<span>component</span>' +
         '<span class="sub-count">(' + cCount + ')</span>' +
       '</div>';
@@ -879,7 +917,10 @@ function renderList() {
     var isHiddenRow = isFilteredOut || !matchSearch;
 
     var detailTitle = (window.t ? window.t('deep_view_detail', 'Lihat detail') : 'Lihat detail');
-    var selectPrefix = (window.t ? window.t('deep_select_tag_prefix', 'Pilih tag ') : 'Pilih tag ');
+    var selectPrefix = isMat
+      ? (window.t ? window.t('deep_select_material_prefix', 'Pilih material ') : 'Pilih material ')
+      : (window.t ? window.t('deep_select_tag_prefix', 'Pilih tag ') : 'Pilih tag ');
+
     var eyeTitle = t.visible
       ? (window.t ? window.t('deep_hide_tag', 'Sembunyikan tag') : 'Sembunyikan tag')
       : (window.t ? window.t('deep_show_tag', 'Tampilkan tag') : 'Tampilkan tag');
@@ -898,10 +939,13 @@ function renderList() {
           '<div class="dp-color" style="background:' + t.color + ';"></div>' +
           '<span class="dp-tag-name" title="' + esc(t.name) + '">' + esc(t.name) + '</span>' +
           summaryHtml +
-          '<div class="dp-eye' + eyeClass + '" title="' + eyeTitle + '" ' +
-            'onclick="toggleVis(\'' + safeTagAttr + '\',' + (!t.visible) + ',this)">' +
-            '<svg><use href="' + eyeIcon + '"/></svg>' +
-          '</div>' +
+          (isMat ?
+            '<div class="dp-eye dp-swap" title="' + (window.t ? window.t('deep_replace_material', 'Ganti material') : 'Ganti material') + '" ' +
+              'onclick="openMatPicker(event,this)"><svg><use href="#i-replace"/></svg></div>' :
+            '<div class="dp-eye' + eyeClass + '" title="' + eyeTitle + '" ' +
+              'onclick="toggleVis(\'' + safeTagAttr + '\',' + (!t.visible) + ',this)">' +
+              '<svg><use href="' + eyeIcon + '"/></svg>' +
+            '</div>') +
         '</div>' +
         '<div class="dp-sub-rows">' +
           subEdge + subFace + subGroup + subComp +
@@ -923,10 +967,83 @@ function renderList() {
   setTimeout(function () { autoFitHeight(0); }, 60);
 }
 
+// ── Ganti material: pilih dari material yang sudah ada di model ────────────
+function closeMatPicker() {
+  var p = document.getElementById('dpMatPop');
+  if (p) p.remove();
+  document.removeEventListener('mousedown', _dpMatOutside, true);
+  document.removeEventListener('keydown', _dpMatKey, true);
+}
+function _dpMatOutside(e) {
+  var p = document.getElementById('dpMatPop');
+  if (p && !p.contains(e.target)) closeMatPicker();
+}
+function _dpMatKey(e) { if (e.key === 'Escape') closeMatPicker(); }
+
+function openMatPicker(ev, btn) {
+  if (ev) ev.stopPropagation();
+  closeMatPicker();
+  var row = btn.closest('.dp-row');
+  var from = row ? row.getAttribute('data-tag') : '';
+  var pop = document.createElement('div');
+  pop.id = 'dpMatPop';
+  pop.className = 'dp-mat-pop';
+  var phSearch = window.t ? window.t('deep_pick_material_ph', 'Cari material di model…') : 'Cari material di model…';
+  var noneTxt = window.t ? window.t('deep_no_material', 'Tidak ada material lain di model.') : 'Tidak ada material lain di model.';
+  var defTxt = window.t ? window.t('deep_material_default', '(Default) — lepas material') : '(Default) — lepas material';
+  pop.innerHTML = '<input class="input dp-mat-search" placeholder="' + esc(phSearch) + '" autocomplete="off" spellcheck="false">' +
+    '<div class="dp-mat-list"></div>';
+  document.body.appendChild(pop);
+
+  var list = pop.querySelector('.dp-mat-list');
+  var search = pop.querySelector('.dp-mat-search');
+  function draw() {
+    var q = search.value.toLowerCase().trim();
+    var items = [];
+    if (from !== '(Default)' && (!q || defTxt.toLowerCase().indexOf(q) !== -1 || '(default)'.indexOf(q) !== -1)) {
+      items.push({ name: '(Default)', label: defTxt, color: '#cccccc' });
+    }
+    _dpMaterials.forEach(function (m) {
+      if (m.name === from) return;
+      if (q && m.name.toLowerCase().indexOf(q) === -1) return;
+      items.push({ name: m.name, label: m.name, color: m.color });
+    });
+    if (!items.length) { list.innerHTML = '<div class="dp-mat-empty">' + esc(noneTxt) + '</div>'; return; }
+    list.innerHTML = items.map(function (it, i) {
+      return '<div class="dp-mat-item" data-i="' + i + '"><span class="dp-mat-sw" style="background:' + it.color + '"></span>' +
+        '<span class="dp-mat-name" title="' + esc(it.label) + '">' + esc(it.label) + '</span></div>';
+    }).join('');
+    list.querySelectorAll('.dp-mat-item').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var it = items[parseInt(el.getAttribute('data-i'), 10)];
+        closeMatPicker();
+        if (window.sketchup && typeof sketchup.dp_replace_material === 'function') sketchup.dp_replace_material(from, it.name);
+      });
+    });
+  }
+  search.addEventListener('input', draw);
+  draw();
+
+  var r = btn.getBoundingClientRect();
+  var w = Math.min(240, window.innerWidth - 16);
+  var h = pop.offsetHeight;
+  var left = Math.max(8, Math.min(window.innerWidth - w - 8, r.right - w));
+  var top = r.bottom + 4;
+  if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 4);
+  pop.style.width = w + 'px';
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+  setTimeout(function () {
+    document.addEventListener('mousedown', _dpMatOutside, true);
+    document.addEventListener('keydown', _dpMatKey, true);
+    search.focus();
+  }, 0);
+}
+
 // ── Klik Sub-row: Seleksi Subtipe Spesifik di Model ─────────────────────────
 function selectSubtype(tagName, subtype) {
   if (window.sketchup && typeof sketchup.dp_select_subtype === 'function') {
-    sketchup.dp_select_subtype(tagName, subtype);
+    sketchup.dp_select_subtype(tagName, subtype, _dpMode);
   }
 }
 
@@ -985,7 +1102,7 @@ function doScan(btn) {
   _dpScanTimer = setTimeout(function() { busy('btnScan', false); }, 5000);
   try {
     if (window.sketchup && typeof sketchup.dp_scan === 'function') {
-      sketchup.dp_scan();
+      sketchup.dp_scan(_dpMode);
     } else {
       clearTimeout(_dpScanTimer);
       busy('btnScan', false);
@@ -1002,7 +1119,9 @@ function doScan(btn) {
 function doSelect() {
   var checked = document.querySelectorAll('.dp-check:checked');
   if (!checked.length) {
-    showToast(window.t ? window.t('deep_err_min1', 'Centang minimal 1 tag terlebih dahulu.') : 'Centang minimal 1 tag terlebih dahulu.', 'error');
+    showToast(_dpMode === 'material'
+      ? (window.t ? window.t('deep_err_min1_material', 'Centang minimal 1 material terlebih dahulu.') : 'Centang minimal 1 material terlebih dahulu.')
+      : (window.t ? window.t('deep_err_min1', 'Centang minimal 1 tag terlebih dahulu.') : 'Centang minimal 1 tag terlebih dahulu.'), 'error');
     autoFitHeight(0);
     return;
   }
@@ -1020,7 +1139,7 @@ function doSelect() {
     types = ['edge', 'face', 'group', 'component'];
   }
 
-  var payload = JSON.stringify({ tags: tags, types: types });
+  var payload = JSON.stringify({ tags: tags, types: types, mode: _dpMode });
   try {
     if (window.sketchup && typeof sketchup.dp_select === 'function') {
       sketchup.dp_select(payload);

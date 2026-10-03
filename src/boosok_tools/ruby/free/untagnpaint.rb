@@ -1,4 +1,4 @@
-Sketchup.require 'boosok_tools/titlebar'
+Sketchup.require 'boosok_tools/ruby/titlebar'
 
 module BoosokTools::UntagUnpaintManager
   # Guard agar callbacks tidak di-stack oleh Hub reload (@dialog = dialog yang sudah terdaftar).

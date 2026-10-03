@@ -5,6 +5,30 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.7.0] — 2026-10-03
+
+### ✨ Fitur Baru
+
+- **Trowel** — Push/Pull dan Offset langsung di dalam group tanpa membukanya. Offset satu edge ke face mana pun
+  (termasuk group lain), Offset seluruh garis tepi lalu otomatis lanjut Push/Pull, hasil bisa di dalam group atau
+  group baru, group solid tetap solid saat bertabrakan, dan Shift + klik untuk menghapus edge di dalam face.
+- **Slice** — memotong objek apa pun dengan satu atau banyak garis, hasil dua group atau satu group.
+- **Void** — group sebagai pelubang di group solid lain, termasuk component pintu/jendela.
+- **Purge** — bersihkan component, material, dan tag yang tidak terpakai.
+- **Deep Properties** — mode Material (scan per material) dan **Ganti material** dengan material yang sudah ada di model.
+- **Select Tool** — seleksi area dengan tahan klik kiri.
+- **Lisensi online** — aktivasi lewat server, pindah komputer sendiri lewat Hapus Aktivasi (perlu internet), masa
+  toleransi offline 14 hari. Pembayaran lewat QR DANA dan permintaan key lewat WhatsApp.
+- **Update lewat server** — pengguna berlisensi aktif mengunduh update langsung dari server.
+
+### 🔧 Perbaikan
+
+- Struktur file dirapikan menjadi `ruby/free` dan `ruby/paid`; tool gratis: Selector, Replacer, Reset Scale, Group Cleaner, Untag & Paint, Purge.
+- Replacer tidak lagi menampilkan notifikasi ganda.
+- Hub: tool gratis dan berbayar dalam satu grid, dialog Tentang memakai ikon yang sama dengan header.
+
+---
+
 ## [1.5.2] — 2026-09-30
 
 ### 🔧 Perbaikan

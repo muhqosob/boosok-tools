@@ -1,6 +1,6 @@
 require 'sketchup'
 require 'json'
-Sketchup.require 'boosok_tools/titlebar'
+Sketchup.require 'boosok_tools/ruby/titlebar'
 
 module BoosokTools::TheSelectorPlugin
   @dialog = nil
@@ -258,6 +258,7 @@ module BoosokTools::TheSelectorPlugin
       use_attribute = data["use_attr"]
       target_attr_key = data["attr_key"].to_s.strip.downcase
       target_attr_val = data["attr_val"].to_s.strip.downcase
+      include_geo = data["include_geo"] != false
 
       model = Sketchup.active_model
       no_model_msg = defined?(BoosokTools::Locale) ? BoosokTools::Locale.t('sel_no_model', 'Tidak ada model yang aktif.') : 'Tidak ada model yang aktif.'
@@ -267,10 +268,37 @@ module BoosokTools::TheSelectorPlugin
       selection.clear
       matching_entities = []
       search_entities = model.active_entities
+      all_tags = "(Semua Tag / Abaikan)"
+      # Edge/face hanya ikut dicari kalau tag utama BUKAN "semua tag" dan kata kunci nama kosong
+      # (edge/face tidak punya nama). Kalau tag utama = semua tag, cukup group/component.
+      # Hanya edge/face yang diberi tag sendiri (bukan Untagged) yang dipilih, supaya geometri polos tidak ikut.
+      geo_enabled = include_geo && target_keyword.empty? && tag_utama != all_tags
+
+      geo_tag_counts = Hash.new(0) # diagnosa: tag milik edge/face yang ditemukan saat menelusuri
 
       find_entities = lambda do |entities, current_parent_tag = nil|
         entities.each do |ent|
-          if ent.is_a?(Sketchup::Group) || ent.is_a?(Sketchup::ComponentInstance)
+          if geo_enabled && (ent.is_a?(Sketchup::Edge) || ent.is_a?(Sketchup::Face))
+            next if %w[Untagged Layer0].include?(ent.layer.name)
+            ent_tag = ent.layer.name.strip
+            geo_tag_counts[ent_tag] += 1
+
+            match_tag_utama = (tag_utama == all_tags) || ent_tag.downcase == tag_utama.downcase ||
+                              (current_parent_tag && current_parent_tag.downcase == tag_utama.downcase)
+            match_tag_kedua = (tag_kedua == all_tags) || (ent_tag.downcase == tag_kedua.downcase)
+            next unless match_tag_utama && match_tag_kedua
+
+            if use_attribute
+              next if target_attr_key.empty?
+              attr_ok = (ent.attribute_dictionaries || []).any? do |dict|
+                key = dict.keys.find { |k| k.to_s.downcase == target_attr_key }
+                key && (target_attr_val.empty? || dict[key].to_s.strip.downcase == target_attr_val)
+              end
+              next unless attr_ok
+            end
+
+            matching_entities << ent
+          elsif ent.is_a?(Sketchup::Group) || ent.is_a?(Sketchup::ComponentInstance)
             ent_tag = ent.layer.name.strip
 
             active_parent_tag = current_parent_tag
@@ -327,6 +355,7 @@ module BoosokTools::TheSelectorPlugin
         dialog.execute_script("showSuccessStep(#{pesan.to_json});")
       else
         not_found_msg = defined?(BoosokTools::Locale) ? BoosokTools::Locale.t('sel_not_found_msg', 'Tidak ditemukan objek dengan kriteria tersebut.') : 'Tidak ditemukan objek dengan kriteria tersebut.'
+        puts "[Selector] Tidak ditemukan. tag_utama=#{tag_utama.inspect} tag_kedua=#{tag_kedua.inspect} geo=#{geo_enabled} edge/face bertag terlihat: #{geo_tag_counts.inspect}"
         dialog.execute_script("resetSubmitButton();")
         dialog.execute_script("showToast(#{not_found_msg.to_json});")
       end

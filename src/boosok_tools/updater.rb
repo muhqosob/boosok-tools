@@ -1,7 +1,7 @@
 require 'sketchup'
 require 'json'
 require 'tmpdir'
-Sketchup.require 'boosok_tools/titlebar'
+Sketchup.require 'boosok_tools/ruby/titlebar'
 
 module BoosokTools
   # Update di dalam SketchUp: cek -> download .rbz -> install -> hot reload langsung aktif.
@@ -13,7 +13,47 @@ module BoosokTools
     DOWNLOAD_TIMEOUT = 180 # detik
     MAX_REDIRECTS = 5      # link release GitHub redirect ke CDN
 
+    # true: kalau server update tidak bisa dihubungi, cek versi / unduhan jatuh ke GitHub (masa transisi, saat rilis
+    # masih juga dipublikasikan di GitHub). Ubah ke false setelah update sepenuhnya dari server (repo dijadikan privat).
+    GITHUB_FALLBACK = true
+
+    NOT_LICENSED_MSG = 'Update hanya untuk pengguna berlisensi aktif. Aktifkan lisensi (key dari server) di menu Tentang.'
+
     @state ||= { status: 'idle' }
+
+    # Cek versi: server lisensi dulu (/update/latest, bentuk sama dengan version.json), lalu GitHub bila gagal.
+    def self.fetch_version(loud, &on_version)
+      github = lambda do
+        fetch(VERSION_API_URL, CHECK_TIMEOUT, loud,
+              headers: { 'Accept' => 'application/vnd.github.raw' },
+              on_fail: ->(_e) { fetch(VERSION_URL, CHECK_TIMEOUT, loud, &on_version) },
+              &on_version)
+      end
+      if BoosokTools::License.online_configured?
+        fetch("#{BoosokTools::License::SERVER_URL}/update/latest", CHECK_TIMEOUT, loud,
+              on_fail: ->(e) { GITHUB_FALLBACK ? github.call : (loud ? fail_with(e.message) : set(status: 'idle')) },
+              &on_version)
+      else
+        github.call
+      end
+    end
+
+    # Header unduhan: unduhan dari server butuh lisensi online aktif; sumber lain (GitHub) tanpa header.
+    # Hasil: Hash header, atau :denied bila tidak berhak.
+    def self.download_headers(url)
+      return {} unless BoosokTools::License.online_configured? && url.to_s.start_with?(BoosokTools::License::SERVER_URL)
+
+      BoosokTools::License.update_headers || :denied
+    end
+
+    def self.http_error(code, body)
+      err = (JSON.parse(body.to_s)['error'] rescue nil)
+      case err
+      when 'not_bound', 'revoked', 'invalid_key' then NOT_LICENSED_MSG
+      when 'no_release' then 'File update belum tersedia di server.'
+      else "HTTP #{code}"
+      end
+    end
 
     # manual = dari menu. Cek otomatis saat startup diam saja kecuali ada update.
     def self.check(manual = false)
@@ -33,19 +73,18 @@ module BoosokTools
           set(status: 'latest')
         end
       end
-      # API dulu biar rilis baru langsung kelihatan; kena limit/gagal -> raw (bisa telat ~5 menit)
-      fetch(VERSION_API_URL, CHECK_TIMEOUT, manual,
-            headers: { 'Accept' => 'application/vnd.github.raw' },
-            on_fail: ->(_e) { fetch(VERSION_URL, CHECK_TIMEOUT, manual, &on_version) },
-            &on_version)
+      fetch_version(manual, &on_version)
     end
 
     def self.download
       return unless @state[:status] == 'available'
 
+      headers = download_headers(@state[:download_url])
+      return fail_with(NOT_LICENSED_MSG) if headers == :denied
+
       set(status: 'downloading', progress: 0)
       expected_sha256 = @state[:expected_sha256].to_s
-      fetch(@state[:download_url], DOWNLOAD_TIMEOUT, true) do |body|
+      fetch(@state[:download_url], DOWNLOAD_TIMEOUT, true, headers: headers) do |body|
         set(status: 'installing', progress: nil)
         # Guard: tolak file kosong atau partial download
         if body.nil? || body.empty?
@@ -88,12 +127,7 @@ module BoosokTools
           @state = @state.merge(status: 'latest')
         end
       end
-      fetch(VERSION_API_URL, CHECK_TIMEOUT, false,
-            headers: { 'Accept' => 'application/vnd.github.raw' },
-            on_fail: ->(e) {
-              fetch(VERSION_URL, CHECK_TIMEOUT, false, &on_version)
-            },
-            &on_version)
+      fetch_version(false, &on_version)
     rescue => e
       push_to_hub({ status: 'error', current: PLUGIN_VERSION, error: e.message })
     end
@@ -102,11 +136,17 @@ module BoosokTools
       @hub_dlg = hub_dlg
       return unless @state[:status] == 'available'
 
+      headers = download_headers(@state[:download_url])
+      if headers == :denied
+        push_to_hub({ status: 'error', current: PLUGIN_VERSION, error: NOT_LICENSED_MSG })
+        return
+      end
+
       @state = @state.merge(status: 'downloading', progress: 0)
       push_to_hub({ status: 'downloading', current: PLUGIN_VERSION, progress: 0 })
       expected_sha256 = @state[:expected_sha256].to_s
 
-      fetch(@state[:download_url], DOWNLOAD_TIMEOUT, false) do |body|
+      fetch(@state[:download_url], DOWNLOAD_TIMEOUT, false, headers: headers) do |body|
         @state = @state.merge(status: 'installing', progress: nil)
         # Guard: tolak file kosong atau partial download
         if body.nil? || body.empty?
@@ -187,7 +227,7 @@ module BoosokTools
       base_dir = ::BoosokTools::SUPPORT_DIR
       # Paket terenkripsi (.rbe) tidak punya file .rb: Sketchup.require cuma memuat sekali per
       # sesi, jadi kode baru baru dipakai setelah SketchUp di-restart.
-      return false unless File.exist?(File.join(base_dir, 'bootstrap.rb'))
+      return false unless File.exist?(File.join(base_dir, 'ruby', 'bootstrap.rb'))
 
       old_verbose = $VERBOSE
       $VERBOSE = nil
@@ -199,24 +239,28 @@ module BoosokTools
 
         # Muat ulang semua file modul plugin
         ruby_files = [
-          'titlebar.rb',
-          'locale.rb',
-          'bootstrap.rb',
-          'the_custom_select.rb',
-          'main.rb',
-          'the_replacer.rb',
-          'the_cleangroup.rb',
-          'the_reset.rb',
-          'the_hideonscenemanager.rb',
-          'untagnpaint.rb',
+          'ruby/titlebar.rb',
+          'ruby/locale.rb',
+          'ruby/bootstrap.rb',
+          'ruby/paid/select_tool.rb',
+          'ruby/free/selector.rb',
+          'ruby/free/replacer.rb',
+          'ruby/free/cleangroup.rb',
+          'ruby/free/reset.rb',
+          'ruby/paid/hideon_scene.rb',
+          'ruby/free/untagnpaint.rb',
+          'ruby/free/purge.rb',
+          'ruby/paid/void.rb',
+          'ruby/paid/slice.rb',
+          'ruby/paid/trowel.rb',
           'updater.rb',
           'hub.rb'
         ]
 
         # Muat ulang semua handler Select Tool
-        custom_select_dir = File.join(base_dir, 'custom_select')
-        if File.directory?(custom_select_dir)
-          Dir[File.join(custom_select_dir, '*.rb')].sort.each do |f|
+        select_tool_dir = File.join(base_dir, 'ruby', 'paid', 'select_tool')
+        if File.directory?(select_tool_dir)
+          Dir[File.join(select_tool_dir, '*.rb')].sort.each do |f|
             load f
           end
         end
@@ -294,7 +338,7 @@ module BoosokTools
             raise "Redirect tanpa tujuan" unless loc
             next fetch(loc, timeout, loud, headers: headers, on_fail: on_fail, hops: hops + 1, &on_ok)
           end
-          raise "HTTP #{code}" unless code == 200
+          raise http_error(code, res.body) unless code == 200
           on_ok.call(res.body)
         end
       end

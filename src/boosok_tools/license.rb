@@ -1,5 +1,7 @@
 require 'sketchup'
 require 'digest'
+require 'json'
+require 'base64'
 
 module BoosokTools
   module License
@@ -11,6 +13,31 @@ module BoosokTools
     end
 
     PREF_KEY        = "license_key"  unless defined?(PREF_KEY)
+    # Token bertanda tangan dari server lisensi, disimpan sebagai base64 URL-safe: Sketchup.read_default meng-eval nilai
+    # string, jadi JSON mentah (berisi tanda kutip) menyebabkan SyntaxError. Nama lama "license_token" (JSON mentah,
+    # dari versi bermasalah) dikosongkan saat lisensi diaktifkan / dihapus.
+    PREF_TOKEN      = "license_tok"     unless defined?(PREF_TOKEN)
+    PREF_TOKEN_OLD  = "license_token"   unless defined?(PREF_TOKEN_OLD)
+    PREF_MODE       = "license_mode"    unless defined?(PREF_MODE)    # 'online' | 'legacy' (key lama berbasis Hardware ID)
+    PREF_CHECKED    = "license_checked" unless defined?(PREF_CHECKED) # waktu terakhir berhasil dicek ke server
+
+    # ── Server lisensi online (Cloudflare Workers) ──
+    # Isi SERVER_URL dengan alamat hasil "wrangler deploy". Selama masih berisi ISI_ALAMAT_SERVER, aktivasi online
+    # nonaktif dan plugin hanya menerima key lama (berbasis Hardware ID) seperti sebelumnya.
+    SERVER_URL = "https://boosok-license.boosok.workers.dev" unless defined?(SERVER_URL)
+    PUBLIC_KEY_PEM = <<~PEM unless defined?(PUBLIC_KEY_PEM)
+      -----BEGIN PUBLIC KEY-----
+      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgijOnKh3GmcSMDR+BKFv
+      NpV9pOs+sGlA5GqKfaH/koU6kgt0ZpoM8T/S0PXSbkUiySuqWdbS70pirpfNzlGK
+      HYgP3FZpvkGQH/8l2PEabZG2otA8DQJS/R78gCA+ZQ+0bLV5pUwF4k0bYizZf2Qy
+      1gf9KmKHb10QiZFhuO+kS84AB7IFBhC5RbEjGBoskGB80yXyLf35ESn67C3taENV
+      IiN3P5yfI3aA8KLg89LjQC7IcrWlAAUEEKgiTsDa5spdQO3jSTAALvqA2UEl64E5
+      o1OfqJNXhII0/pK5qDqRB5HixdNPhmKRJT1lZyLJ1GZQMQ18O0dizgCPpmASZ9wV
+      CQIDAQAB
+      -----END PUBLIC KEY-----
+    PEM
+    REFRESH_INTERVAL = 12 * 3600 unless defined?(REFRESH_INTERVAL) # cek ulang ke server paling sering tiap 12 jam
+    HTTP_TIMEOUT     = 20 unless defined?(HTTP_TIMEOUT)
     PREF_SECT       = "BoosokTools"  unless defined?(PREF_SECT)
     remove_const(:TRIAL_DURATION) if defined?(TRIAL_DURATION)
     TRIAL_DAYS      = 7
@@ -74,19 +101,22 @@ module BoosokTools
       "UNKNOWN-HWID"
     end
 
+    # Key yang seharusnya untuk sebuah Hardware ID (dipakai validasi dan pembuat key di tools/keygen)
+    def self.expected_key(hw)
+      clean_hw = hw.to_s.strip.upcase.gsub(/[^0-9A-Z]/, '')
+      return nil if clean_hw.empty?
+
+      Digest::SHA256.hexdigest("#{clean_hw}::#{SECRET}").upcase.gsub(/[^0-9A-Z]/, '')[0, 20]
+    end
+
     # Validasi license key yang diinput user
     def self.validate(input_key, hw = nil)
       return false if input_key.nil? || input_key.to_s.strip.empty?
       clean_input = input_key.to_s.strip.upcase.gsub(/[^0-9A-Z]/, '')
       return false if clean_input.length != 20
 
-      hw ||= hardware_id
-      clean_hw = hw.to_s.strip.upcase.gsub(/[^0-9A-Z]/, '')
-      return false if clean_hw.empty?
-
-      raw_hash = Digest::SHA256.hexdigest("#{clean_hw}::#{SECRET}").upcase
-      expected_chars = raw_hash.gsub(/[^0-9A-Z]/, '')[0, 20]
-      clean_input == expected_chars
+      expected = expected_key(hw || hardware_id)
+      !expected.nil? && clean_input == expected
     rescue => e
       false
     end
@@ -106,6 +136,8 @@ module BoosokTools
     def self.clear_cache!
       @licensed_cache = nil
       @saved_key_cache = nil
+      @saved_mode_cache = nil
+      @token_cache = nil
       @trial_start_cache = nil
     end
 
@@ -115,12 +147,214 @@ module BoosokTools
       ""
     end
 
+    # Mode lisensi tersimpan: 'online' (token dari server) atau 'legacy' (key lama berbasis Hardware ID; juga bila
+    # belum ada mode tersimpan, yaitu pengguna lama)
+    def self.saved_mode
+      @saved_mode_cache ||= (Sketchup.read_default(PREF_SECT, PREF_MODE, "").to_s.strip == "online" ? "online" : "legacy")
+    rescue => e
+      "legacy"
+    end
+
     def self.licensed?
       return @licensed_cache unless @licensed_cache.nil?
       key = saved_key
-      @licensed_cache = key.empty? ? false : validate(key)
+      @licensed_cache =
+        if key.empty?
+          false
+        elsif saved_mode == "online"
+          online_valid?(key)
+        else
+          validate(key)
+        end
     rescue => e
       false
+    end
+
+    # ── Lisensi online ──────────────────────────────────────────────────────────
+
+    def self.online_configured?
+      !SERVER_URL.include?("ISI_ALAMAT_SERVER")
+    end
+
+    def self.compact_id(str)
+      str.to_s.upcase.gsub(/[^0-9A-Z]/, '')
+    end
+
+    # Token tersimpan {"payload"=>String, "sig"=>base64}. Diverifikasi dengan kunci publik, jadi tidak bisa dipalsukan
+    # tanpa kunci privat di server. Hasil: Hash payload atau nil.
+    def self.verified_payload(token)
+      return nil unless token.is_a?(Hash) && token["payload"].is_a?(String) && token["sig"].is_a?(String)
+
+      # OpenSSL dimuat malas (baru saat token pertama diverifikasi, jarang) agar startup SketchUp tidak melambat
+      require 'openssl' # rubocop:disable SketchupPerformance/OpenSSL -- hanya verifikasi tanda tangan RSA token lisensi
+      pkey = OpenSSL::PKey::RSA.new(PUBLIC_KEY_PEM)
+      sig = Base64.strict_decode64(token["sig"])
+      return nil unless pkey.verify(OpenSSL::Digest.new("SHA256"), sig, token["payload"])
+
+      JSON.parse(token["payload"])
+    rescue => e
+      nil
+    end
+
+    def self.saved_token
+      @token_cache ||= begin
+        raw = Sketchup.read_default(PREF_SECT, PREF_TOKEN, "").to_s
+        raw.empty? ? {} : JSON.parse(Base64.urlsafe_decode64(raw))
+      end
+    rescue StandardError, ScriptError # ScriptError: nilai lama bermasalah di-eval oleh read_default
+      {}
+    end
+
+    def self.saved_payload
+      verified_payload(saved_token)
+    end
+
+    # Token sah bila: tanda tangan benar, untuk key dan Hardware ID ini, belum lewat masa toleransi (exp), dan jam
+    # sistem tidak dimundurkan.
+    def self.online_valid?(key)
+      p = saved_payload
+      return false unless p
+      return false unless compact_id(p["k"]) == compact_id(key) && compact_id(p["hw"]) == compact_id(hardware_id)
+
+      now = Time.now.to_i
+      return false if now >= p["exp"].to_i
+
+      last_seen = Sketchup.read_default(PREF_SECT, "last_seen", 0).to_i
+      return false if last_seen > 0 && now < (last_seen - 3600)
+
+      true
+    rescue => e
+      false
+    end
+
+    # POST JSON ke server lisensi (async, Sketchup::Http). Blok dipanggil SEKALI dengan (status_http, data_hash_atau_nil);
+    # status 0 = gagal terhubung / waktu habis.
+    def self.http_post(path, body, &callback)
+      done = false
+      finish = lambda do |status, data|
+        next if done
+
+        done = true
+        callback.call(status, data)
+      end
+      request = Sketchup::Http::Request.new("#{SERVER_URL}#{path}", Sketchup::Http::POST)
+      request.headers = { "Content-Type" => "application/json" }
+      request.body = JSON.generate(body)
+      request.start do |_req, res|
+        status = (res.status_code rescue 0).to_i
+        data = (JSON.parse(res.body.to_s) rescue nil)
+        finish.call(status, data)
+      end
+      UI.start_timer(HTTP_TIMEOUT, false) { finish.call(0, nil) } # jaga-jaga bila callback tidak pernah datang
+    rescue => e
+      finish.call(0, nil) if finish
+    end
+
+    # Header untuk mengunduh update dari server. Hanya lisensi online yang aktif (key + perangkat terikat) yang berhak;
+    # selain itu nil (trial, key lama, atau belum aktif).
+    def self.update_headers
+      return nil unless online_configured? && saved_mode == "online" && licensed?
+
+      { "X-License-Key" => saved_key, "X-Hardware-Id" => hardware_id }
+    end
+
+    def self.clear_license!
+      Sketchup.write_default(PREF_SECT, PREF_KEY, "")
+      Sketchup.write_default(PREF_SECT, PREF_TOKEN, "")
+      Sketchup.write_default(PREF_SECT, PREF_TOKEN_OLD, "")
+      Sketchup.write_default(PREF_SECT, PREF_MODE, "")
+      Sketchup.write_default(PREF_SECT, PREF_CHECKED, "")
+      clear_cache!
+    end
+
+    def self.store_token(key, token)
+      Sketchup.write_default(PREF_SECT, PREF_KEY, key.to_s.strip)
+      Sketchup.write_default(PREF_SECT, PREF_TOKEN_OLD, "")
+      Sketchup.write_default(PREF_SECT, PREF_TOKEN, Base64.urlsafe_encode64(JSON.generate(token), padding: false))
+      Sketchup.write_default(PREF_SECT, PREF_MODE, "online")
+      Sketchup.write_default(PREF_SECT, PREF_CHECKED, Time.now.to_i.to_s)
+      clear_cache!
+    end
+
+    # Aktivasi: key dicek ke server (mengikat key ke Hardware ID ini). Key lama berbasis Hardware ID tetap diterima
+    # secara offline. Blok dipanggil dengan Hash {ok:, error:, used:, max:}; error: invalid_key, revoked,
+    # device_limit, network, bad_response.
+    def self.activate(key, &callback)
+      key = key.to_s.strip
+      legacy_ok = validate(key)
+      accept_legacy = lambda do
+        save_key(key)
+        Sketchup.write_default(PREF_SECT, PREF_MODE, "legacy")
+        Sketchup.write_default(PREF_SECT, PREF_TOKEN, "")
+        clear_cache!
+        callback.call({ ok: true, mode: "legacy" })
+      end
+      unless online_configured?
+        legacy_ok ? accept_legacy.call : callback.call({ ok: false, error: "invalid_key" })
+        return
+      end
+
+      http_post("/activate", { key: key, hwid: hardware_id }) do |status, data|
+        if status == 200 && data && data["ok"] && verified_payload(data["token"])
+          store_token(key, data["token"])
+          callback.call({ ok: true, mode: "online" })
+        elsif status == 200 && data && data["ok"]
+          callback.call({ ok: false, error: "bad_response" })
+        elsif data && data["error"] == "invalid_key"
+          legacy_ok ? accept_legacy.call : callback.call({ ok: false, error: "invalid_key" })
+        elsif data && data["error"]
+          callback.call({ ok: false, error: data["error"], used: data["used"], max: data["max"] })
+        else
+          legacy_ok ? accept_legacy.call : callback.call({ ok: false, error: "network" })
+        end
+      end
+    end
+
+    # Cek ulang ke server (dipanggil saat Hub difokus). Hanya untuk lisensi online dan paling sering tiap
+    # REFRESH_INTERVAL. Tanpa internet: tidak terjadi apa-apa (masa toleransi di token yang berlaku). Key dicabut /
+    # perangkat dilepas di server: lisensi lokal dihapus. Blok dipanggil dengan true bila status lisensi berubah.
+    def self.maybe_refresh(&callback)
+      return unless online_configured? && saved_mode == "online" && !saved_key.empty? && !@refreshing
+
+      last = Sketchup.read_default(PREF_SECT, PREF_CHECKED, "").to_i
+      return if last > 0 && (Time.now.to_i - last) < REFRESH_INTERVAL
+
+      @refreshing = true
+      key = saved_key
+      http_post("/check", { key: key, hwid: hardware_id }) do |status, data|
+        @refreshing = false
+        changed = false
+        if status == 200 && data && data["ok"] && verified_payload(data["token"])
+          store_token(key, data["token"])
+        elsif data && %w[revoked not_bound invalid_key].include?(data["error"])
+          clear_license!
+          changed = true
+        end
+        callback.call(changed) if callback
+      end
+    rescue => e
+      @refreshing = false
+    end
+
+    # Lepas perangkat ini dari key (pindah komputer): server menghapus ikatan, lalu lisensi lokal dihapus. Lisensi
+    # lama (legacy) cukup dihapus lokal. Blok dipanggil dengan {ok:, error:}; error 'network' = tidak ada koneksi
+    # (lisensi tidak dihapus supaya perangkat tidak tertahan di server).
+    def self.release(&callback)
+      unless online_configured? && saved_mode == "online"
+        clear_license!
+        callback.call({ ok: true })
+        return
+      end
+
+      key = saved_key
+      http_post("/release", { key: key, hwid: hardware_id }) do |status, data|
+        if status == 200 || (data && %w[revoked invalid_key].include?(data["error"]))
+          clear_license!
+          callback.call({ ok: true })
+        else
+          callback.call({ ok: false, error: "network" })
+        end
+      end
     end
 
     # ── 6. Sistem Trial 7 Hari ──
@@ -269,6 +503,9 @@ module BoosokTools
         hw_short:    hw_id[0, 9],
         is_valid:    is_valid,
         saved_key:   saved.empty? ? "" : saved,
+        mode:        saved_mode,
+        grace_days:  (saved_mode == "online" && is_valid && saved_payload ? [((saved_payload["exp"].to_i - Time.now.to_i) / 86400.0).ceil, 0].max : nil),
+        devices:     (saved_mode == "online" && saved_payload ? { used: saved_payload["used"], max: saved_payload["max"] } : nil),
         status:      st_code,
         days_left:   (rem_sec > 0 ? (rem_sec / 86400.0).ceil : 0),
         mins_left:   mins_left,

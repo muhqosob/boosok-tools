@@ -1,6 +1,6 @@
 require 'sketchup'
 require 'json'
-Sketchup.require 'boosok_tools/titlebar'
+Sketchup.require 'boosok_tools/ruby/titlebar'
 
 module BoosokTools::TheResetScale
   # Dipanggil Hub saat dialog ditutup supaya callback didaftarkan lagi di dialog berikutnya

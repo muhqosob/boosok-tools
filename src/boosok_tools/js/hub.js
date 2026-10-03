@@ -98,12 +98,14 @@
       if (copyText && copyText.textContent !== ht('about_copied', 'Tersalin!')) {
         copyText.textContent = ht('about_copy', 'Salin');
       }
+      var licQrLbl = document.getElementById('licQrLbl');
+      if (licQrLbl) licQrLbl.textContent = ht('about_qr_label', 'Scan QR DANA');
       var licNoticePrefix = document.getElementById('licNoticePrefix');
-      if (licNoticePrefix) licNoticePrefix.innerHTML = ht('about_send_hwid_prefix', 'Kirim <strong style="color:var(--ink);">Hardware ID</strong> ke email:');
+      if (licNoticePrefix) licNoticePrefix.innerHTML = ht('about_send_hwid_prefix', 'Kirim <strong style="color:var(--ink);">nama, nomor HP, dan bukti bayar</strong> ke WhatsApp:');
       var licNoticeSuffix = document.getElementById('licNoticeSuffix');
-      if (licNoticeSuffix) licNoticeSuffix.textContent = ht('about_send_hwid_suffix', 'beserta bukti transfer/kirim dana untuk mendapatkan lisensi key. (harga = Rp20.000)');
+      if (licNoticeSuffix) licNoticeSuffix.textContent = ht('about_send_hwid_suffix', 'untuk mendapatkan lisensi key. Harga = Rp25.000.');
       var licMailLink = document.getElementById('licMailLink');
-      if (licMailLink) licMailLink.title = ht('about_open_browser', 'Buka di browser');
+      if (licMailLink) licMailLink.title = ht('about_open_wa', 'Buka WhatsApp');
       var abLblEnterKey = document.getElementById('aboutLblEnterKey');
       if (abLblEnterKey) abLblEnterKey.textContent = ht('about_enter_key', 'Masukkan Lisensi Key');
       var licActText = document.getElementById('licActivateBtnText');
@@ -212,7 +214,11 @@
       { id: 'reset', icon: 'scale-3d', t: 'Reset Scale', s: 'Kembalikan skala group', needs: 'objects' },
       { id: 'scene', icon: 'eye-off', t: 'Hide Scene', s: 'Atur visibilitas per scene', needs: 'scenes' },
       { id: 'untag', icon: 'paint-bucket', t: 'Untag', s: 'Hapus tag & material', needs: 'objects' },
-      { id: 'deep', icon: 'layers', t: 'Deep Props', s: 'Analisis tag & entitas mendalam', needs: 'objects' }
+      { id: 'deep', icon: 'layers', t: 'Deep Props', s: 'Analisis tag & entitas mendalam', needs: 'objects' },
+      { id: 'purge', icon: 'trash-2', t: 'Purge', s: 'Hapus component, material, tag tak terpakai', needs: 'objects' },
+      { id: 'void', icon: 'square-minus', t: 'Void', s: 'Group pelubang group lain', needs: 'objects' },
+      { id: 'slice', icon: 'scissors', t: 'Slice', s: 'Potong group dengan garis', needs: 'objects' },
+      { id: 'trowel', icon: 'shovel', t: 'Trowel', s: 'Push/Pull & Offset dalam group', needs: 'objects' }
     ];
 
     /* ═══════════════════════════════════════════════
@@ -228,7 +234,11 @@
       { id: 'reset', label: 'Reset Scale', key: '' },
       { id: 'scene', label: 'Hide Scene', key: '' },
       { id: 'untag', label: 'Untag', key: '' },
-      { id: 'deep', label: 'Deep Props', key: '' }
+      { id: 'deep', label: 'Deep Props', key: '' },
+      { id: 'purge', label: 'Purge', key: '' },
+      { id: 'void', label: 'Void', key: '' },
+      { id: 'slice', label: 'Slice', key: '' },
+      { id: 'trowel', label: 'Trowel', key: '' }
     ];
     function loadHotkeys() {
       try {
@@ -474,7 +484,6 @@
       updateSettingsLock(false);
 
       var lic = (S.data && S.data.license) ? S.data.license : null;
-      var isLocked = lic && !lic.can_use;
 
       var trialBannerHtml = '';
       if (lic) {
@@ -484,7 +493,7 @@
             '<div class="tb-icon">' + icon('triangle-alert') + '</div>' +
             '<div class="tb-body">' +
             '<div class="tb-title">' + esc(ht('trial_expired_title', 'Masa Trial 7 Hari Telah Habis')) + '</div>' +
-            '<div class="tb-desc">' + esc(ht('trial_expired_desc', 'Semua tool terkunci. Masukkan lisensi key.')) + '</div>' +
+            '<div class="tb-desc">' + esc(ht('trial_expired_desc', 'Masukkan lisensi key untuk membuka semua tool.')) + '</div>' +
             '</div>' +
             '<button class="tb-action" onclick="openAbout(); event.stopPropagation();">' + esc(ht('activate', 'Aktifkan')) + '</button>' +
             '</div>';
@@ -505,7 +514,7 @@
       if (lastTool) {
         var lTitle = getToolTitle(lastTool);
         var lDesc = getToolDesc(lastTool);
-        if (isLocked) {
+        if (isToolLocked(lastTool.id)) {
           recentHtml =
             '<div id="recentSection">' +
             '<div class="sec-label">' + esc(ht('recent_label', 'Terakhir dipakai')) + '</div>' +
@@ -554,9 +563,29 @@
       setTimeout(function () { autoFitHeight(0); }, 50);
     }
 
+    /* Tool gratis tetap bisa dipakai walau trial habis (daftar utama dari Ruby: S.data.free_tools) */
+    var FREE_TOOLS_DEFAULT = ['selector', 'replacer', 'reset', 'clean', 'untag', 'purge'];
+    function isToolLocked(id) {
+      var lic = S.data && S.data.license;
+      if (!lic || lic.can_use) return false;
+      var free = (S.data && S.data.free_tools) || FREE_TOOLS_DEFAULT;
+      return free.indexOf(id) < 0;
+    }
+
+    function isFreeTool(id) {
+      return ((S.data && S.data.free_tools) || FREE_TOOLS_DEFAULT).indexOf(id) >= 0;
+    }
+
+    /* Satu grid 4 kolom; tool gratis di bagian atas, lalu yang berbayar (urutan asli dipertahankan di tiap bagian) */
     function buildGrid(stats) {
-      var isLocked = S.data && S.data.license && !S.data.license.can_use;
-      return '<div class="grid4" id="grid4">' + TOOLS.map(function (tool) {
+      var sorted = TOOLS.filter(function (t) { return isFreeTool(t.id); })
+        .concat(TOOLS.filter(function (t) { return !isFreeTool(t.id); }));
+      return '<div class="grid4" id="grid4">' + sorted.map(buildTile).join('') + '</div>';
+    }
+
+    function buildTile(tool) {
+      {
+        var isLocked = isToolLocked(tool.id);
         var cls = 'tile4';
         var attr = '';
         var tTitle = getToolTitle(tool);
@@ -573,7 +602,7 @@
           '<div class="ic4">' + icon(tool.icon) + '</div>' +
           '<div class="t4">' + esc(tTitle) + '</div>' +
           '</button>';
-      }).join('') + '</div>';
+      }
     }
 
     /* ═══════════════════════════════════════════════
@@ -616,12 +645,12 @@
     // Klik tool saat terkunci: cukup notifikasi (tanpa membuka panel aktivasi).
     // Aktivasi tetap bisa lewat tombol "Aktifkan" di banner atau Pengaturan > Tentang.
     function onLicenseExpiredPrompt() {
-      showToast(ht('lic_trial_expired_toast', 'Masa trial 7 hari telah habis. Semua tool terkunci.'), 'error');
+      showToast(ht('lic_trial_expired_toast', 'Masa trial 7 hari telah habis.'), 'error');
     }
 
     function openTool(id) {
       if (S.status !== 'ready') return;
-      if (S.data && S.data.license && !S.data.license.can_use) {
+      if (isToolLocked(id)) {
         onLicenseExpiredPrompt();
         return;
       }
@@ -950,7 +979,11 @@
         'reset': 'Reset Scale',
         'scene': 'Hide Scene',
         'untag': 'Untag',
-        'deep': 'Deep Props'
+        'deep': 'Deep Props',
+        'purge': 'Purge',
+        'void': 'Void',
+        'slice': 'Slice',
+        'trowel': 'Trowel'
       };
       list.innerHTML = hotkeys.map(function (h) {
         var path = 'Extensions › Boosok Tools › ' + (menuPath[h.id] || h.label);
@@ -1213,7 +1246,19 @@
     }
 
     // Dipanggil Ruby setelah validasi
-    function onLicenseValidated(success, st) {
+    // Pesan hasil aktivasi (reason dari license.rb: invalid_key, revoked, device_limit, network, bad_response, error)
+    function licenseErrorText(reason, extra) {
+      if (reason === 'device_limit') {
+        var n = (extra && extra.max) ? extra.max : '?';
+        return ht('lic_err_device_limit', 'Key ini sudah dipakai di {n} perangkat. Lepas perangkat lama lewat Tentang > Hapus Aktivasi, atau hubungi author.').replace('{n}', n);
+      }
+      if (reason === 'revoked') return ht('lic_err_revoked', 'Key ini sudah dicabut. Hubungi author.');
+      if (reason === 'network') return ht('lic_err_network', 'Tidak bisa terhubung ke server lisensi. Periksa koneksi internet lalu coba lagi.');
+      if (reason === 'bad_response') return ht('lic_err_bad_response', 'Jawaban server tidak valid. Coba lagi nanti.');
+      return ht('lic_err_invalid', 'Key tidak valid.');
+    }
+
+    function onLicenseValidated(success, st, reason, extra) {
       var btn = document.getElementById('licActivateBtn');
       if (btn) busy(btn, false);
       var keyInput = document.getElementById('licKeyInput');
@@ -1224,13 +1269,13 @@
           onLicenseStatus(st);
           draw(); // Refresh tampilan Hub secara langsung
         }
-        showToast(ht('lic_success_toast', 'Lisensi berhasil diaktifkan! Semua tool terbuka.'));
       } else {
         if (keyInput) {
           keyInput.style.borderColor = 'var(--err, #dc2626)';
           keyInput.value = '';
           keyInput.placeholder = ht('lic_placeholder_invalid', 'Kode tidak valid — coba lagi');
         }
+        if (reason && reason !== 'invalid_key') showToast(licenseErrorText(reason, extra), 'error');
         var badge = document.getElementById('licBadge');
         if (badge) {
           badge.textContent = ht('lic_invalid', '✗ TIDAK VALID');
@@ -1239,6 +1284,12 @@
           badge.style.color = 'var(--err, #dc2626)';
         }
       }
+    }
+
+    // Dipanggil Ruby setelah "Hapus Aktivasi" (online: perangkat dilepas dari key di server)
+    function onLicenseRemoved(ok, reason) {
+      if (!ok) showToast(licenseErrorText(reason || 'network'), 'error');
+      else draw();
     }
 
     // Hapus lisensi yang tersimpan
@@ -1317,56 +1368,46 @@
       document.body.removeChild(el);
     }
 
-    function getMailParams() {
-      var hwId = window._currentHwId || (S.data && S.data.license && S.data.license.hw_id) || '';
-      if (!hwId) {
-        var el = document.getElementById('licHwId');
-        if (el && el.textContent) hwId = el.textContent.trim();
-      }
-      var subject = encodeURIComponent(ht('email_subject', 'Permintaan Lisensi Boosok Tools'));
-      var greeting = ht('email_greeting', 'Halo Muh Qosob,');
-      var reqText = ht('email_request', 'Saya ingin meminta lisensi key untuk Boosok Tools.');
-      var attachText = ht('email_attach', '(Mohon lampirkan bukti transfer/kirim dana di sini)');
-      var thanksText = ht('email_thanks', 'Terima kasih!');
-      var body = encodeURIComponent(
-        greeting + '\n\n' +
-        reqText + '\n\n' +
-        'Hardware ID : ' + hwId + '\n\n' +
-        attachText + '\n\n' +
-        thanksText
-      );
-      return {
-        subject: subject,
-        body: body,
-        gmailUrl: 'https://mail.google.com/mail/?view=cm&fs=1&to=muhqosob@gmail.com&su=' + subject + '&body=' + body,
-        mailtoUrl: 'mailto:muhqosob@gmail.com?subject=' + subject + '&body=' + body
-      };
+    // Nomor WhatsApp author untuk permintaan lisensi key (format internasional tanpa + / 0 di depan)
+    var WA_NUMBER = '6282116605101';
+
+    // Link WhatsApp dengan pesan pembelian: pembeli mengisi Nama dan Nomor HP di chat, lalu melampirkan bukti bayar
+    function getWaUrl() {
+      var text =
+        ht('wa_greeting', 'Halo Muh Qosob,') + '\n\n' +
+        ht('wa_request', 'Saya ingin membeli lisensi Boosok Tools.') + '\n\n' +
+        ht('wa_name', 'Nama') + ' : \n' +
+        ht('wa_phone', 'Nomor HP') + ' : \n\n' +
+        ht('wa_attach', '(Bukti pembayaran DANA saya kirim di chat ini)') + '\n\n' +
+        ht('email_thanks', 'Terima kasih!');
+      return 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(text);
     }
 
-    function openMailInBrowser(e) {
+    function openWhatsApp(e) {
       if (e) {
         try { e.preventDefault(); e.stopPropagation(); } catch (err) { }
       }
-      var p = getMailParams();
+      var url = getWaUrl();
       if (window.sketchup && typeof sketchup.open_external_url === 'function') {
-        sketchup.open_external_url(p.gmailUrl);
+        sketchup.open_external_url(url);
       } else {
-        window.open(p.gmailUrl, '_blank');
+        window.open(url, '_blank');
       }
       return false;
     }
 
-    function openMailtoClient(e) {
-      if (e) {
-        try { e.preventDefault(); e.stopPropagation(); } catch (err) { }
-      }
-      var p = getMailParams();
-      if (window.sketchup && typeof sketchup.open_external_url === 'function') {
-        sketchup.open_external_url(p.mailtoUrl);
-      } else {
-        window.location.href = p.mailtoUrl;
-      }
-      return false;
+    // Klik QR DANA: tampilkan lebih besar supaya mudah di-scan dari HP
+    function zoomQr() {
+      var src = (document.getElementById('licQrImg') || {}).src;
+      if (!src) return;
+      var ov = document.createElement('div');
+      ov.id = 'qrZoom';
+      ov.style.cssText = 'position:fixed;inset:0;z-index:150;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);cursor:zoom-out;';
+      ov.innerHTML = '<div style="background:#fff;padding:12px;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.4);text-align:center;">' +
+        '<img src="' + src + '" alt="QR DANA" style="width:min(300px,80vw);height:auto;display:block;border-radius:6px;">' +
+        '<div style="margin-top:6px;font:700 12px/1.3 Segoe UI,sans-serif;color:#18181b;">' + esc(ht('about_qr_label', 'Scan QR DANA')) + ' · Rp25.000</div></div>';
+      ov.addEventListener('click', function () { ov.remove(); });
+      document.body.appendChild(ov);
     }
 
     /* Escape menutup hotkey panel, language panel, atau about overlay */

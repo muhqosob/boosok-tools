@@ -183,7 +183,7 @@
   <div id="aboutOverlay" onclick="closeAbout()">
     <div id="aboutSheet" onclick="event.stopPropagation()">
       <div class="about-logo">
-        <div class="about-mark"><svg>
+        <div class="mark about-mark"><svg>
             <use href="#i-package" />
           </svg></div>
         <div>
@@ -227,19 +227,27 @@
         <div id="licNotice" class="lic-notice">
           <div style="display:flex;align-items:flex-start;gap:7px;">
             <svg aria-hidden="true" style="width:15px;height:15px;color:var(--ink);flex-shrink:0;margin-top:1px;">
-              <use href="#i-mail" />
+              <use href="#i-message-circle" />
             </svg>
             <div style="font-size:11px;line-height:1.45;color:var(--muted);flex:1;" id="licNoticeDesc">
               <span id="licNoticePrefix">Kirim <strong style="color:var(--ink);">Hardware ID</strong> ke email:</span>
-              <a href="javascript:void(0)" id="licMailLink" class="lic-email-link" onclick="openMailInBrowser(event)"
-                title="Buka di browser bawaan">
-                muhqosob@gmail.com
+              <a href="javascript:void(0)" id="licMailLink" class="lic-email-link" onclick="openWhatsApp(event)"
+                title="Buka WhatsApp">
+                0821-1660-5101
                 <svg aria-hidden="true"
                   style="width:11px;height:11px;display:inline-block;vertical-align:-1px;margin-left:1px;">
                   <use href="#i-external-link" />
                 </svg>
               </a>
-              <span id="licNoticeSuffix">beserta bukti transfer/kirim dana untuk mendapatkan lisensi key. (harga = Rp20.000)</span>
+              <span id="licNoticeSuffix">untuk mendapatkan lisensi key. Harga = Rp25.000.</span>
+            </div>
+            <!-- QR pembayaran DANA: file images/dana_qr.png (disembunyikan otomatis kalau filenya belum ada) -->
+            <div id="licQrWrap" title="Klik untuk memperbesar" onclick="zoomQr()"
+              style="display:none;flex-shrink:0;flex-direction:column;align-items:center;gap:3px;cursor:zoom-in;">
+              <img id="licQrImg" src="../images/dana_qr.png" alt="QR DANA"
+                style="width:86px;height:86px;object-fit:contain;border-radius:8px;border:1px solid var(--line);background:#fff;padding:3px;"
+                onload="this.parentNode.style.display='flex'" onerror="this.parentNode.style.display='none'">
+              <span id="licQrLbl" style="font-size:9.5px;font-weight:700;color:var(--muted);">Scan QR DANA</span>
             </div>
           </div>
         </div>

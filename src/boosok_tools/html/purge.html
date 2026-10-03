@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Purge</title>
+  <link rel="stylesheet" href="../css/ui.css">
+  <script src="../js/strings.js"></script>
+  <script src="../js/locale.js"></script>
+  <style>
+    .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+    .col-head { display: flex; align-items: center; gap: 6px; padding: 0 2px; min-height: 22px; }
+    .col-head .check { padding: 2px 4px; margin-left: -4px; font-weight: 600; font-size: 12.5px; }
+    .col-head .ttl { display: inline-flex; align-items: center; gap: 6px; }
+    .col-head .ttl svg { width: 14px; height: 14px; color: var(--muted); }
+    .col .list { flex: none; height: 300px; max-height: none; }
+    .col .check .name { flex: 1; min-width: 0; }
+    .sw { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; border: 1px solid var(--line-strong); }
+    .col-head input:indeterminate + .box { background: var(--dark-gray); border-color: var(--dark-gray); }
+    .col-head input:indeterminate + .box::after { content: ''; width: 8px; height: 2px; border-radius: 2px; background: #fff; }
+    [data-theme="dark"] .col-head input:indeterminate + .box::after { background: #18181b; }
+    .actions .btn { white-space: nowrap; }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+  <script src="../js/ui.js"></script>
+
+  <header class="head">
+    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()" data-i18n-title="back_to_hub" data-i18n-aria="back_aria"><svg><use href="#i-arrow-left"/></svg></button>
+    <div class="mark"><svg><use href="#i-trash-2"/></svg></div>
+    <div class="txt">
+      <h1 data-i18n="purge_title">Purge</h1>
+      <p data-i18n="purge_sub">Hapus component, material &amp; tag yang tidak terpakai</p>
+    </div>
+    <span class="pill" id="totalPill"></span>
+    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema" data-i18n-title="theme_toggle" data-i18n-aria="theme_toggle"></button>
+  </header>
+
+  <section class="step active" id="step1">
+    <div class="cols">
+      <div class="col" data-key="components" data-list="listComp">
+        <div class="col-head">
+          <label class="check"><input type="checkbox" data-all="listComp"><span class="box"><svg><use href="#i-check"/></svg></span>
+            <span class="ttl"><svg><use href="#i-component"/></svg><span data-i18n="purge_col_comp">Component</span></span></label>
+          <span class="count" id="nComp"></span>
+        </div>
+        <div class="with-ic">
+          <svg class="lead"><use href="#i-search"/></svg>
+          <input class="input" placeholder="Cari component…" data-i18n-placeholder="purge_search_comp" data-filter="listComp" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="list" id="listComp"></div>
+      </div>
+
+      <div class="col" data-key="materials" data-list="listMat">
+        <div class="col-head">
+          <label class="check"><input type="checkbox" data-all="listMat"><span class="box"><svg><use href="#i-check"/></svg></span>
+            <span class="ttl"><svg><use href="#i-paint-bucket"/></svg><span data-i18n="purge_col_mat">Material</span></span></label>
+          <span class="count" id="nMat"></span>
+        </div>
+        <div class="with-ic">
+          <svg class="lead"><use href="#i-search"/></svg>
+          <input class="input" placeholder="Cari material…" data-i18n-placeholder="purge_search_mat" data-filter="listMat" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="list" id="listMat"></div>
+      </div>
+
+      <div class="col" data-key="tags" data-list="listTag">
+        <div class="col-head">
+          <label class="check"><input type="checkbox" data-all="listTag"><span class="box"><svg><use href="#i-check"/></svg></span>
+            <span class="ttl"><svg><use href="#i-tags"/></svg><span data-i18n="purge_col_tag">Tag</span></span></label>
+          <span class="count" id="nTag"></span>
+        </div>
+        <div class="with-ic">
+          <svg class="lead"><use href="#i-search"/></svg>
+          <input class="input" placeholder="Cari tag…" data-i18n-placeholder="purge_search_tag" data-filter="listTag" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="list" id="listTag"></div>
+      </div>
+    </div>
+
+    <div class="actions row">
+      <button class="btn ghost" id="btnCapture" onclick="doCapture(this)">
+        <svg><use href="#i-refresh-cw"/></svg><span data-i18n="purge_capture">Capture Unused</span>
+      </button>
+      <button class="btn primary" id="btnSelected" onclick="doPurgeSelected(this)">
+        <svg><use href="#i-trash-2"/></svg><span data-i18n="purge_selected">Purge Selected</span>
+      </button>
+      <button class="btn danger" id="btnAll" onclick="doPurgeAll(this)">
+        <svg><use href="#i-eraser"/></svg><span data-i18n="purge_all">Purge All</span>
+      </button>
+    </div>
+  </section>
+
+  <script>
+    var $ = function (id) { return document.getElementById(id); };
+
+    // Kolom: kunci data dari Ruby, id list, id penghitung, teks kosong
+    var COLS = [
+      { key: 'components', list: 'listComp', n: 'nComp', sw: false },
+      { key: 'materials',  list: 'listMat',  n: 'nMat',  sw: true },
+      { key: 'tags',       list: 'listTag',  n: 'nTag',  sw: true }
+    ];
+    var captured = false;
+    var counts = { components: 0, materials: 0, tags: 0 };
+
+    function colOf(listId) { return COLS.filter(function (c) { return c.list === listId; })[0]; }
+    function allBox(listId) { return document.querySelector('input[data-all="' + listId + '"]'); }
+    function visibleItems(listId) {
+      return Array.prototype.filter.call($(listId).querySelectorAll('.check'), function (l) { return l.style.display !== 'none'; });
+    }
+    function checkedValues(listId) {
+      return Array.prototype.map.call($(listId).querySelectorAll('input:checked'), function (c) { return c.value; });
+    }
+
+    // Sinkronkan ceklis header (penuh / sebagian / kosong) dan penghitung "dipilih / total"
+    function syncHeader(listId) {
+      var col = colOf(listId);
+      var vis = visibleItems(listId);
+      var on = vis.filter(function (l) { return l.querySelector('input').checked; }).length;
+      var box = allBox(listId);
+      box.checked = vis.length > 0 && on === vis.length;
+      box.indeterminate = on > 0 && on < vis.length;
+      box.disabled = vis.length === 0;
+      var total = counts[col.key];
+      var sel = checkedValues(listId).length;
+      $(col.n).textContent = total ? (sel ? sel + ' / ' : '') + total : '';
+    }
+    function syncAll() {
+      COLS.forEach(function (c) { syncHeader(c.list); });
+      var total = COLS.reduce(function (s, c) { return s + counts[c.key]; }, 0);
+      $('totalPill').textContent = captured ? total + ' ' + t('purge_unused', 'tak terpakai') : '';
+    }
+
+    function renderList(col, items) {
+      var el = $(col.list);
+      var sel = new Set(checkedValues(col.list));
+      counts[col.key] = items.length;
+      if (!items.length) {
+        el.innerHTML = '<div class="empty">' + esc(captured
+          ? t('purge_none', 'Tidak ada yang tidak terpakai.')
+          : t('purge_press_capture', 'Klik “Capture Unused” untuk memindai model.')) + '</div>';
+      } else {
+        el.innerHTML = items.map(function (it) {
+          var sw = (col.sw && it.c) ? '<span class="sw" style="background:' + esc(it.c) + '"></span>' : '';
+          return '<label class="check"><input type="checkbox" value="' + esc(it.n) + '"' + (sel.has(it.n) ? ' checked' : '') + '>' +
+            '<span class="box">' + icon('check') + '</span>' + sw + '<span class="name">' + esc(it.n) + '</span></label>';
+        }).join('');
+      }
+      applyFilter(col.list);
+    }
+
+    function applyFilter(listId) {
+      var input = document.querySelector('input[data-filter="' + listId + '"]');
+      var q = input ? input.value.toLowerCase().trim() : '';
+      $(listId).querySelectorAll('.check').forEach(function (l) {
+        l.style.display = (!q || l.textContent.toLowerCase().indexOf(q) > -1) ? '' : 'none';
+      });
+    }
+
+    function render(data) {
+      data = data || {};
+      COLS.forEach(function (c) { renderList(c, data[c.key] || []); });
+      syncAll();
+      autoFitHeight(0);
+    }
+    render({}); // keadaan awal: belum ada capture
+
+    // Pencarian per kolom
+    document.addEventListener('input', function (e) {
+      var listId = e.target.dataset && e.target.dataset.filter;
+      if (!listId) return;
+      applyFilter(listId);
+      syncHeader(listId);
+    });
+    document.addEventListener('keydown', function (e) {
+      var listId = e.target.dataset && e.target.dataset.filter;
+      if (e.key === 'Escape' && listId) {
+        e.target.value = '';
+        applyFilter(listId);
+        syncHeader(listId);
+      }
+    });
+
+    // Ceklis item → perbarui header kolomnya; ceklis header → pilih/lepas semua item yang tampil
+    document.addEventListener('change', function (e) {
+      var t0 = e.target;
+      if (t0.dataset && t0.dataset.all) {
+        visibleItems(t0.dataset.all).forEach(function (l) { l.querySelector('input').checked = t0.checked; });
+        syncHeader(t0.dataset.all);
+      } else {
+        var list = t0.closest && t0.closest('.list');
+        if (list) syncHeader(list.id);
+      }
+    });
+
+    // ---- Aksi ke Ruby ----
+    function setBusy(btn) {
+      busy(btn, true);
+      ['btnCapture', 'btnSelected', 'btnAll'].forEach(function (id) {
+        if ($(id) !== btn) $(id).disabled = true;
+      });
+    }
+    function resetPurgeButtons() {
+      ['btnCapture', 'btnSelected', 'btnAll'].forEach(function (id) {
+        if ($(id).dataset.html != null) busy(id, false);
+        $(id).disabled = false;
+      });
+    }
+    function call(name, arg, btn) {
+      setBusy(btn);
+      try {
+        if (window.sketchup && typeof sketchup[name] === 'function') {
+          if (arg === undefined) sketchup[name](); else sketchup[name](arg);
+        } else {
+          resetPurgeButtons();
+          showToast(t('purge_err_notready', 'Fungsi Purge belum siap.'), 'error');
+        }
+      } catch (err) {
+        resetPurgeButtons();
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function doCapture(btn) { call('purge_capture', undefined, btn); }
+    function doPurgeAll(btn) { call('purge_all', undefined, btn); }
+    function doPurgeSelected(btn) {
+      var picked = {
+        components: checkedValues('listComp'),
+        materials: checkedValues('listMat'),
+        tags: checkedValues('listTag')
+      };
+      if (!picked.components.length && !picked.materials.length && !picked.tags.length) {
+        return showToast(t('purge_min_1', 'Centang minimal 1 item dulu.'));
+      }
+      call('purge_selected', JSON.stringify(picked), btn);
+    }
+
+    // ---- Dipanggil dari Ruby ----
+    function onCaptured(data) {
+      captured = true;
+      resetPurgeButtons();
+      render(data);
+      var total = (data.components || []).length + (data.materials || []).length + (data.tags || []).length;
+      showToast(total
+        ? t('purge_captured', 'Ditemukan %{count} item tidak terpakai.').replace('%{count}', total)
+        : t('purge_none', 'Tidak ada yang tidak terpakai.'));
+    }
+    function onPurged(res) {
+      captured = true;
+      resetPurgeButtons();
+      render(res.data);
+      var r = res.removed || {};
+      var total = (r.components || 0) + (r.materials || 0) + (r.tags || 0);
+      showToast(total
+        ? t('purge_done', 'Dihapus: %{c} component, %{m} material, %{t} tag.')
+            .replace('%{c}', r.components || 0).replace('%{m}', r.materials || 0).replace('%{t}', r.tags || 0)
+        : t('purge_nothing', 'Tidak ada yang bisa dihapus.'), total ? 'success' : undefined);
+    }
+
+    autoFitHeight(0);
+  </script>
+</body>
+</html>

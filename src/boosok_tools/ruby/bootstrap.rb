@@ -3,16 +3,35 @@ require 'json'
 
 module BoosokTools
   unless file_loaded?(__FILE__)
-    Sketchup.require 'boosok_tools/titlebar'
+    Sketchup.require 'boosok_tools/ruby/titlebar'
     BoosokTools.init_session_file
-    Sketchup.require 'boosok_tools/locale'
+    Sketchup.require 'boosok_tools/ruby/locale'
     # Buat js/strings.js dari locales/*.json sebelum dialog mana pun dimuat
     BoosokTools::Locale.export_js
     Sketchup.require 'boosok_tools/updater'
-    Sketchup.require 'boosok_tools/shortcut_sync'
+    Sketchup.require 'boosok_tools/ruby/shortcut_sync'
     Sketchup.require 'boosok_tools/license'
     Sketchup.require 'boosok_tools/hub'
-    Sketchup.require 'boosok_tools/the_custom_select'
+    Sketchup.require 'boosok_tools/ruby/paid/select_tool'
+
+    # File lama sebelum dipindah ke ruby/free dan ruby/paid: hapus supaya tidak ada salinan ganda (hanya kalau
+    # lokasi baru sudah ada, dan gagal pun tidak masalah).
+    if File.directory?(File.join(BoosokTools::SUPPORT_DIR, 'ruby', 'free'))
+      begin
+        require 'fileutils'
+        %w[cleangroup purge replacer reset selector deep_properties hideon_scene select_tool slice void
+           untagnpaint locale shortcut_sync titlebar bootstrap].each do |name|
+          %w[rb rbe].each do |ext|
+            old = File.join(BoosokTools::SUPPORT_DIR, "#{name}.#{ext}")
+            File.delete(old) if File.exist?(old)
+          end
+        end
+        old_dir = File.join(BoosokTools::SUPPORT_DIR, 'select_tool')
+        FileUtils.rm_rf(old_dir) if File.directory?(old_dir)
+      rescue StandardError
+        nil
+      end
+    end
 
     BoosokTools::ShortcutSync.init
 
@@ -36,6 +55,10 @@ module BoosokTools
     register_cmd.call('Hide Scene')    { BoosokTools::Hub.open_or_show('scene') }
     register_cmd.call('Untag')         { BoosokTools::Hub.open_or_show('untag') }
     register_cmd.call('Deep Props')    { BoosokTools::Hub.open_or_show('deep') }
+    register_cmd.call('Purge')         { BoosokTools::Hub.open_or_show('purge') }
+    register_cmd.call('Void')          { BoosokTools::Hub.open_or_show('void') }
+    register_cmd.call('Slice')         { BoosokTools::Hub.open_or_show('slice') }
+    register_cmd.call('Trowel')        { BoosokTools::Hub.open_or_show('trowel') }
 
     # Mode developer (hanya aktif kalau file .dev_mode ada di folder plugin)
     Sketchup.require 'boosok_tools/dev_reload'

@@ -58,8 +58,21 @@ module BoosokTools
       end
     end
 
+    # GetWindow dipisah dari blok di atas: blok itu tidak dijalankan ulang saat hot-reload (User32 sudah ada).
+    unless defined?(GetWindowFn)
+      begin
+        GetWindowFn = Fiddle::Function.new(
+          User32['GetWindow'],
+          [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_INT],
+          Fiddle::TYPE_INTPTR_T
+        )
+      rescue StandardError, LoadError
+        nil
+      end
+    end
+
     def self.log(msg)
-      log_file = File.join(::BoosokTools::SUPPORT_DIR, 'titlebar.log')
+      log_file = File.join(::BoosokTools::SUPPORT_DIR, 'ruby', 'titlebar.log')
       File.open(log_file, 'a') { |f| f.puts("[#{Time.now.strftime('%H:%M:%S')}] #{msg}") }
     rescue
     end
@@ -142,6 +155,52 @@ module BoosokTools
       nil
     end
 
+    # Area gambar (viewport) SketchUp dalam koordinat layar, dicari sebagai child window yang
+    # ukurannya sama dengan view.vpwidth x view.vpheight. Return [left, top, right, bottom] atau nil.
+    def self.get_viewport_rect
+      return nil unless ready? && defined?(GetWindowFn)
+
+      root = get_sketchup_hwnd
+      view = Sketchup.active_model && Sketchup.active_model.active_view
+      return nil unless root && root != 0 && view
+
+      vw = view.vpwidth
+      vh = view.vpheight
+      queue = [root]
+      seen = 0
+      until queue.empty? || seen > 800
+        hwnd = queue.shift
+        child = GetWindowFn.call(hwnd, 5) # GW_CHILD
+        while child && child != 0 && seen <= 800
+          seen += 1
+          buf = [0, 0, 0, 0].pack('l4')
+          if GetWindowRect.call(child, buf) != 0
+            left, top, right, bottom = buf.unpack('l4')
+            return [left, top, right, bottom] if (right - left - vw).abs <= 2 && (bottom - top - vh).abs <= 2
+          end
+          queue << child
+          child = GetWindowFn.call(child, 2) # GW_HWNDNEXT
+        end
+      end
+      nil
+    rescue => e
+      log("get_viewport_rect error: #{e.message}")
+      nil
+    end
+
+    # Pojok kiri atas area gambar (+ sedikit jarak). Kalau viewport tidak ketemu: pojok kiri atas
+    # jendela SketchUp digeser melewati menu/toolbar; kalau itu pun gagal: tengah jendela.
+    def self.get_viewport_corner_pos(dialog_width = 380, dialog_height = 480)
+      margin = 16
+      vp = get_viewport_rect
+      return [vp[0] + margin, vp[1] + margin] if vp
+
+      rect = get_sketchup_rect
+      return [rect[0] + margin, rect[1] + 140] if rect
+
+      get_sketchup_center_pos(dialog_width, dialog_height)
+    end
+
     def self.get_sketchup_center_pos(dialog_width = 380, dialog_height = 480)
       rect = get_sketchup_rect
       if rect
@@ -189,10 +248,113 @@ module BoosokTools
       @applied_theme = [hwnd, is_dark]
     end
 
+    SLIDE_SECONDS = 0.22 unless defined?(SLIDE_SECONDS)
+
+    # [left, top, right, bottom] jendela dialog (koordinat layar yang sama dengan SetWindowPos).
+    def self.get_window_rect(title)
+      return nil unless ready?
+      hwnd = find_hwnd(title)
+      return nil if hwnd == 0
+
+      buf = [0, 0, 0, 0].pack('l4')
+      GetWindowRect.call(hwnd, buf) != 0 ? buf.unpack('l4') : nil
+    rescue => e
+      log("get_window_rect error: #{e.message}")
+      nil
+    end
+
+    HEIGHT_SECONDS = 0.16 unless defined?(HEIGHT_SECONDS)
+
+    # Tinggi dialog berubah halus (ease-out) dari tinggi saat ini ke target; sisi atas jendela tetap.
+    # Lebar diambil dari @dialog_width, jadi aman berjalan bersamaan dengan animasi lebar (apply_width).
+    def self.animate_height(dialog, target)
+      UI.stop_timer(@height_timer) if @height_timer
+      @height_timer = nil
+      from = @cur_h
+      if from.nil? || (from - target).abs < 6
+        @cur_h = target
+        dialog.set_size(@dialog_width || 380, target)
+        return
+      end
+
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      step = lambda do
+        k = [(Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) / HEIGHT_SECONDS, 1.0].min
+        e = 1 - ((1 - k)**3) # easeOutCubic
+        @cur_h = (from + ((target - from) * e)).round
+        dialog.set_size(@dialog_width || 380, @cur_h)
+        if k >= 1.0 || !dialog.visible?
+          UI.stop_timer(@height_timer) if @height_timer
+          @height_timer = nil
+        end
+      end
+      step.call
+      @height_timer = UI.start_timer(0.016, true) { step.call } if @height_timer.nil? && @cur_h != target
+    end
+
+    # Lebar jendela aktif. Default 380; tool lebar (mis. Purge) mengubahnya lewat apply_width.
+    # Lebar dianimasikan (ease in-out) dan sisi kirinya digeser setengah selisih lebar, jadi jendela
+    # melebar/menyempit ke kiri-kanan sama rata. Titik tengah (anchor) disimpan supaya bolak-balik
+    # Hub <-> tool lebar tidak membuat posisi bergeser; anchor dihitung ulang kalau user memindahkan jendela.
+    def self.apply_width(dialog, width)
+      width = width.to_i
+      return unless dialog && width > 0
+      return if @target_width == width
+
+      @target_width = width
+      UI.stop_timer(@slide_timer) if @slide_timer
+      @slide_timer = nil
+      @last_h = nil # paksa set_dialog_height berikutnya menerapkan ukuran baru
+      from = @dialog_width || width
+      rect = @dialog_title && get_window_rect(@dialog_title)
+      unless rect
+        @dialog_width = width
+        dialog.set_size(width, @cur_h || @fit_h || 480)
+        return
+      end
+
+      if @slide_left.nil? || (rect[0] - @slide_left).abs > 3
+        @frame_extra = (rect[2] - rect[0]) - from # bingkai/bayangan jendela di luar lebar konten
+        @anchor_cx = rect[0] + ((rect[2] - rect[0]) / 2.0)
+      end
+      top = rect[1]
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+      step = lambda do
+        k = [(Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) / SLIDE_SECONDS, 1.0].min
+        e = k < 0.5 ? 4 * k * k * k : 1 - ((-2 * k + 2)**3) / 2 # easeInOutCubic
+        w = (from + ((width - from) * e)).round
+        @dialog_width = w
+        dialog.set_size(w, @cur_h || @fit_h || 480)
+        left = (@anchor_cx - ((w + @frame_extra) / 2.0)).round
+        sk = get_sketchup_rect
+        left = [left, sk[0]].max if sk # jangan keluar dari sisi kiri jendela SketchUp
+        set_window_pos(@dialog_title, left, top)
+        @slide_left = left
+        if k >= 1.0 || !dialog.visible?
+          UI.stop_timer(@slide_timer) if @slide_timer
+          @slide_timer = nil
+        end
+      end
+
+      step.call
+      @slide_timer = UI.start_timer(0.016, true) { step.call } if @slide_timer.nil? && @dialog_width != width
+    end
+
     def self.attach(dialog, title, width: nil)
       return unless dialog
       @applied_theme = nil
-      last_h = nil
+      @dialog_width = width ? width.to_i : 380
+      @target_width = @dialog_width
+      UI.stop_timer(@slide_timer) if @slide_timer
+      @slide_timer = nil
+      @slide_left = nil
+      @dialog_title = title
+      @last_h = nil
+      @fit_h = nil
+      @cur_h = nil
+      UI.stop_timer(@height_timer) if @height_timer
+      @height_timer = nil
 
       dialog.add_action_callback("syncTheme") do |_ctx, theme|
         is_dark = (theme.to_s == 'dark')
@@ -229,10 +391,10 @@ module BoosokTools
       dialog.add_action_callback("set_dialog_height") do |_ctx, height|
         h = height.to_i
         # set_size = resize jendela native + relayout; lewati kalau tingginya tidak berubah
-        if h > 200 && h < 1200 && (last_h.nil? || (h - last_h).abs >= 4)
-          w = width ? width.to_i : 380
-          dialog.set_size(w, h)
-          last_h = h
+        if h > 200 && h < 1200 && (@last_h.nil? || (h - @last_h).abs >= 4)
+          @last_h = h
+          @fit_h = h
+          animate_height(dialog, h)
         end
       end
 
@@ -275,11 +437,10 @@ module BoosokTools
       return @dialog_pos
     end
 
-    # Saat awal mulai ketika SketchUp pertama kali dibuka:
-    # Posisikan tepat di center model kerja / workspace SketchUp
-    center_pos = TitleBar.get_sketchup_center_pos(width, height)
-    @dialog_pos = center_pos
-    center_pos
+    # Pembukaan pertama di sesi SketchUp ini: pojok kiri atas area gambar (viewport) model kerja
+    start_pos = TitleBar.get_viewport_corner_pos(width, height)
+    @dialog_pos = start_pos
+    start_pos
   end
 
   def self.capture_current_position(title)

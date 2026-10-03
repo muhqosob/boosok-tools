@@ -6,6 +6,78 @@ module BoosokTools::DeepProperties
   @callbacks_registered = false
   @dialog_registered_id = nil
   @scan_context = nil   # Entity yang di-scan (apapun: Edge, Face, Group, ComponentInstance)
+  @mode = 'tag'         # 'tag' atau 'material': dasar pengelompokan hasil scan
+  MATERIAL_DEFAULT = '(Default)'.freeze unless defined?(MATERIAL_DEFAULT)
+
+  def self.mode
+    @mode
+  end
+
+  def self.mode=(value)
+    @mode = %w[tag material].include?(value.to_s) ? value.to_s : 'tag'
+  end
+
+  def self.material_mode?
+    @mode == 'material'
+  end
+
+  # Kunci pengelompokan sebuah entity: nama tag, atau nama material ('(Default)' kalau belum dicat).
+  # Face memakai material sisi depan.
+  def self.entity_key(ent)
+    if material_mode?
+      mat = (ent.material rescue nil)
+      mat ? mat.name.to_s : MATERIAL_DEFAULT
+    else
+      display_tag_name((ent.layer.name rescue 'Layer0'))
+    end
+  end
+
+  # Warna hex dari material (atau abu-abu untuk '(Default)')
+  def self.material_color_hex(model, name)
+    mat = model.materials[name]
+    return '#cccccc' unless mat
+
+    c = mat.color
+    '#%02x%02x%02x' % [c.red, c.green, c.blue]
+  rescue
+    '#cccccc'
+  end
+
+  # Daftar material yang sudah ada di model (untuk memilih material pengganti)
+  def self.model_materials(model)
+    model.materials.map do |mat|
+      { name: mat.name.to_s, color: material_color_hex(model, mat.name.to_s), texture: !mat.texture.nil? }
+    end.sort_by { |h| h[:name].downcase }
+  rescue
+    []
+  end
+
+  # Ganti material `from` menjadi `to` (nama material di model, atau '(Default)' = lepas material) pada semua
+  # objek hasil scan (termasuk isi group / component). Hasil: [jumlah_diganti, pesan_error]
+  def self.replace_material(model, from, to)
+    return [0, 'Scan objek terlebih dahulu.'] unless @scan_context && !@scan_context.empty?
+    return [0, 'Material tujuan sama dengan material asal.'] if from == to
+
+    new_mat = to == MATERIAL_DEFAULT ? nil : model.materials[to]
+    return [0, "Material '#{to}' tidak ditemukan di model."] if to != MATERIAL_DEFAULT && !new_mat
+
+    @mode = 'material'
+    count = 0
+    model.start_operation('Ganti Material', true)
+    collect_all_entities(@scan_context) do |ent|
+      next if ent.respond_to?(:locked?) && ent.locked?
+      next unless ent.is_a?(Sketchup::Edge) || ent.is_a?(Sketchup::Face) || ent.is_a?(Sketchup::Group) || ent.is_a?(Sketchup::ComponentInstance)
+      next unless entity_key(ent) == from
+
+      ent.material = new_mat
+      count += 1
+    end
+    model.commit_operation
+    [count, nil]
+  rescue => e
+    model.abort_operation rescue nil
+    [0, "Gagal mengganti material: #{e.message}"]
+  end
 
   # ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -48,8 +120,9 @@ module BoosokTools::DeepProperties
   end
 
   # Dapatkan entitas yang di-scan berdasarkan objek yang dipilih (Edge, Face, Group, Component)
-  def self.scan_root_entities(model)
-    sel = model.selection.to_a
+  # reuse = true: pakai objek hasil scan sebelumnya (dipakai saat ganti mode tag/material tanpa seleksi ulang)
+  def self.scan_root_entities(model, reuse = false)
+    sel = reuse ? (@scan_context || []).select { |e| e.respond_to?(:valid?) && e.valid? } : model.selection.to_a
     if sel.empty?
       @scan_context = []
       return [[], nil, 'Pilih objek terlebih dahulu di SketchUp (Edge, Face, Group, atau Component).']
@@ -95,8 +168,7 @@ module BoosokTools::DeepProperties
 
   def self.count_entity(ent, counts, memo)
     return unless ent.respond_to?(:valid?) && ent.valid?
-    raw_tag = ent.layer.name rescue 'Layer0'
-    c = (counts[display_tag_name(raw_tag)] ||= { edges: 0, faces: 0, groups: 0, components: 0 })
+    c = (counts[entity_key(ent)] ||= { edges: 0, faces: 0, groups: 0, components: 0 })
     if ent.is_a?(Sketchup::Edge)
       c[:edges] += 1
     elsif ent.is_a?(Sketchup::Face)
@@ -120,14 +192,15 @@ module BoosokTools::DeepProperties
   end
 
   # ── Scan Tags ───────────────────────────────────────────────────────────────
-  def self.scan_tags(model)
-    root_list, ctx_name, err = scan_root_entities(model)
+  def self.scan_tags(model, reuse = false)
+    root_list, ctx_name, err = scan_root_entities(model, reuse)
     if err
       return {
         error: err,
         tags: [],
         ctx_name: nil,
-        total_ents: 0
+        total_ents: 0,
+        mode: @mode
       }
     end
 
@@ -142,12 +215,18 @@ module BoosokTools::DeepProperties
       total = c[:edges] + c[:faces] + c[:groups] + c[:components]
       next if total == 0
 
-      layer = find_layer(model, tag_name)
-      visible = layer.respond_to?(:visible?) ? layer.visible? : true
+      if material_mode?
+        color = material_color_hex(model, tag_name)
+        visible = true # material tidak punya visibilitas; ikon mata disembunyikan di tampilan
+      else
+        layer = find_layer(model, tag_name)
+        visible = layer.respond_to?(:visible?) ? layer.visible? : true
+        color = color_hex(layer)
+      end
 
       {
         name:       tag_name,
-        color:      color_hex(layer),
+        color:      color,
         visible:    visible,
         edges:      c[:edges],
         faces:      c[:faces],
@@ -158,6 +237,8 @@ module BoosokTools::DeepProperties
     end.compact
 
     {
+      mode:       @mode,
+      materials:  material_mode? ? model_materials(model) : [],
       tags:       result,
       ctx_name:   ctx_name,
       total_ents: counts.values.map { |c| c[:edges] + c[:faces] + c[:groups] + c[:components] }.inject(0, :+) || 0
@@ -199,9 +280,7 @@ module BoosokTools::DeepProperties
 
     collect_all_entities(@scan_context) do |ent|
       next unless ent.respond_to?(:valid?) && ent.valid?
-      raw_tag = ent.layer.name rescue 'Layer0'
-      ent_tag = display_tag_name(raw_tag).downcase
-      next unless ent_tag == target_tag
+      next unless entity_key(ent).downcase == target_tag
 
       case subtype.to_s.downcase
       when 'edge'
@@ -248,9 +327,7 @@ module BoosokTools::DeepProperties
 
     collect_all_entities(@scan_context) do |ent|
       next unless ent.respond_to?(:valid?) && ent.valid?
-      raw_tag = ent.layer.name rescue 'Layer0'
-      ent_tag = display_tag_name(raw_tag).downcase
-      next unless tag_set.include?(ent_tag)
+      next unless tag_set.include?(entity_key(ent).downcase)
 
       if type_arr.include?('edge') && ent.is_a?(Sketchup::Edge)
         matched << ent
@@ -320,14 +397,42 @@ module BoosokTools::DeepProperties
     end
 
     # Scan tags ulang (dipanggil saat user klik tombol Scan Objek)
-    dlg.add_action_callback('dp_scan') do |_ctx|
+    dlg.add_action_callback('dp_scan') do |_ctx, mode|
       model = Sketchup.active_model
       next unless model
       begin
+        self.mode = mode if mode
         data = scan_tags(model)
         dlg.execute_script("if (typeof initData === 'function') initData(#{data.to_json}, true);")
       rescue => e
         dlg.execute_script("showToast(#{("Gagal scan: " + e.message).to_json}, 'error');")
+      end
+    end
+
+    # Ganti dasar pengelompokan (tag / material): hitung ulang objek hasil scan sebelumnya tanpa seleksi ulang
+    dlg.add_action_callback('dp_mode') do |_ctx, mode|
+      model = Sketchup.active_model
+      next unless model
+      begin
+        self.mode = mode
+        data = scan_tags(model, true)
+        dlg.execute_script("if (typeof initData === 'function') initData(#{data.to_json}, false);")
+      rescue => e
+        dlg.execute_script("showToast(#{("Gagal scan: " + e.message).to_json}, 'error');")
+      end
+    end
+
+    # Ganti material (dari material yang sudah ada di model) pada semua objek hasil scan
+    dlg.add_action_callback('dp_replace_material') do |_ctx, from, to|
+      model = Sketchup.active_model
+      next unless model
+      n, err = replace_material(model, from.to_s, to.to_s)
+      if err
+        dlg.execute_script("showToast(#{err.to_json}, 'error');")
+      else
+        dlg.execute_script("showToast(#{"#{n} objek diganti: '#{from}' → '#{to}'.".to_json}, 'success');")
+        data = scan_tags(model, true)
+        dlg.execute_script("if (typeof initData === 'function') initData(#{data.to_json}, false);")
       end
     end
 
@@ -349,16 +454,18 @@ module BoosokTools::DeepProperties
     end
 
     # Seleksi subtipe dari klik sub-row di tree
-    dlg.add_action_callback('dp_select_subtype') do |_ctx, tag_name, subtype|
+    dlg.add_action_callback('dp_select_subtype') do |_ctx, tag_name, subtype, mode|
       model = Sketchup.active_model
       next unless model
+      self.mode = mode if mode
       n = select_by_tag_and_subtype(model, tag_name, subtype)
       type_labels = { 'edge' => 'Edge', 'face' => 'Face', 'group' => 'Group', 'component' => 'Component' }
       label = type_labels[subtype.to_s.downcase] || subtype
+      unit = material_mode? ? 'material' : 'tag'
       if n > 0
-        dlg.execute_script("showToast(#{("Terseleksi #{n} #{label} pada tag '#{tag_name}'.").to_json}, 'success');")
+        dlg.execute_script("showToast(#{("Terseleksi #{n} #{label} pada #{unit} '#{tag_name}'.").to_json}, 'success');")
       else
-        dlg.execute_script("showToast(#{("Tidak ada #{label} yang ditemukan pada tag '#{tag_name}'.").to_json}, 'error');")
+        dlg.execute_script("showToast(#{("Tidak ada #{label} yang ditemukan pada #{unit} '#{tag_name}'.").to_json}, 'error');")
       end
     end
 
@@ -368,6 +475,7 @@ module BoosokTools::DeepProperties
       next unless model
       begin
         params = JSON.parse(json_str)
+        self.mode = params['mode'] if params['mode']
         tag_names = params['tags']  || []
         types     = params['types'] || ['edge', 'face', 'group', 'component']
         n = select_by_tags(model, tag_names, types)

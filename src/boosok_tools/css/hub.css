@@ -1331,15 +1331,8 @@
       border-bottom: 1px solid var(--line);
     }
 
-    /* about-mark sama persis dengan .mark di header hub */
+    /* about-mark memakai kelas .mark (ui.css) yang sama dengan header hub, jadi tampilannya otomatis identik */
     .about-mark {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: var(--ink);
-      color: #fff;
-      display: grid;
-      place-items: center;
       flex-shrink: 0;
     }
 

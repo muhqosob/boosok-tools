@@ -18,6 +18,8 @@ AllCops:
   DisabledByDefault: true
   NewCops: disable
   SuggestExtensions: false
+  Exclude:
+    - "tools/**/*" # skrip pribadi author (keygen), bukan bagian paket plugin
   TargetRubyVersion: 2.7
   SketchUp:
     # Relatif terhadap file ini. Isinya harus persis: boosok_tools.rb + folder boosok_tools/

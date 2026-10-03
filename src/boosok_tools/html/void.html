@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Void</title>
+  <link rel="stylesheet" href="../css/ui.css">
+  <script src="../js/strings.js"></script>
+  <script src="../js/locale.js"></script>
+  <style>
+    .stat { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+    .stat .t { font-weight: 600; }
+    .stat .s { color: var(--muted); font-size: 11.5px; }
+    .btn.ok { background: var(--ok); color: #fff; }
+    .btn.ok:hover { filter: brightness(.92); }
+    .warn-intro { margin: 0; font-size: 12.5px; color: var(--ink); }
+    .warn { margin: 0; padding-left: 18px; font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+    .stat .num { margin-left: auto; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+  <script src="../js/ui.js"></script>
+
+  <header class="head">
+    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()" data-i18n-title="back_to_hub" data-i18n-aria="back_aria"><svg><use href="#i-arrow-left"/></svg></button>
+    <div class="mark"><svg><use href="#i-square-minus"/></svg></div>
+    <div class="txt">
+      <h1 data-i18n="void_title">Void</h1>
+      <p data-i18n="void_sub">Group pelubang untuk group lain yang bertabrakan</p>
+    </div>
+    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema" data-i18n-title="theme_toggle" data-i18n-aria="theme_toggle"></button>
+  </header>
+
+  <section class="step active" id="step1">
+    <div class="card stat">
+      <div>
+        <div class="t" data-i18n="void_count_title">Group void</div>
+        <div class="s" data-i18n="void_count_sub">Di konteks edit yang sedang aktif</div>
+      </div>
+      <div class="num" id="voidCount">0</div>
+    </div>
+
+    <div class="card">
+      <div class="cap" data-i18n="scene_workflow">Alur kerja</div>
+      <ul class="steps">
+        <li>
+          <div class="ic"><svg><use href="#i-square-dashed-mouse-pointer"/></svg></div>
+          <div><div class="t" data-i18n="void_s1_t">Seleksi group / component pelubang</div><div class="s" data-i18n="void_s1_s">Lalu klik Jadikan Void (diberi warna merah tembus)</div></div>
+        </li>
+        <li>
+          <div class="ic"><svg><use href="#i-square-minus"/></svg></div>
+          <div><div class="t" data-i18n="void_s2_t">Terapkan Void</div><div class="s" data-i18n="void_s2_s">Semua group solid yang bertabrakan akan dilubangi</div></div>
+        </li>
+        <li>
+          <div class="ic"><svg><use href="#i-box"/></svg></div>
+          <div><div class="t" data-i18n="void_s3_t">Mau component ikut bergerak?</div><div class="s" data-i18n="void_s3_s">Masukkan component (pintu, jendela, dll.) ke dalam group void (double-click → tempel). Hanya bentuk lubangnya yang memotong.</div></div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="toggle" id="useLive" role="switch" aria-checked="true" tabindex="0">
+      <svg class="ic"><use href="#i-refresh-cw"/></svg>
+      <div class="txt">
+        <div class="t" data-i18n="void_live">Lubang ikut bergeser (live)</div>
+        <div class="s" data-i18n="void_live_desc">Saat void / group digeser, lubang diperbarui otomatis</div>
+      </div>
+      <div class="switch"></div>
+    </div>
+
+    <div class="actions row">
+      <button class="btn ghost" id="btnUnmark" onclick="doMark(false, this)">
+        <svg><use href="#i-rotate-ccw"/></svg><span data-i18n="void_unmake">Batalkan Void</span>
+      </button>
+      <button class="btn ghost" id="btnMark" onclick="doMark(true, this)">
+        <svg><use href="#i-square-minus"/></svg><span data-i18n="void_make">Jadikan Void</span>
+      </button>
+    </div>
+    <div class="actions row">
+      <button class="btn ok" id="btnBake" title="Hapus salinan utuh tersembunyi; hasil jadi group biasa" data-i18n-title="void_bake_title" onclick="doBake(this)">
+        <svg><use href="#i-check"/></svg><span data-i18n="void_bake">Finalisasi</span>
+      </button>
+      <button class="btn primary" id="btnApply" onclick="doApply(this)">
+        <svg><use href="#i-focus"/></svg><span data-i18n="void_apply">Terapkan Void</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Konfirmasi Finalisasi -->
+  <div class="overlay" id="bakeModal">
+    <div class="sheet">
+      <h3 data-i18n="void_bake_confirm_title">Yakin ingin finalisasi?</h3>
+      <p class="warn-intro" data-i18n="void_bake_confirm_intro">Finalisasi bersifat permanen untuk lubang yang sudah dibuat:</p>
+      <ul class="warn">
+        <li data-i18n="void_bake_w1">Salinan utuh (tersembunyi) dari group yang berlubang akan DIHAPUS.</li>
+        <li data-i18n="void_bake_w2">Group yang berlubang menjadi group biasa; void tidak lagi mengontrol lubangnya.</li>
+        <li data-i18n="void_bake_w3">Menggeser atau menghapus void tidak akan mengubah lubang lagi, dan Batalkan Void tidak bisa mengembalikan group aslinya.</li>
+        <li data-i18n="void_bake_w4">Satu-satunya cara membatalkan: Undo (Ctrl+Z) tepat setelah finalisasi.</li>
+      </ul>
+      <div class="actions row">
+        <button class="btn ghost" id="bakeNo" type="button"><span data-i18n="void_bake_no">Tidak</span></button>
+        <button class="btn danger" id="bakeYes" type="button"><svg><use href="#i-check"/></svg><span data-i18n="void_bake_yes">Ya, Finalisasi</span></button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var $ = function (id) { return document.getElementById(id); };
+    var BTNS = ['btnMark', 'btnUnmark', 'btnBake', 'btnApply'];
+
+    function setBusy(btn) {
+      busy(btn, true);
+      BTNS.forEach(function (id) { if ($(id) !== btn) $(id).disabled = true; });
+    }
+    function resetVoidButtons() {
+      BTNS.forEach(function (id) {
+        if ($(id).dataset.html != null) busy(id, false);
+        $(id).disabled = false;
+      });
+    }
+    function call(name, arg, btn) {
+      setBusy(btn);
+      try {
+        if (window.sketchup && typeof sketchup[name] === 'function') {
+          if (arg === undefined) sketchup[name](); else sketchup[name](arg);
+        } else {
+          resetVoidButtons();
+          showToast(t('void_err_notready', 'Fungsi Void belum siap.'), 'error');
+        }
+      } catch (err) {
+        resetVoidButtons();
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function doMark(on, btn) { call('void_mark', on, btn); }
+    function doApply(btn) { call('void_apply', undefined, btn); }
+    // Finalisasi permanen: tampilkan konfirmasi Ya / Tidak lebih dulu
+    function doBake(btn) { $('bakeModal').classList.add('open'); }
+    function closeBake() { $('bakeModal').classList.remove('open'); }
+    $('bakeNo').addEventListener('click', closeBake);
+    $('bakeModal').addEventListener('mousedown', function (e) { if (e.target === this) closeBake(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeBake(); });
+    $('bakeYes').addEventListener('click', function () {
+      closeBake();
+      call('void_bake', undefined, $('btnBake'));
+    });
+
+    // Switch live: simpan ke model lewat Ruby
+    function toggleLive() {
+      var on = $('useLive').getAttribute('aria-checked') !== 'true';
+      $('useLive').setAttribute('aria-checked', on);
+      if (window.sketchup && typeof sketchup.void_live === 'function') sketchup.void_live(on);
+    }
+    $('useLive').addEventListener('click', toggleLive);
+    $('useLive').addEventListener('keydown', function (e) {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleLive(); }
+    });
+
+    // ---- Dipanggil dari Ruby ----
+    function init(data) {
+      $('voidCount').textContent = (data && data.voids) || 0;
+      if (data && data.live === false) $('useLive').setAttribute('aria-checked', 'false');
+      autoFitHeight(0);
+    }
+    function onCount(n) {
+      $('voidCount').textContent = n || 0;
+    }
+    function onMarked(res) {
+      resetVoidButtons();
+      $('voidCount').textContent = res.voids || 0;
+      var key = res.on ? 'void_marked' : 'void_unmarked';
+      var def = res.on ? '%{n} group dijadikan void.' : '%{n} group dikembalikan jadi biasa.';
+      showToast(res.changed
+        ? t(key, def).replace('%{n}', res.changed)
+        : t('void_nochange', 'Tidak ada yang berubah.'), res.changed ? 'success' : undefined);
+    }
+    function onBaked(res) {
+      resetVoidButtons();
+      showToast(res.count
+        ? t('void_baked', '%{n} group difinalisasi (salinan utuh dihapus).').replace('%{n}', res.count)
+        : t('void_nochange', 'Tidak ada yang berubah.'), res.count ? 'success' : undefined);
+    }
+    function onApplied(st) {
+      resetVoidButtons();
+      var parts = [];
+      if (!st.voids) {
+        return showToast(t('void_none', 'Belum ada group void. Jadikan void dulu.'), 'error');
+      }
+      parts.push(t('void_applied', '%{n} group dilubangi.').replace('%{n}', st.cut));
+      if (st.skipped) parts.push(t('void_skipped', '%{n} dilewati (bukan solid).').replace('%{n}', st.skipped));
+      if (st.bad_voids) parts.push(t('void_bad', '%{n} void bukan solid.').replace('%{n}', st.bad_voids));
+      if (st.failed) parts.push(t('void_failed', '%{n} gagal.').replace('%{n}', st.failed));
+      showToast(parts.join(' '), (st.cut && !st.failed && !st.bad_voids) ? 'success' : undefined);
+    }
+
+    function requestInit() {
+      function tryReady() {
+        if (window.sketchup && typeof sketchup.ready === 'function') { sketchup.ready(); return true; }
+        return false;
+      }
+      if (!tryReady()) {
+        var retries = 0;
+        var iv = setInterval(function () {
+          retries++;
+          if (tryReady() || retries > 30) clearInterval(iv);
+        }, 50);
+      }
+    }
+
+    requestInit();
+    autoFitHeight(0);
+  </script>
+</body>
+</html>

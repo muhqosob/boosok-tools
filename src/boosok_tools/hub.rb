@@ -1,9 +1,9 @@
 require 'sketchup'
 require 'json'
-Sketchup.require 'boosok_tools/titlebar'
-Sketchup.require 'boosok_tools/shortcut_sync'
+Sketchup.require 'boosok_tools/ruby/titlebar'
+Sketchup.require 'boosok_tools/ruby/shortcut_sync'
 Sketchup.require 'boosok_tools/license'
-Sketchup.require 'boosok_tools/locale'
+Sketchup.require 'boosok_tools/ruby/locale'
 
 module BoosokTools
   # Satu pintu masuk semua tool (Single Window Architecture).
@@ -19,15 +19,31 @@ module BoosokTools
     # SketchUp akan terus pakai versi lama TOOL_PAGES dari memori → error "tidak dikenal".
     remove_const(:TOOL_PAGES) if defined?(TOOL_PAGES)
     TOOL_PAGES = {
-      'selector'      => { file: 'main',                  page: 'selector.html',        title: 'Selector' },
-      'custom_select' => { file: 'the_custom_select',      page: nil,                    title: 'Select Tools' },
-      'replacer'      => { file: 'the_replacer',           page: 'replacer.html',        title: 'Group Replacer' },
-      'clean'         => { file: 'the_cleangroup',         page: 'cleangroup.html',      title: 'Group Cleaner' },
-      'reset'         => { file: 'the_reset',              page: 'reset.html',           title: 'Reset Scale' },
-      'scene'         => { file: 'the_hideonscenemanager', page: 'hidescene.html',       title: 'Hide on Scene' },
-      'untag'         => { file: 'untagnpaint',            page: 'untagnpaint.html',     title: 'Untag & Unpaint' },
-      'deep'          => { file: 'deep_properties',        page: 'deep_properties.html', title: 'Deep Properties' }
+      'selector'      => { file: 'ruby/free/selector',            page: 'selector.html',        title: 'Selector' },
+      'custom_select' => { file: 'ruby/paid/select_tool',         page: nil,                    title: 'Select Tools' },
+      'replacer'      => { file: 'ruby/free/replacer',            page: 'replacer.html',        title: 'Group Replacer' },
+      'clean'         => { file: 'ruby/free/cleangroup',          page: 'cleangroup.html',      title: 'Group Cleaner' },
+      'reset'         => { file: 'ruby/free/reset',               page: 'reset.html',           title: 'Reset Scale' },
+      'scene'         => { file: 'ruby/paid/hideon_scene',        page: 'hidescene.html',       title: 'Hide on Scene' },
+      'untag'         => { file: 'ruby/free/untagnpaint',           page: 'untagnpaint.html',     title: 'Untag & Unpaint' },
+      'deep'          => { file: 'ruby/paid/deep_properties',     page: 'deep_properties.html', title: 'Deep Properties' },
+      'purge'         => { file: 'ruby/free/purge',               page: 'purge.html',           title: 'Purge', width: 800 },
+      'void'          => { file: 'ruby/paid/void',                page: 'void.html',            title: 'Void' },
+      'slice'         => { file: 'ruby/paid/slice',               page: 'slice.html',           title: 'Slice' },
+      'trowel'        => { file: 'ruby/paid/trowel',              page: 'trowel.html',          title: 'Trowel' }
     }.freeze
+
+    # Tool yang tetap bisa dipakai walau trial habis dan belum berlisensi. Sisanya (Select Tools, Hide Scene,
+    # Deep Props, Void, Slice) butuh lisensi aktif atau masa trial. Tanpa `unless defined?` supaya daftar ikut berubah saat reload.
+    remove_const(:FREE_TOOLS) if defined?(FREE_TOOLS)
+    FREE_TOOLS = %w[selector replacer reset clean untag purge].freeze
+
+    # Boleh dibuka? Tool gratis selalu boleh; selain itu butuh lisensi aktif / masa trial.
+    def self.tool_allowed?(id)
+      return true if FREE_TOOLS.include?(id.to_s)
+
+      !defined?(BoosokTools::License) || BoosokTools::License.can_use?
+    end
 
     @current_tool ||= 'hub'
 
@@ -87,11 +103,12 @@ module BoosokTools
       BoosokTools::Locale.export_js # murah: hanya menulis ulang kalau ada file bahasa yang berubah
       pos = BoosokTools.get_position(WIDTH, DEFAULT_HEIGHT)
 
+      width = (tool_id && TOOL_PAGES[tool_id.to_s] && TOOL_PAGES[tool_id.to_s][:width]) || WIDTH
       dlg = UI::HtmlDialog.new(
         dialog_title: TITLE,
         scrollable: false,
         resizable: false,
-        width: WIDTH,
+        width: width,
         height: DEFAULT_HEIGHT,
         style: UI::HtmlDialog::STYLE_DIALOG
       )
@@ -104,7 +121,7 @@ module BoosokTools
 
       page_file = custom_page || 'hub.html'
       dlg.set_file(File.join(::BoosokTools::SUPPORT_DIR, 'html', page_file))
-      TitleBar.attach(dlg, TITLE, width: WIDTH)
+      TitleBar.attach(dlg, TITLE, width: width)
 
       @current_tool = tool_id ? tool_id.to_s : 'hub'
       # Dibuka langsung ke sebuah tool (menu/hotkey): loader pembuka tidak perlu muncul nanti
@@ -121,25 +138,31 @@ module BoosokTools
 
       dlg.set_on_closed do
         BoosokTools.capture_current_position(TITLE)
-        TOOL_PAGES.each_key { |tid| deactivate_tool(tid) }
-        ConvertToCleanGroup.release_dialog if defined?(ConvertToCleanGroup)
-        TheReplacer.release_dialog if defined?(TheReplacer)
-        TheResetScale.release_dialog if defined?(TheResetScale)
-        UntagUnpaintManager.release_dialog if defined?(UntagUnpaintManager)
-        DeepProperties.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(DeepProperties)
-        DeepProperties.instance_variable_set(:@dialog_registered_id, nil) rescue nil if defined?(DeepProperties)
-        TheSelectorPlugin.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(TheSelectorPlugin)
-        TheSelectorPlugin.instance_variable_set(:@dialog_registered_id, nil) rescue nil if defined?(TheSelectorPlugin)
-        HideOnSceneManager.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(HideOnSceneManager)
-        HideOnSceneManager.instance_variable_set(:@dialog_registered_id, nil) rescue nil if defined?(HideOnSceneManager)
-        # Nonaktifkan Select Tool jika masih aktif
-        begin
-          model = Sketchup.active_model
-          model.select_tool(nil) if model && model.respond_to?(:select_tool)
-        rescue
-        end
-        # Hanya kosongkan kalau ini memang dialog aktif (bukan dialog baru hasil reload/buka ulang)
+        # Penutupan dialog LAMA (mis. saat reload/buka ulang cepat) bisa tiba setelah dialog baru terpasang. Jangan
+        # sentuh pendaftaran callback & state milik dialog baru: kalau terhapus, callback terdaftar lagi di dialog
+        # yang sama dan tiap aksi (mis. Replacer) jalan dua kali.
         if BoosokTools.dialog.nil? || BoosokTools.dialog.equal?(dlg)
+          TOOL_PAGES.each_key { |tid| deactivate_tool(tid) }
+          ConvertToCleanGroup.release_dialog if defined?(ConvertToCleanGroup)
+          TheReplacer.release_dialog if defined?(TheReplacer)
+          TheResetScale.release_dialog if defined?(TheResetScale)
+          UntagUnpaintManager.release_dialog if defined?(UntagUnpaintManager)
+          Purge.release_dialog if defined?(Purge)
+          Void.release_dialog if defined?(Void)
+          Slice.release_dialog if defined?(Slice)
+          Trowel.release_dialog if defined?(Trowel)
+          DeepProperties.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(DeepProperties)
+          DeepProperties.instance_variable_set(:@dialog_registered_id, nil) rescue nil if defined?(DeepProperties)
+          TheSelectorPlugin.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(TheSelectorPlugin)
+          TheSelectorPlugin.instance_variable_set(:@dialog_registered_id, nil) rescue nil if defined?(TheSelectorPlugin)
+          HideOnSceneManager.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(HideOnSceneManager)
+          HideOnSceneManager.instance_variable_set(:@dialog_registered_id, nil) rescue nil if defined?(HideOnSceneManager)
+          # Nonaktifkan Select Tool jika masih aktif
+          begin
+            model = Sketchup.active_model
+            model.select_tool(nil) if model && model.respond_to?(:select_tool)
+          rescue
+          end
           BoosokTools.dialog = nil
           @current_tool = 'hub'
         end
@@ -155,6 +178,7 @@ module BoosokTools
       when 'replacer' then TheReplacer.stop_cache_timer if defined?(TheReplacer)
       when 'selector' then TheSelectorPlugin.detach_all_observers if defined?(TheSelectorPlugin)
       when 'scene'    then HideOnSceneManager.detach_all_observers if defined?(HideOnSceneManager)
+      when 'slice'    then Slice.leave if defined?(Slice)
       end
     rescue => e
       puts "[Boosok Tools] deactivate_tool '#{id}': #{e.message}"
@@ -164,8 +188,8 @@ module BoosokTools
       cfg = TOOL_PAGES[id.to_s]
       return unless cfg
 
-      # Trial habis & belum berlisensi: cukup beri tahu bahwa tool terkunci (tanpa popup aktivasi)
-      if defined?(BoosokTools::License) && !BoosokTools::License.can_use?
+      # Trial habis & belum berlisensi: tool berbayar cukup diberi notifikasi terkunci (tanpa popup aktivasi)
+      unless tool_allowed?(id)
         notify_locked
         return
       end
@@ -189,8 +213,8 @@ module BoosokTools
       dlg = BoosokTools.dialog
       return unless dlg && dlg.visible?
 
-      # Kunci semua tool jika trial habis dan belum berlisensi
-      if defined?(BoosokTools::License) && !BoosokTools::License.can_use?
+      # Tool berbayar terkunci jika trial habis dan belum berlisensi
+      unless tool_allowed?(id)
         notify_locked
         return
       end
@@ -216,6 +240,7 @@ module BoosokTools
       # File tool cukup di-load sekali per sesi (tidak di-parse ulang tiap buka)
       preload_tools
       attach_tool_callbacks(id.to_s)
+      TitleBar.apply_width(dlg, cfg[:width] || WIDTH)
       navigate_to(cfg[:page])
     rescue Exception => e
       puts "[Boosok Tools] Gagal membuka #{id}: #{e.class}: #{e.message}\n#{e.backtrace.first(5).join("\n") rescue ''}"
@@ -254,6 +279,7 @@ module BoosokTools
       rescue
       end
       @current_tool = 'hub'
+      TitleBar.apply_width(dlg, WIDTH)
       # Callback hub sudah terdaftar sejak show — tidak perlu didaftarkan ulang tiap kembali
       navigate_to('hub.html')
     end
@@ -284,6 +310,15 @@ module BoosokTools
           license: (defined?(BoosokTools::License) ? BoosokTools::License.status : nil)
         }
         dlg.execute_script("if (typeof onHubRefresh === 'function') onHubRefresh(#{lite.to_json});")
+        # Cek ulang lisensi online ke server (async, jarang: paling cepat tiap 12 jam). Bila key dicabut: perbarui tampilan.
+        if defined?(BoosokTools::License)
+          BoosokTools::License.maybe_refresh do |changed|
+            next unless changed && dlg.visible?
+
+            dlg.execute_script("if (typeof onHubRefresh === 'function') onHubRefresh(#{{ license: BoosokTools::License.status }.to_json});")
+            dlg.execute_script("if (typeof onLicenseStatus === 'function') onLicenseStatus(#{BoosokTools::License.status.to_json});")
+          end
+        end
       end
 
       dlg.add_action_callback("ready") do |_ctx|
@@ -295,14 +330,27 @@ module BoosokTools
           TheSelectorPlugin.send_init_data(dlg)
         elsif @current_tool == 'deep' && defined?(DeepProperties)
           DeepProperties.send_init_data(dlg)
+        elsif @current_tool == 'void' && defined?(Void)
+          Void.send_init_data(dlg)
+        elsif @current_tool == 'slice' && defined?(Slice)
+          Slice.send_init_data(dlg)
+        elsif @current_tool == 'trowel' && defined?(Trowel)
+          Trowel.send_init_data(dlg)
         end
       end
 
       # Select Tool (dipakai Replacer & tab Objek di Hide Scene) — satu pendaftaran saja
       dlg.add_action_callback("activate_select_tool") do |_ctx|
         begin
-          load_tool_file('custom_select') unless defined?(BoosokTools::SelectTool)
-          BoosokTools::SelectTool.activate_tool if defined?(BoosokTools::SelectTool)
+          # Tanpa lisensi / trial habis: pakai tool Select bawaan SketchUp, bukan Select Tools Boosok
+          boosok_select = tool_allowed?('custom_select')
+          if boosok_select
+            load_tool_file('custom_select') unless defined?(BoosokTools::SelectTool)
+            BoosokTools::SelectTool.activate_tool if defined?(BoosokTools::SelectTool)
+          else
+            Sketchup.active_model.select_tool(nil)
+          end
+          dlg.execute_script("if (typeof onSelectMode === 'function') onSelectMode(#{boosok_select});")
         rescue => e
           puts "[Boosok Hub] Gagal aktifkan Select Tool: #{e.message}"
         end
@@ -411,33 +459,45 @@ module BoosokTools
         end
       end
 
+      # Aktivasi: key dicek ke server lisensi (jawaban datang async); key lama tetap diterima offline
       dlg.add_action_callback("validate_license") do |_ctx, key_json|
-        begin
-          key = JSON.parse(key_json) rescue key_json.to_s
-          if defined?(BoosokTools::License)
-            is_valid = BoosokTools::License.validate(key)
-            if is_valid
-              BoosokTools::License.save_key(key)
-              st = BoosokTools::License.status
-              dlg.execute_script("if (typeof onLicenseValidated === 'function') onLicenseValidated(true, #{st.to_json});")
-            else
-              dlg.execute_script("if (typeof onLicenseValidated === 'function') onLicenseValidated(false, null);")
+        key = (JSON.parse(key_json) rescue key_json.to_s).to_s
+        lic = defined?(BoosokTools::License) ? BoosokTools::License : nil
+        js = lambda { |code| dlg.execute_script(code) if dlg.visible? }
+        if lic.nil?
+          js.call("if (typeof onLicenseValidated === 'function') onLicenseValidated(false, null, 'error');")
+        else
+          begin
+            lic.activate(key) do |res|
+              if res[:ok]
+                js.call("if (typeof onLicenseValidated === 'function') onLicenseValidated(true, #{lic.status.to_json});")
+              else
+                js.call("if (typeof onLicenseValidated === 'function') onLicenseValidated(false, null, #{res[:error].to_s.to_json}, #{{ used: res[:used], max: res[:max] }.to_json});")
+              end
             end
-          else
-            dlg.execute_script("if (typeof onLicenseValidated === 'function') onLicenseValidated(false, null);")
+          rescue => e
+            puts "[Boosok Hub] validate_license error: #{e.message}"
+            js.call("if (typeof onLicenseValidated === 'function') onLicenseValidated(false, null, 'error');")
           end
-        rescue => e
-          puts "[Boosok Hub] validate_license error: #{e.message}"
-          dlg.execute_script("if (typeof onLicenseValidated === 'function') onLicenseValidated(false, null);")
         end
       end
 
+      # Hapus aktivasi = lepas perangkat ini dari key di server (perangkat lain bisa memakai slot-nya)
       dlg.add_action_callback("remove_license") do |_ctx|
+        lic = defined?(BoosokTools::License) ? BoosokTools::License : nil
+        next unless lic
+
         begin
-          Sketchup.write_default("BoosokTools", "license_key", "") rescue nil
-          BoosokTools::License.clear_cache! if defined?(BoosokTools::License)
-          st = defined?(BoosokTools::License) ? BoosokTools::License.status : { status: 'unlicensed' }
-          dlg.execute_script("if (typeof onLicenseStatus === 'function') onLicenseStatus(#{st.to_json});")
+          lic.release do |res|
+            next unless dlg.visible?
+
+            if res[:ok]
+              dlg.execute_script("if (typeof onLicenseStatus === 'function') onLicenseStatus(#{lic.status.to_json});")
+              dlg.execute_script("if (typeof onLicenseRemoved === 'function') onLicenseRemoved(true);")
+            else
+              dlg.execute_script("if (typeof onLicenseRemoved === 'function') onLicenseRemoved(false, #{res[:error].to_s.to_json});")
+            end
+          end
         rescue => e
           puts "[Boosok Hub] remove_license error: #{e.message}"
         end
@@ -511,6 +571,14 @@ module BoosokTools
         UntagUnpaintManager.attach_callbacks(dlg) if defined?(UntagUnpaintManager)
       when 'deep'
         DeepProperties.attach_callbacks(dlg) if defined?(DeepProperties)
+      when 'purge'
+        Purge.attach_callbacks(dlg) if defined?(Purge)
+      when 'void'
+        Void.attach_callbacks(dlg) if defined?(Void)
+      when 'slice'
+        Slice.attach_callbacks(dlg) if defined?(Slice)
+      when 'trowel'
+        Trowel.attach_callbacks(dlg) if defined?(Trowel)
       end
     end
 
@@ -546,6 +614,7 @@ module BoosokTools
         language: cur_lang,
         hotkeys: (BoosokTools::ShortcutSync.get_all_shortcuts rescue {}),
         license: lic_st,
+        free_tools: FREE_TOOLS,
         stats: model_stats(model)
       }
     rescue => e
@@ -554,7 +623,7 @@ module BoosokTools
 
     # Pesan "terkunci" (ikut bahasa terpilih)
     def self.locked_message
-      BoosokTools::Locale.t('lic_trial_expired_toast', 'Masa trial 7 hari telah habis. Semua tool terkunci.')
+      BoosokTools::Locale.t('lic_trial_expired_toast', 'Masa trial 7 hari telah habis.')
     end
 
     # Notifikasi biasa (bukan popup aktivasi). Kalau dialog Hub belum terbuka, buka dulu lalu

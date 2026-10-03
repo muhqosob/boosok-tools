@@ -1,11 +1,13 @@
 require 'sketchup'
-Sketchup.require 'boosok_tools/locale' unless defined?(BoosokTools::Locale)
+Sketchup.require 'boosok_tools/ruby/locale' unless defined?(BoosokTools::Locale)
 
 module BoosokTools
   module SelectTool
     # Daftar eksplisit (bukan Dir['*.rb']): di paket terenkripsi filenya .rbe sehingga glob tidak ketemu.
     # Handler cuma saling pakai saat tool dibuat, jadi urutan muat tidak berpengaruh.
-    HANDLERS = %w[core_tool draw_handler mouse_handler select_handler ui_info_handler].freeze unless defined?(HANDLERS)
+    # Tanpa `unless defined?`: konstanta harus diganti saat hot-reload, kalau tidak handler baru tidak ikut dimuat.
+    remove_const(:HANDLERS) if defined?(HANDLERS)
+    HANDLERS = %w[core_tool draw_handler mouse_handler select_handler area_handler ui_info_handler].freeze
 
     # Nama tipe entity ("Group", "Face", ...). Pengganti Entity#typename yang lambat.
     def self.type_name(entity)
@@ -13,7 +15,7 @@ module BoosokTools
     end
 
     def self.load_handlers
-      HANDLERS.each { |h| BoosokTools.load_module("custom_select/#{h}") }
+      HANDLERS.each { |h| BoosokTools.load_module("ruby/paid/select_tool/#{h}") }
     end
 
     def self.reload!
@@ -48,7 +50,7 @@ module BoosokTools
       BoosokTools::Hub.open_or_show('custom_select')
     end
 
-    # Muat semua handler di dalam folder custom_select
+    # Muat semua handler di dalam folder select_tool
     load_handlers
   end
 end
