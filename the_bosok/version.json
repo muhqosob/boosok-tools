@@ -1,6 +1,6 @@
 {
-  "version": "1.7.2",
-  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.7.2/boosok_tools_v1.7.2.rbz",
-  "changelog": "Penambahan QR DANA pada dialog Tentang.\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>",
-  "sha256": "982287ea1ed25ef4a3eacce1c1bf3d3076696d9b34a366d737d99a9bb99ef225"
+  "version": "1.7.3",
+  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.7.3/boosok_tools_v1.7.3.rbz",
+  "changelog": "Lisensi offline tanpa batas, trial lebih sulit di-reset, perbaikan Slice di SketchUp 2025, hotkey Hub dihapus.",
+  "sha256": "4bee6aef1b6901046d4869595c7c5321b0b4310cdc28e958be0153d845d14c6f"
 }
