@@ -1,6 +1,6 @@
 {
-  "version": "1.6.0",
-  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.6.0/boosok_tools_v1.6.0.rbz",
-  "changelog": "Merge branch 'main' of https://github.com/muhqosob/boosok-tools",
-  "sha256": "45ab90e74ad4148c6334627a9870cd92dd73cc2eebc4f031d9c5ed96bf9149c7"
+  "version": "1.7.0",
+  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.7.0/boosok_tools_v1.7.0.rbz",
+  "changelog": "Rilis v1.7.0: Trowel, Slice, Void, Purge, lisensi & update lewat server\n\nFitur baru:\n- Trowel: Push/Pull dan Offset di dalam group tanpa membukanya, Offset ke face lain/group lain, group solid tetap solid, Shift+klik hapus edge\n- Slice: potong objek dengan satu atau banyak garis\n- Void: group sebagai pelubang di group solid lain\n- Purge: bersihkan component, material, dan tag tidak terpakai\n- Deep Properties: mode Material dan ganti material\n- Select Tool: seleksi area dengan tahan klik kiri\n- Lisensi online (aktivasi lewat server, pindah komputer lewat Hapus Aktivasi), pembayaran QR DANA, permintaan key via WhatsApp\n- Update plugin lewat server untuk pengguna berlisensi aktif\n\nPerbaikan: struktur file ruby/free dan ruby/paid, notifikasi ganda Replacer, tampilan Hub dan dialog Tentang.\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>",
+  "sha256": "6a6b3179e625d0a8c206914ea9499e5e735b2d2a088b5f2fa0502cd596a513f7"
 }
