@@ -5,6 +5,21 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.7.3] — 2026-10-03
+
+### ✨ Fitur Baru
+
+- **Lisensi aktif berlaku offline tanpa batas waktu.** Internet hanya dibutuhkan saat aktivasi, saat melepas lisensi untuk pindah PC, dan saat cek update. Masa toleransi 14 hari dihapus.
+- **Cek lisensi ikut saat cek update** (saat SketchUp dibuka dan lewat tombol Cek update). Bila sedang offline, pengecekan dilewati.
+
+### 🔧 Perbaikan
+
+- **Masa trial lebih sulit di-reset:** data trial kini juga disimpan di luar registry SketchUp dan dipakai bersama semua versi SketchUp.
+- **Lisensi terikat ke komputer:** pengaturan lisensi yang disalin ke PC lain tidak berlaku. Mengganti nama komputer tidak berpengaruh.
+- Perbaikan peringatan konstanta pada Trowel saat plugin dimuat ulang.
+
+---
+
 ## [1.7.2] — 2026-10-03
 
 ### ✨ Fitur Baru
