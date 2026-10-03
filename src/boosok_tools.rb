@@ -41,6 +41,39 @@ module BoosokTools
     Sketchup.version.to_i >= MIN_SKETCHUP_VERSION && Sketchup.platform == :platform_win
   end
 
+  # Update dari versi tanpa enkripsi (<= 1.7.2): file .rb lama TIDAK terhapus oleh install .rbz, jadi tertinggal di
+  # samping .rbe yang baru. Hapus yang punya pasangan .rbe (kode lama yang terbuka, dan updater lama
+  # menganggapnya paket tanpa enkripsi lalu memuat ulang kode lama). Dijalankan di file root: selalu ikut ditimpa saat
+  # update, tidak dienkripsi, dan jalan sebelum modul mana pun dimuat. Hasil: jumlah file yang dihapus.
+  def self.remove_stale_plain_files
+    removed = 0
+    Dir.glob(File.join(SUPPORT_DIR, '**', '*.rbe')).each do |enc|
+      plain = enc.sub(/\.rbe\z/, '.rb')
+      next unless File.exist?(plain)
+
+      begin
+        File.delete(plain)
+        removed += 1
+      rescue StandardError
+        nil # file terkunci / tanpa izin: dilewati, dicoba lagi di start berikutnya
+      end
+    end
+    removed
+  rescue StandardError
+    0
+  end
+
+  if supported_environment?
+    stale_removed = remove_stale_plain_files
+    # Terjadi di tengah sesi (updater lama baru memasang paket): kode lama masih di memori, perlu restart
+    if stale_removed > 0 && file_loaded?(__FILE__)
+      UI.start_timer(1.0, false) do
+        UI.messagebox("Boosok Tools telah diperbarui. Tutup lalu buka kembali SketchUp agar versi baru aktif.\n" \
+                      "Boosok Tools was updated. Please restart SketchUp to use the new version.")
+      end
+    end
+  end
+
   unless file_loaded?(__FILE__) || !supported_environment?
     plugin_dir = File.dirname(root_file)
 

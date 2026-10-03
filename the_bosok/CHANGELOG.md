@@ -19,6 +19,7 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ### 🔧 Perbaikan
 
+- **Update dari versi lama membersihkan file kode lama** yang tertinggal di folder plugin, supaya hanya versi terenkripsi yang dipakai. Setelah update, restart SketchUp agar versi baru aktif.
 - **Slice dan Trowel tidak berfungsi di SketchUp 2025** (dan versi sebelum 2026.2): deteksi solid memakai method yang baru ada di SketchUp 2026.2.
 - **Masa trial lebih sulit di-reset:** data trial kini juga disimpan di luar registry SketchUp dan dipakai bersama semua versi SketchUp.
 - **Lisensi terikat ke komputer:** pengaturan lisensi yang disalin ke PC lain tidak berlaku. Mengganti nama komputer tidak berpengaruh.

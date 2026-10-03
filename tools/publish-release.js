@@ -84,6 +84,11 @@ if (filePath) {
   const pkgVersion = rootRb && (rootRb.match(/PLUGIN_VERSION\s*=\s*"([^"]+)"/) || [])[1];
   if (!pkgVersion) die('boosok_tools.rb di dalam .rbz tidak ditemukan / tidak memuat PLUGIN_VERSION. Struktur zip dari portal berubah?');
   if (pkgVersion !== version) die(`Versi tidak cocok: .rbz berisi ${pkgVersion}, src\\ berisi ${version}. Unggah ulang .rbz yang benar ke portal.`);
+  // File root tidak dienkripsi dan tidak diubah portal, jadi harus identik dengan src\. Berbeda = kode berubah sesudah
+  // .rbz mentah dibangun / dikirim ke portal (versi sama, jadi pemeriksaan versi saja tidak menangkapnya).
+  const norm = (s) => s.replace(/\r\n/g, '\n').trimEnd();
+  if (norm(rootRb) !== norm(main)) die('boosok_tools.rb di dalam .rbz BERBEDA dari src\\boosok_tools.rb: kode berubah setelah paket dibangun.\n' +
+      'Jalankan lagi `node tools\\publish-release.js --dry-run`, unggah .rbz mentah yang baru ke portal, lalu unduh hasilnya.');
 } else {
   if (!dry && !plain) {
     die('Tanpa --file, skrip hanya boleh membangun paket MENTAH (kode terbuka). Untuk rilis:\n' +
