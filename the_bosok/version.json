@@ -1,6 +1,6 @@
 {
-  "version": "1.7.3",
-  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.7.3/boosok_tools_v1.7.3.rbz",
-  "changelog": "Lisensi offline tanpa batas, trial lebih sulit di-reset, perbaikan Slice di SketchUp 2025, hotkey Hub dihapus.",
-  "sha256": "4bee6aef1b6901046d4869595c7c5321b0b4310cdc28e958be0153d845d14c6f"
+  "version": "1.7.4",
+  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.7.4/boosok_tools_v1.7.4.rbz",
+  "changelog": "Pembaruan UI resize minimalis: dialog lebih ringkas untuk laptop kecil. Fix Slice tidak berfungsi.",
+  "sha256": "057d28a2fbf9584e07b35d79c605a6df6c671d16e1f7e9760805ec1bc5987787"
 }
