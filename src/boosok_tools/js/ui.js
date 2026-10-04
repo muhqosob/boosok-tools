@@ -357,6 +357,45 @@ function backToHub() {
 // AUTO FIT HEIGHT DIALOG
 // ==========================================
 var _lastFitHeight = 0;
+var _holdHeight = 0; // tinggi minimum selama overlay besar (mis. panel Tentang) terbuka
+
+// Selisih antara outerHeight window dan innerHeight document di Windows (~35-40px)
+function dialogFrameDiff() {
+  var d = (window.outerHeight && window.innerHeight) ? (window.outerHeight - window.innerHeight) : 38;
+  return (d <= 0 || d > 70) ? 38 : d;
+}
+
+// Tinggi jendela maksimum: tinggi layar dikurangi sedikit ruang (0 = tidak diketahui)
+function dialogMaxOuter() {
+  return (window.screen && screen.availHeight > 340) ? screen.availHeight - 40 : 0;
+}
+
+function requestDialogHeight(outer) {
+  if (Math.abs(outer - _lastFitHeight) < 4 || outer <= 200 || outer >= 1100) return;
+  _lastFitHeight = outer;
+  if (window.sketchup && typeof window.sketchup.set_dialog_height === 'function') {
+    window.sketchup.set_dialog_height(outer);
+  }
+}
+
+// Overlay lebih tinggi dari jendela: besarkan jendela sementara (tetap dibatasi tinggi layar;
+// sisanya di-scroll di dalam overlay). Panggil releaseOverlayHeight() saat overlay ditutup.
+function holdHeightFor(el, pad) {
+  setTimeout(function () {
+    if (!el) return;
+    var outer = Math.ceil(el.scrollHeight + (pad || 0)) + dialogFrameDiff();
+    var max = dialogMaxOuter();
+    if (max) outer = Math.min(outer, max);
+    _holdHeight = Math.max(outer, _holdHeight);
+    if (_holdHeight > window.outerHeight) requestDialogHeight(_holdHeight);
+  }, 40);
+}
+
+function releaseOverlayHeight() {
+  _holdHeight = 0;
+  autoFitHeight(0);
+}
+
 function autoFitHeight(extraPadding) {
   // extraPadding: ruang tambahan di bawah konten visual, default 6px (nyaman & proporsional)
   extraPadding = (extraPadding !== undefined) ? extraPadding : 6;
@@ -367,6 +406,7 @@ function autoFitHeight(extraPadding) {
 
       // Hitung batas bawah elemen konten yang sedang aktif/tampak (hanya in-flow content)
       var maxBottom = 0;
+      var sy = window.pageYOffset || document.documentElement.scrollTop || 0; // posisi scroll saat mode fit-scroll
       var els = document.body.children;
       for (var i = 0; i < els.length; i++) {
         var el = els[i];
@@ -380,28 +420,108 @@ function autoFitHeight(extraPadding) {
 
         if (el.offsetParent !== null || el.offsetHeight > 0) {
           var rect = el.getBoundingClientRect();
-          if (rect.bottom > maxBottom) {
-            maxBottom = rect.bottom;
+          if (rect.bottom + sy > maxBottom) {
+            maxBottom = rect.bottom + sy;
           }
         }
       }
 
       var targetInner = maxBottom > 50 ? Math.ceil(maxBottom + pb + extraPadding) : Math.ceil(document.body.scrollHeight + extraPadding);
 
-      // Selisih antara outerHeight window dan innerHeight document di Windows (~35-40px)
-      var frameDiff = (window.outerHeight && window.innerHeight) ? (window.outerHeight - window.innerHeight) : 38;
-      if (frameDiff <= 0 || frameDiff > 70) frameDiff = 38;
+      var targetOuter = targetInner + dialogFrameDiff();
 
-      var targetOuter = targetInner + frameDiff;
-      if (Math.abs(targetOuter - _lastFitHeight) >= 4 && targetOuter > 200 && targetOuter < 1100) {
-        _lastFitHeight = targetOuter;
-        if (window.sketchup && typeof window.sketchup.set_dialog_height === 'function') {
-          window.sketchup.set_dialog_height(targetOuter);
-        }
-      }
+      // Layar pendek (laptop kecil): jendela tidak boleh lebih tinggi dari layar; sisa konten di-scroll
+      var maxOuter = dialogMaxOuter();
+      var tooTall = maxOuter > 0 && targetOuter > maxOuter;
+      document.documentElement.classList.toggle('fit-scroll', tooTall);
+      if (tooTall) targetOuter = maxOuter;
+      requestDialogHeight(Math.max(targetOuter, _holdHeight));
     } catch (e) {}
   }, 60);
 }
+
+// ==========================================
+// KETERANGAN MENGAMBANG (TOOLTIP)
+// ==========================================
+// Keterangan penggunaan (subjudul header, deskripsi toggle/opsi/langkah, catatan panjang) disembunyikan lewat CSS
+// supaya dialog pendek, lalu muncul sebagai bubble saat kursor berhenti di atas elemennya. Teks dibaca dari elemen
+// sumber setiap kali muncul, jadi ikut terjemahan & isi dinamis (mis. #lineHint di Slice).
+// [selektor host, selektor sumber teks di dalam host (null = atribut data-tip)]
+var TIP_SOURCES = [
+  ['[data-tip]', null],
+  ['.head .txt', 'p'],
+  ['.toggle', '.txt .s'],
+  ['.opt-card', '.opt-desc'],
+  ['.steps li', '.s'],
+  ['.card.stat', '.s'],
+  ['.tile', '.s'],
+  ['#recentCard', '.rc-txt .s'],
+  ['.note.tip', 'span']
+];
+var _tipEl = null, _tipHost = null, _tipTimer = null;
+
+function findTipHost(el) {
+  for (; el && el.nodeType === 1 && el !== document.body; el = el.parentElement) {
+    for (var i = 0; i < TIP_SOURCES.length; i++) {
+      if (el.matches(TIP_SOURCES[i][0])) return { host: el, src: TIP_SOURCES[i][1] };
+    }
+  }
+  return null;
+}
+
+// Hanya tampil kalau teks sumbernya memang tidak terlihat utuh (disembunyikan atau terpotong ellipsis)
+function tipTextOf(hit) {
+  if (!hit.src) return hit.host.getAttribute('data-tip') || '';
+  var s = hit.host.querySelector(hit.src);
+  if (!s) return '';
+  var hidden = s.offsetParent === null;
+  var cut = s.scrollWidth > s.clientWidth + 1;
+  return (hidden || cut) ? s.textContent.replace(/\s+/g, ' ').trim() : '';
+}
+
+function hideTip() {
+  clearTimeout(_tipTimer);
+  _tipHost = null;
+  if (_tipEl) { _tipEl.classList.remove('show'); _tipEl.style.display = 'none'; }
+}
+
+function showTip(hit) {
+  var text = tipTextOf(hit);
+  if (!text || !document.body.contains(hit.host)) return;
+  if (!_tipEl) {
+    _tipEl = document.createElement('div');
+    _tipEl.id = 'tip';
+    _tipEl.setAttribute('role', 'tooltip');
+    document.body.appendChild(_tipEl);
+  }
+  _tipEl.textContent = text;
+  _tipEl.style.left = '0px';
+  _tipEl.style.top = '0px';
+  _tipEl.style.display = 'block';
+  var r = hit.host.getBoundingClientRect();
+  var vw = document.documentElement.clientWidth, vh = window.innerHeight;
+  var tw = _tipEl.offsetWidth, th = _tipEl.offsetHeight;
+  var left = Math.min(Math.max(8, r.left + (r.width - tw) / 2), vw - tw - 8);
+  var top = r.bottom + 6;
+  if (top + th > vh - 6) top = Math.max(6, r.top - th - 6); // tidak muat di bawah: tampil di atas
+  _tipEl.style.left = Math.round(left) + 'px';
+  _tipEl.style.top = Math.round(top) + 'px';
+  void _tipEl.offsetWidth; // mulai transisi dari posisi akhir
+  _tipEl.classList.add('show');
+}
+
+document.addEventListener('mouseover', function (e) {
+  var hit = findTipHost(e.target);
+  if (hit && hit.host === _tipHost) return;
+  hideTip();
+  if (!hit) return;
+  _tipHost = hit.host;
+  _tipTimer = setTimeout(function () { showTip(hit); }, 350);
+});
+document.documentElement.addEventListener('mouseleave', hideTip);
+['mousedown', 'keydown', 'wheel'].forEach(function (ev) { document.addEventListener(ev, hideTip, true); });
+window.addEventListener('scroll', hideTip, true);
+window.addEventListener('blur', hideTip);
 
 // Auto save position jika window digeser
 var _lastSavedX = null, _lastSavedY = null;

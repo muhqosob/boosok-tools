@@ -78,10 +78,19 @@
       // About & License modal translations
       var abLblCreated = document.getElementById('aboutLblCreated');
       if (abLblCreated) abLblCreated.textContent = ht('about_created_by', 'Dibuat oleh');
-      var abLblPlatform = document.getElementById('aboutLblPlatform');
-      if (abLblPlatform) abLblPlatform.textContent = ht('about_platform', 'Platform');
-      var abValPlatform = document.getElementById('aboutValPlatform');
-      if (abValPlatform) abValPlatform.textContent = ht('about_platform_val', 'SketchUp Extension');
+      [['aboutPlatformReq', 'about_platform_req', 'SketchUp 2021+ · Windows'],
+       ['aboutDesc', 'about_desc', 'Kumpulan tool SketchUp untuk mempercepat pekerjaan modeling sehari-hari.'],
+       ['aboutAuthorRole', 'about_author_role', 'Pembuat & pengembang Boosok Tools'],
+       ['aboutCopyMailText', 'about_copy', 'Salin'],
+       ['aboutLicBtnText', 'menu_license', 'Lisensi'],
+       ['aboutCloseBtnText', 'about_close', 'Tutup'],
+       ['licPanelTitle', 'menu_license', 'Lisensi'],
+       ['menuLicenseLabel', 'menu_license', 'Lisensi']].forEach(function (r) {
+        var el = document.getElementById(r[0]);
+        if (el) el.textContent = ht(r[1], r[2]);
+      });
+      var abCopyMail = document.getElementById('aboutCopyMail');
+      if (abCopyMail) abCopyMail.title = ht('mail_copy', 'Salin alamat email');
       var abLblLic = document.getElementById('aboutLblLic');
       if (abLblLic) abLblLic.textContent = ht('about_lic_status', 'Lisensi Plugin');
       var abLblHwid = document.getElementById('aboutLblHwid');
@@ -95,11 +104,11 @@
       var licQrLbl = document.getElementById('licQrLbl');
       if (licQrLbl) licQrLbl.textContent = ht('about_qr_label', 'Scan QR DANA');
       var licNoticePrefix = document.getElementById('licNoticePrefix');
-      if (licNoticePrefix) licNoticePrefix.innerHTML = ht('about_send_hwid_prefix', 'Kirim <strong style="color:var(--ink);">nama, nomor HP, dan bukti bayar</strong> ke WhatsApp:');
+      if (licNoticePrefix) licNoticePrefix.innerHTML = ht('about_send_hwid_prefix', 'Kirim <strong style="color:var(--ink);">nama, nomor HP, dan bukti bayar</strong> ke email:');
       var licNoticeSuffix = document.getElementById('licNoticeSuffix');
       if (licNoticeSuffix) licNoticeSuffix.textContent = ht('about_send_hwid_suffix', 'untuk mendapatkan lisensi key. Harga = Rp25.000.');
       var licMailLink = document.getElementById('licMailLink');
-      if (licMailLink) licMailLink.title = ht('about_open_wa', 'Buka WhatsApp');
+      if (licMailLink) licMailLink.title = ht('mail_open', 'Buka Gmail di browser (pilih akun Google)');
       var abLblRegName = document.getElementById('aboutLblRegName');
       if (abLblRegName) abLblRegName.textContent = ht('about_reg_name', 'Nama terdaftar');
       var abLblRegPhone = document.getElementById('aboutLblRegPhone');
@@ -392,17 +401,17 @@
       S.data.stats = d.stats || S.data.stats;
       S.data.license = lic;
       if (lic.status !== oldLic.status || lic.can_use !== oldLic.can_use) { draw(); return; }
-      var note = document.getElementById('statsNote');
-      if (note) note.innerHTML = statsNoteInner(S.data.stats);
+      var sub = document.getElementById('hubSub');
+      if (sub) sub.innerHTML = statsNoteInner(S.data.stats);
       var tt = document.querySelector('.tb-trial-text span');
       if (tt && lic.status === 'trial') tt.innerHTML = trialText(lic);
     }
 
+    // Statistik model, tampil di subjudul header Hub
     function statsNoteInner(stats) {
       stats = stats || {};
-      return icon('info') +
-        '<span><b>' + (stats.selected || 0) + '</b> ' + esc(ht('selected', 'terseleksi')) + ' · <b>' + (stats.objects || 0) +
-        '</b> ' + esc(ht('group_comp', 'group/comp')) + ' · <b>' + (stats.scenes || 0) + '</b> ' + esc(ht('scene', 'scene')) + '</span>';
+      return '<b>' + (stats.selected || 0) + '</b> ' + esc(ht('selected', 'terseleksi')) + ' · <b>' + (stats.objects || 0) +
+        '</b> ' + esc(ht('group_comp', 'group/comp')) + ' · <b>' + (stats.scenes || 0) + '</b> ' + esc(ht('scene', 'scene'));
     }
 
     function trialText(lic) {
@@ -452,18 +461,18 @@
       if (lic) {
         if (lic.status === 'expired') {
           trialBannerHtml =
-            '<div class="trial-banner expired" onclick="openAbout()">' +
+            '<div class="trial-banner expired" onclick="openLicense()">' +
             '<div class="tb-icon">' + icon('triangle-alert') + '</div>' +
             '<div class="tb-body">' +
             '<div class="tb-title">' + esc(ht('trial_expired_title', 'Masa Trial 7 Hari Telah Habis')) + '</div>' +
             '<div class="tb-desc">' + esc(ht('trial_expired_desc', 'Masukkan lisensi key untuk membuka semua tool.')) + '</div>' +
             '</div>' +
-            '<button class="tb-action" onclick="openAbout(); event.stopPropagation();">' + esc(ht('activate', 'Aktifkan')) + '</button>' +
+            '<button class="tb-action" onclick="openLicense(); event.stopPropagation();">' + esc(ht('activate', 'Aktifkan')) + '</button>' +
             '</div>';
         } else if (lic.status === 'trial') {
           var tText = trialText(lic);
           trialBannerHtml =
-            '<div class="trial-banner trial" onclick="openAbout()" title="' + esc(ht('about_title', 'Tentang Boosok Tools')) + '">' +
+            '<div class="trial-banner trial" onclick="openLicense()" title="' + esc(ht('menu_license', 'Lisensi')) + '">' +
             '<div class="tb-trial-text">' + icon('info') + '<span>' + tText + '</span></div>' +
             '<span class="tb-trial-link">' + esc(ht('activate_license', 'Aktifkan Lisensi →')) + '</span>' +
             '</div>';
@@ -480,7 +489,6 @@
         if (isToolLocked(lastTool.id)) {
           recentHtml =
             '<div id="recentSection">' +
-            '<div class="sec-label">' + esc(ht('recent_label', 'Terakhir dipakai')) + '</div>' +
             '<div id="recentCard" class="locked" role="button" tabindex="0" onclick="onLicenseExpiredPrompt()">' +
             '<div class="rc-ic">' + icon(lastTool.icon) + '</div>' +
             '<div class="rc-txt"><div class="t">' + esc(lTitle) + '</div><div class="s">' + esc(lDesc) + '</div></div>' +
@@ -489,7 +497,6 @@
         } else {
           recentHtml =
             '<div id="recentSection">' +
-            '<div class="sec-label">' + esc(ht('recent_label', 'Terakhir dipakai')) + '</div>' +
             '<div id="recentCard" role="button" tabindex="0" onclick="openTool(\'' + lastTool.id + '\')">' +
             '<div class="rc-ic">' + icon(lastTool.icon) + '</div>' +
             '<div class="rc-txt"><div class="t">' + esc(lTitle) + '</div><div class="s">' + esc(lDesc) + '</div></div>' +
@@ -511,11 +518,10 @@
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>' +
         esc(ht('no_tools_found', 'Tidak ada tool yang cocok')) + '</div></div>';
 
-      var statsNote = '<div class="note" id="statsNote">' + statsNoteInner(stats) + '</div>';
+      var sub = document.getElementById('hubSub');
+      if (sub) sub.innerHTML = statsNoteInner(stats);
 
-      app.innerHTML = searchHtml + trialBannerHtml + recentHtml +
-        '<div class="sec-label all-label">' + esc(ht('all_tools_label', 'Semua tools')) + '</div>' +
-        gridHtml + statsNote + foot;
+      app.innerHTML = searchHtml + trialBannerHtml + recentHtml + gridHtml + foot;
 
       if (searchQuery) {
         var si = document.getElementById('searchInput');
@@ -539,7 +545,7 @@
       return ((S.data && S.data.free_tools) || FREE_TOOLS_DEFAULT).indexOf(id) >= 0;
     }
 
-    /* Satu grid 4 kolom; tool gratis di bagian atas, lalu yang berbayar (urutan asli dipertahankan di tiap bagian) */
+    /* Satu grid 3 kolom (2 baris terlihat, sisanya di-scroll); tool gratis di bagian atas, lalu yang berbayar (urutan asli dipertahankan di tiap bagian) */
     function buildGrid(stats) {
       var sorted = TOOLS.filter(function (t) { return isFreeTool(t.id); })
         .concat(TOOLS.filter(function (t) { return !isFreeTool(t.id); }));
@@ -555,9 +561,9 @@
         var tDesc = getToolDesc(tool);
         if (isLocked) {
           cls += ' locked';
-          attr = ' onclick="onLicenseExpiredPrompt()" title="' + esc(ht('locked_trial_title', 'Terkunci — Masa trial 7 hari telah habis')) + '"';
+          attr = ' onclick="onLicenseExpiredPrompt()" data-tip="' + esc(tTitle + '\n' + ht('locked_trial_title', 'Terkunci — Masa trial 7 hari telah habis')) + '"';
         } else {
-          attr = ' onclick="openTool(\'' + tool.id + '\')"';
+          attr = ' onclick="openTool(\'' + tool.id + '\')" data-tip="' + esc(tTitle + '\n' + tDesc) + '"';
         }
         var searchLabel = (tTitle + ' ' + tool.id + ' ' + tDesc).toLowerCase();
         return '<button class="' + cls + '" data-id="' + tool.id + '" data-label="' + esc(searchLabel) + '"' + attr + '>' +
@@ -897,12 +903,35 @@
     /* ═══════════════════════════════════════════════
        About + Lisensi
     ═══════════════════════════════════════════════ */
+    function setPanelVersions() {
+      var ver = (S.data && S.data.version) ? 'v' + S.data.version : '';
+      ['aboutVer', 'licVer'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el && ver) el.textContent = ver;
+      });
+    }
+
+    // Panel Tentang: profil plugin & author
     function openAbout() {
       closeSettingsMenu();
-      var verEl = document.getElementById('aboutVer');
-      if (verEl && S.data && S.data.version) verEl.textContent = 'v' + S.data.version;
+      setPanelVersions();
       document.getElementById('aboutOverlay').classList.add('open');
       applyTranslations();
+      fitPanels();
+    }
+
+    function closeAbout() {
+      document.getElementById('aboutOverlay').classList.remove('open');
+      releaseOverlayHeight();
+    }
+
+    // Panel Lisensi: status, Hardware ID, cara beli & aktivasi key
+    function openLicense() {
+      closeSettingsMenu();
+      setPanelVersions();
+      document.getElementById('licenseOverlay').classList.add('open');
+      applyTranslations();
+      fitPanels();
       // Muat status lisensi dari Ruby
       if (window.sketchup && typeof sketchup.get_license_status === 'function') {
         sketchup.get_license_status();
@@ -912,8 +941,17 @@
       }
     }
 
-    function closeAbout() {
-      document.getElementById('aboutOverlay').classList.remove('open');
+    function closeLicense() {
+      document.getElementById('licenseOverlay').classList.remove('open');
+      releaseOverlayHeight();
+    }
+
+    // Panel Tentang/Lisensi bisa lebih tinggi dari Hub yang ringkas: besarkan jendela selama panel terbuka
+    function fitPanels() {
+      [['aboutOverlay', 'aboutSheet'], ['licenseOverlay', 'licenseSheet']].forEach(function (p) {
+        var ov = document.getElementById(p[0]);
+        if (ov && ov.classList.contains('open')) holdHeightFor(document.getElementById(p[1]), 20);
+      });
     }
 
     // Nomor HP disamarkan di tampilan: 081234567890 -> 0812-****-7890
@@ -964,6 +1002,9 @@
         val.title = txt;
         row.style.display = txt ? 'flex' : 'none';
       });
+      // Bagian data terdaftar disembunyikan kalau kosong, supaya tidak menyisakan celah
+      var regBody = document.getElementById('licRegBody');
+      if (regBody) regBody.style.display = (isActive && (st.name || st.phone)) ? 'flex' : 'none';
       if (isActive) {
         badge.textContent = ht('lic_active', '✓ AKTIF');
         badge.style.background = 'var(--ok-soft, #e6f9ee)';
@@ -1032,6 +1073,8 @@
           keyInput.placeholder = 'XXXXX-XXXXX-XXXXX-XXXXX';
         }
       }
+      badge.title = badge.textContent; // badge bisa terpotong di header panel
+      fitPanels();
     }
 
     // Kirim key ke Ruby untuk divalidasi
@@ -1060,7 +1103,7 @@
     function licenseErrorText(reason, extra) {
       if (reason === 'device_limit') {
         var n = (extra && extra.max) ? extra.max : '?';
-        return ht('lic_err_device_limit', 'Key ini sudah dipakai di {n} perangkat. Lepas perangkat lama lewat Tentang > Hapus Aktivasi, atau hubungi author.').replace('{n}', n);
+        return ht('lic_err_device_limit', 'Key ini sudah dipakai di {n} perangkat. Lepas perangkat lama lewat Lisensi > Hapus Aktivasi, atau hubungi author.').replace('{n}', n);
       }
       if (reason === 'revoked') return ht('lic_err_revoked', 'Key ini sudah dicabut. Hubungi author.');
       if (reason === 'network') return ht('lic_err_network', 'Tidak bisa terhubung ke server lisensi. Periksa koneksi internet lalu coba lagi.');
@@ -1178,32 +1221,55 @@
       document.body.removeChild(el);
     }
 
-    // Nomor WhatsApp author untuk permintaan lisensi key (format internasional tanpa + / 0 di depan)
-    var WA_NUMBER = '6282116605101';
+    // Email author untuk permintaan lisensi key
+    var LICENSE_EMAIL = 'muhqosob@gmail.com';
 
-    // Link WhatsApp dengan pesan pembelian: pembeli mengisi Nama dan Nomor HP di chat, lalu melampirkan bukti bayar
-    function getWaUrl() {
-      var text =
-        ht('wa_greeting', 'Halo Muh Qosob,') + '\n\n' +
+    // Isi email pembelian: pembeli mengisi Nama dan Nomor HP, lalu melampirkan bukti bayar
+    function licenseMailParts() {
+      var body =
+        ht('email_greeting', 'Halo Muh Qosob,') + '\n\n' +
         ht('wa_request', 'Saya ingin membeli lisensi Boosok Tools.') + '\n\n' +
         ht('wa_name', 'Nama') + ' : \n' +
-        ht('wa_phone', 'Nomor HP') + ' : \n\n' +
-        ht('wa_attach', '(Bukti pembayaran DANA saya kirim di chat ini)') + '\n\n' +
+        ht('wa_phone', 'Nomor HP') + ' : \n' +
+        'Hardware ID : ' + (window._currentHwId || '') + '\n\n' +
+        ht('email_attach', '(Mohon lampirkan bukti transfer/kirim dana di sini)') + '\n\n' +
         ht('email_thanks', 'Terima kasih!');
-      return 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(text);
+      return { to: LICENSE_EMAIL, subject: ht('email_subject', 'Permintaan Lisensi Boosok Tools'), body: body };
     }
 
-    function openWhatsApp(e) {
+    // Gmail dibuka di browser lewat pemilih akun Google, jadi user memilih dulu akun Google yang dipakai
+    // untuk mengirim (balasan lisensi juga masuk ke akun itu), lalu langsung masuk halaman tulis email berisi template.
+    function licenseMailUrl() {
+      var m = licenseMailParts();
+      var compose = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(m.to) +
+        '&su=' + encodeURIComponent(m.subject) + '&body=' + encodeURIComponent(m.body);
+      return 'https://accounts.google.com/AccountChooser?service=mail&continue=' + encodeURIComponent(compose);
+    }
+
+    function openLicenseMail(e) {
       if (e) {
         try { e.preventDefault(); e.stopPropagation(); } catch (err) { }
       }
-      var url = getWaUrl();
+      var url = licenseMailUrl();
       if (window.sketchup && typeof sketchup.open_external_url === 'function') {
         sketchup.open_external_url(url);
       } else {
         window.open(url, '_blank');
       }
       return false;
+    }
+
+    function copyLicenseMail() {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(LICENSE_EMAIL).catch(function () { fallbackCopy(LICENSE_EMAIL); });
+        } else {
+          fallbackCopy(LICENSE_EMAIL);
+        }
+      } catch (e) {
+        fallbackCopy(LICENSE_EMAIL);
+      }
+      showToast(ht('mail_copied', 'Alamat email disalin: ') + LICENSE_EMAIL, 'success');
     }
 
     // Klik QR DANA: tampilkan lebih besar supaya mudah di-scan dari HP
@@ -1224,6 +1290,7 @@
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
       if (document.getElementById('aboutOverlay').classList.contains('open')) { closeAbout(); return; }
+      if (document.getElementById('licenseOverlay').classList.contains('open')) { closeLicense(); return; }
       if (document.getElementById('languagePanel') && document.getElementById('languagePanel').classList.contains('open')) { closeLanguagePanel(); return; }
       closeSettingsMenu();
     });

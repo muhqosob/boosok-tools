@@ -7,16 +7,16 @@
   <script src="../js/strings.js"></script>
   <script src="../js/locale.js"></script>
   <style>
-    #attr { display: none; flex-direction: column; gap: 12px; }
+    #attr { display: none; flex-direction: column; gap: 9px; }
     #attr.open { display: flex; animation: rise .25s var(--ease); }
-    .keys { max-height: 150px; flex: none; }
+    .keys { max-height: 130px; flex: none; }
     .keys .k { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 10px; border-radius: 7px; font-size: 12.5px; }
     .keys .k:hover { background: var(--bg); }
     .keys .k span { flex: 1; min-width: 0; word-break: break-all; }
     .keys .k .btn { height: 28px; width: 28px; color: var(--muted); }
     .keys .k .btn:hover { color: var(--err); background: var(--err-soft); }
-    .seg.h34 { height: 34px; }
-    .seg.h34 button { padding: 0 10px; }
+    .seg.hin { height: 30px; }
+    .seg.hin button { padding: 0 10px; }
   </style>
 </head>
 <body oncontextmenu="return false;">
@@ -57,7 +57,7 @@
     <div class="inline">
       <div class="field" style="flex: none">
         <label data-i18n="sel_name">Nama</label>
-        <div class="seg h34" id="type" role="tablist">
+        <div class="seg hin" id="type" role="tablist">
           <button role="tab" aria-selected="true" data-v="Instance Name" data-i18n-title="sel_instance_title" title="Nama instance" data-i18n="sel_instance">Instance</button>
           <button role="tab" aria-selected="false" data-v="Definition Name" data-i18n-title="sel_definition_title" title="Nama definition" data-i18n="sel_definition">Definition</button>
         </div>

@@ -10,8 +10,11 @@ module BoosokTools
   # sehingga posisi jendela di layar tidak pernah bergeser atau berkedip.
   module Hub
     TITLE = "Boosok Tools" unless defined?(TITLE)
-    WIDTH = 380 unless defined?(WIDTH)
-    DEFAULT_HEIGHT = 480 unless defined?(DEFAULT_HEIGHT)
+    # Ukuran juga di-assign ulang tiap load (lihat catatan TOOL_PAGES) supaya perubahan ikut terbaca saat reload/update
+    remove_const(:WIDTH) if defined?(WIDTH)
+    WIDTH = 320
+    remove_const(:DEFAULT_HEIGHT) if defined?(DEFAULT_HEIGHT)
+    DEFAULT_HEIGHT = 440
 
     # JANGAN pakai `unless defined?` di sini — TOOL_PAGES HARUS selalu di-assign ulang
     # setiap kali hub.rb di-load (hot-reload / update plugin). Kalau pakai `unless defined?`,
@@ -26,7 +29,7 @@ module BoosokTools
       'scene'         => { file: 'ruby/paid/hideon_scene',        page: 'hidescene.html',       title: 'Hide on Scene' },
       'untag'         => { file: 'ruby/free/untagnpaint',           page: 'untagnpaint.html',     title: 'Untag & Unpaint' },
       'deep'          => { file: 'ruby/paid/deep_properties',     page: 'deep_properties.html', title: 'Deep Properties' },
-      'purge'         => { file: 'ruby/free/purge',               page: 'purge.html',           title: 'Purge', width: 800 },
+      'purge'         => { file: 'ruby/free/purge',               page: 'purge.html',           title: 'Purge' },
       'void'          => { file: 'ruby/paid/void',                page: 'void.html',            title: 'Void' },
       'slice'         => { file: 'ruby/paid/slice',               page: 'slice.html',           title: 'Slice' },
       'trowel'        => { file: 'ruby/paid/trowel',              page: 'trowel.html',          title: 'Trowel' }

@@ -7,19 +7,23 @@
   <script src="../js/strings.js"></script>
   <script src="../js/locale.js"></script>
   <style>
-    .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-    .col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+    /* Satu kategori tampil per tab; kategori lain tetap menyimpan centangnya */
+    .col { display: none; flex-direction: column; gap: 6px; min-width: 0; }
+    .col.active { display: flex; }
+    .seg .tab-n { font-size: 10.5px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .seg .tab-n:empty { display: none; }
     .col-head { display: flex; align-items: center; gap: 6px; padding: 0 2px; min-height: 22px; }
     .col-head .check { padding: 2px 4px; margin-left: -4px; font-weight: 600; font-size: 12.5px; }
     .col-head .ttl { display: inline-flex; align-items: center; gap: 6px; }
     .col-head .ttl svg { width: 14px; height: 14px; color: var(--muted); }
-    .col .list { flex: none; height: 300px; max-height: none; }
+    .col .list { flex: none; height: 200px; max-height: none; }
     .col .check .name { flex: 1; min-width: 0; }
     .sw { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; border: 1px solid var(--line-strong); }
     .col-head input:indeterminate + .box { background: var(--dark-gray); border-color: var(--dark-gray); }
     .col-head input:indeterminate + .box::after { content: ''; width: 8px; height: 2px; border-radius: 2px; background: #fff; }
     [data-theme="dark"] .col-head input:indeterminate + .box::after { background: #18181b; }
     .actions .btn { white-space: nowrap; }
+    .actions.stack { flex-direction: column; }
   </style>
 </head>
 <body oncontextmenu="return false;">
@@ -37,11 +41,17 @@
   </header>
 
   <section class="step active" id="step1">
+    <div class="seg" id="purgeTabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-tab="listComp"><span data-i18n="purge_col_comp">Component</span><span class="tab-n" id="tabComp"></span></button>
+      <button type="button" role="tab" aria-selected="false" data-tab="listMat"><span data-i18n="purge_col_mat">Material</span><span class="tab-n" id="tabMat"></span></button>
+      <button type="button" role="tab" aria-selected="false" data-tab="listTag"><span data-i18n="purge_col_tag">Tag</span><span class="tab-n" id="tabTag"></span></button>
+    </div>
+
     <div class="cols">
-      <div class="col" data-key="components" data-list="listComp">
+      <div class="col active" data-key="components" data-list="listComp">
         <div class="col-head">
           <label class="check"><input type="checkbox" data-all="listComp"><span class="box"><svg><use href="#i-check"/></svg></span>
-            <span class="ttl"><svg><use href="#i-component"/></svg><span data-i18n="purge_col_comp">Component</span></span></label>
+            <span class="ttl"><span data-i18n="purge_select_all">Pilih semua</span></span></label>
           <span class="count" id="nComp"></span>
         </div>
         <div class="with-ic">
@@ -54,7 +64,7 @@
       <div class="col" data-key="materials" data-list="listMat">
         <div class="col-head">
           <label class="check"><input type="checkbox" data-all="listMat"><span class="box"><svg><use href="#i-check"/></svg></span>
-            <span class="ttl"><svg><use href="#i-paint-bucket"/></svg><span data-i18n="purge_col_mat">Material</span></span></label>
+            <span class="ttl"><span data-i18n="purge_select_all">Pilih semua</span></span></label>
           <span class="count" id="nMat"></span>
         </div>
         <div class="with-ic">
@@ -67,7 +77,7 @@
       <div class="col" data-key="tags" data-list="listTag">
         <div class="col-head">
           <label class="check"><input type="checkbox" data-all="listTag"><span class="box"><svg><use href="#i-check"/></svg></span>
-            <span class="ttl"><svg><use href="#i-tags"/></svg><span data-i18n="purge_col_tag">Tag</span></span></label>
+            <span class="ttl"><span data-i18n="purge_select_all">Pilih semua</span></span></label>
           <span class="count" id="nTag"></span>
         </div>
         <div class="with-ic">
@@ -78,16 +88,18 @@
       </div>
     </div>
 
-    <div class="actions row">
+    <div class="actions stack">
       <button class="btn ghost" id="btnCapture" onclick="doCapture(this)">
         <svg><use href="#i-refresh-cw"/></svg><span data-i18n="purge_capture">Capture Unused</span>
       </button>
+      <div class="actions row">
       <button class="btn primary" id="btnSelected" onclick="doPurgeSelected(this)">
         <svg><use href="#i-trash-2"/></svg><span data-i18n="purge_selected">Purge Selected</span>
       </button>
       <button class="btn danger" id="btnAll" onclick="doPurgeAll(this)">
         <svg><use href="#i-eraser"/></svg><span data-i18n="purge_all">Purge All</span>
       </button>
+      </div>
     </div>
   </section>
 
@@ -96,9 +108,9 @@
 
     // Kolom: kunci data dari Ruby, id list, id penghitung, teks kosong
     var COLS = [
-      { key: 'components', list: 'listComp', n: 'nComp', sw: false },
-      { key: 'materials',  list: 'listMat',  n: 'nMat',  sw: true },
-      { key: 'tags',       list: 'listTag',  n: 'nTag',  sw: true }
+      { key: 'components', list: 'listComp', n: 'nComp', tab: 'tabComp', sw: false },
+      { key: 'materials',  list: 'listMat',  n: 'nMat',  tab: 'tabMat',  sw: true },
+      { key: 'tags',       list: 'listTag',  n: 'nTag',  tab: 'tabTag',  sw: true }
     ];
     var captured = false;
     var counts = { components: 0, materials: 0, tags: 0 };
@@ -124,6 +136,7 @@
       var total = counts[col.key];
       var sel = checkedValues(listId).length;
       $(col.n).textContent = total ? (sel ? sel + ' / ' : '') + total : '';
+      $(col.tab).textContent = total || '';
     }
     function syncAll() {
       COLS.forEach(function (c) { syncHeader(c.list); });
@@ -164,6 +177,17 @@
       autoFitHeight(0);
     }
     render({}); // keadaan awal: belum ada capture
+
+    // Tab kategori: hanya kolom aktif yang tampil
+    function showTab(listId) {
+      document.querySelectorAll('#purgeTabs button').forEach(function (b) {
+        b.setAttribute('aria-selected', b.dataset.tab === listId ? 'true' : 'false');
+      });
+      document.querySelectorAll('.col').forEach(function (c) { c.classList.toggle('active', c.dataset.list === listId); });
+    }
+    document.querySelectorAll('#purgeTabs button').forEach(function (b) {
+      b.addEventListener('click', function () { showTab(b.dataset.tab); });
+    });
 
     // Pencarian per kolom
     document.addEventListener('input', function (e) {

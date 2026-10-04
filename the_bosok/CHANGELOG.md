@@ -5,6 +5,23 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.7.4] — 2026-10-04
+
+### ✨ Pembaruan UI — Resize Minimalis
+
+- **Dialog lebih kecil dan ringkas**, nyaman dipakai di laptop kecil. Lebar dialog jadi 320 px, tombol, kolom isian, dan jarak antar elemen dirapatkan. Tinggi dialog dibatasi tinggi layar; bila isinya lebih panjang, dialog bisa di-scroll.
+- **Keterangan penggunaan jadi keterangan mengambang.** Penjelasan toggle, opsi, langkah, dan catatan panjang muncul saat kursor berhenti di atasnya.
+- **Hub:** menu tool 3 kolom (2 baris terlihat, sisanya di-scroll), statistik model pindah ke subjudul, kartu "terakhir dipakai" satu baris.
+- **Purge:** selebar tool lain dengan tab Component / Material / Tag.
+- **Menu pengaturan: Bahasa, Lisensi, Tentang.** Tentang berisi profil author; Lisensi berisi status, Hardware ID, dan aktivasi key.
+- **Permintaan lisensi lewat email** muhqosob@gmail.com: Gmail terbuka di browser, pilih akun Google dulu, lalu email sudah terisi template.
+
+### 🔧 Perbaikan
+
+- **Slice tidak berfungsi.**
+
+---
+
 ## [1.7.3] — 2026-10-03
 
 ### ✨ Fitur Baru

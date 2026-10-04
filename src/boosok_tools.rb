@@ -3,8 +3,8 @@ require 'extensions'
 require 'json'
 
 module BoosokTools
-  # Naikkan angka ini lalu push ke main: GitHub Actions otomatis bikin release + update version.json
-  PLUGIN_VERSION = "1.7.3"
+  # Versi rilis. Alur rilis (build, sign di portal, publish) ada di tools/publish-release.js
+  PLUGIN_VERSION = "1.7.4"
 
   # Folder kode plugin. Dihitung di sini (file root tidak dienkripsi) karena __dir__/__FILE__
   # di dalam file .rbe tidak bisa diandalkan. Semua modul memakai konstanta ini untuk path.

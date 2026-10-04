@@ -59,6 +59,9 @@
         <button role="menuitem" onclick="openLanguagePanel()"><svg>
             <use href="#i-languages" />
           </svg><span id="menuLangLabel">Bahasa</span></button>
+        <button role="menuitem" onclick="openLicense()"><svg>
+            <use href="#i-key-round" />
+          </svg><span id="menuLicenseLabel">Lisensi</span></button>
         <button role="menuitem" onclick="openAbout()"><svg>
             <use href="#i-info" />
           </svg><span id="menuAboutLabel">Tentang</span></button>
@@ -113,64 +116,99 @@
   </div>
 
   <!-- ════════════════════════════════════════════
-       About Overlay
+       About Overlay: profil plugin & author
   ═══════════════════════════════════════════════ -->
-  <div id="aboutOverlay" onclick="closeAbout()">
-    <div id="aboutSheet" onclick="event.stopPropagation()">
+  <div id="aboutOverlay" class="info-overlay" onclick="closeAbout()">
+    <div id="aboutSheet" class="info-sheet" onclick="event.stopPropagation()">
       <div class="about-logo">
         <div class="mark about-mark"><svg>
             <use href="#i-package" />
           </svg></div>
-        <div>
+        <div class="about-head-txt">
           <div class="about-name">Boosok Tools</div>
-          <div class="about-ver" id="aboutVer">v—</div>
+          <div class="about-ver"><span id="aboutVer">v—</span> · <span id="aboutPlatformReq">SketchUp 2021+ · Windows</span></div>
         </div>
       </div>
-      <div class="about-body">
-        <div class="about-row"><span class="about-lbl" id="aboutLblCreated">Dibuat oleh</span><span class="about-val">Muh Qosob</span></div>
-        <div class="about-row"><span class="about-lbl" id="aboutLblPlatform">Platform</span><span class="about-val" id="aboutValPlatform">SketchUp Extension</span>
+      <p class="about-desc" id="aboutDesc">Kumpulan tool SketchUp untuk mempercepat pekerjaan modeling sehari-hari.</p>
+
+      <div class="author-card">
+        <div class="author-top">
+          <div class="author-avatar">MQ</div>
+          <div class="author-txt">
+            <div class="lic-cap" id="aboutLblCreated">Dibuat oleh</div>
+            <div class="author-name">Muh Qosob</div>
+            <div class="author-role" id="aboutAuthorRole">Pembuat &amp; pengembang Boosok Tools</div>
+          </div>
         </div>
+        <div class="author-contact">
+          <svg aria-hidden="true"><use href="#i-mail" /></svg>
+          <span class="author-mail">muhqosob@gmail.com</span>
+          <button type="button" class="btn-copy" onclick="copyLicenseMail()" id="aboutCopyMail" title="Salin alamat email">
+            <svg aria-hidden="true" style="width:13px;height:13px"><use href="#i-copy" /></svg>
+            <span id="aboutCopyMailText">Salin</span>
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;">
+        <button class="btn ghost" style="flex:1;height:32px;font-size:11.5px;border-radius:8px;" onclick="closeAbout(); openLicense();">
+          <svg aria-hidden="true" style="width:14px;height:14px"><use href="#i-key-round" /></svg>
+          <span id="aboutLicBtnText">Lisensi</span>
+        </button>
+        <button class="btn primary" style="flex:1;height:32px;font-size:11.5px;border-radius:8px;" onclick="closeAbout()">
+          <span id="aboutCloseBtnText">Tutup</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       License Overlay: status & aktivasi lisensi
+  ═══════════════════════════════════════════════ -->
+  <div id="licenseOverlay" class="info-overlay" onclick="closeLicense()">
+    <div id="licenseSheet" class="info-sheet" onclick="event.stopPropagation()">
+      <div class="about-logo">
+        <div class="mark about-mark"><svg>
+            <use href="#i-key-round" />
+          </svg></div>
+        <div class="about-head-txt">
+          <div class="about-name" id="licPanelTitle">Lisensi</div>
+          <div class="about-ver">Boosok Tools <span id="licVer"></span></div>
+        </div>
+        <span id="licBadge" class="lic-badge">Memuat…</span>
+      </div>
+      <div class="about-body" id="licRegBody">
         <div class="about-row" id="licNameRow" style="display:none;"><span class="about-lbl" id="aboutLblRegName">Nama terdaftar</span><span class="about-val" id="licNameVal" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span></div>
         <div class="about-row" id="licPhoneRow" style="display:none;"><span class="about-lbl" id="aboutLblRegPhone">Nomor HP terdaftar</span><span class="about-val" id="licPhoneVal"></span></div>
       </div>
 
       <!-- ── Panel Lisensi ── -->
       <div id="licensePanel" class="lic-panel">
-        <!-- Status badge -->
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
-          <span id="aboutLblLic"
-            style="font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Lisensi
-            Plugin</span>
-          <span id="licBadge" class="lic-badge">Memuat…</span>
-        </div>
-
-        <!-- Hardware ID Box + Tombol Salin -->
+        <!-- Hardware ID + Tombol Salin dalam satu baris -->
         <div class="lic-hw-box">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
-            <span id="aboutLblHwid"
-              style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Hardware
-              ID</span>
-            <button id="btnCopyHwId" class="btn-copy" onclick="copyHwId()" title="Salin Hardware ID ke clipboard">
-              <svg aria-hidden="true" style="width:13px;height:13px">
-                <use href="#i-copy" />
-              </svg>
-              <span id="copyText">Salin</span>
-            </button>
+          <div class="lic-hw-txt">
+            <span id="aboutLblHwid" class="lic-cap">Hardware ID</span>
+            <div id="licHwId" class="hw-code" title="Klik untuk memilih teks" onclick="selectHwId()">Memuat…</div>
           </div>
-          <div id="licHwId" class="hw-code" title="Klik untuk memilih teks" onclick="selectHwId()">Memuat…</div>
+          <button id="btnCopyHwId" class="btn-copy" onclick="copyHwId()" title="Salin Hardware ID ke clipboard">
+            <svg aria-hidden="true" style="width:13px;height:13px">
+              <use href="#i-copy" />
+            </svg>
+            <span id="copyText">Salin</span>
+          </button>
         </div>
 
-        <!-- Perintah kirim HWID ke email -->
+        <!-- Perintah kirim data pembelian ke email author -->
         <div id="licNotice" class="lic-notice">
           <div style="display:flex;align-items:flex-start;gap:7px;">
             <svg aria-hidden="true" style="width:15px;height:15px;color:var(--ink);flex-shrink:0;margin-top:1px;">
-              <use href="#i-message-circle" />
+              <use href="#i-mail" />
             </svg>
-            <div style="font-size:11px;line-height:1.45;color:var(--muted);flex:1;" id="licNoticeDesc">
-              <span id="licNoticePrefix">Kirim <strong style="color:var(--ink);">Hardware ID</strong> ke email:</span>
-              <a href="javascript:void(0)" id="licMailLink" class="lic-email-link" onclick="openWhatsApp(event)"
-                title="Buka WhatsApp">
-                0821-1660-5101
+            <div style="font-size:11px;line-height:1.45;color:var(--muted);flex:1;min-width:0;" id="licNoticeDesc">
+              <span id="licNoticePrefix">Kirim <strong style="color:var(--ink);">nama, nomor HP, dan bukti bayar</strong> ke email:</span>
+              <a href="javascript:void(0)" id="licMailLink" class="lic-email-link" onclick="openLicenseMail(event)"
+                title="Buka Gmail di browser">
+                muhqosob@gmail.com
                 <svg aria-hidden="true"
                   style="width:11px;height:11px;display:inline-block;vertical-align:-1px;margin-left:1px;">
                   <use href="#i-external-link" />
@@ -182,27 +220,26 @@
             <div id="licQrWrap" title="Klik untuk memperbesar" onclick="zoomQr()"
               style="display:none;flex-shrink:0;flex-direction:column;align-items:center;gap:3px;cursor:zoom-in;">
               <img id="licQrImg" src="../images/dana_qr.png" alt="QR DANA"
-                style="width:86px;height:86px;object-fit:contain;border-radius:8px;border:1px solid var(--line);background:#fff;padding:3px;"
-                onload="this.parentNode.style.display='flex'" onerror="this.parentNode.style.display='none'">
+                style="width:62px;height:62px;object-fit:contain;border-radius:7px;border:1px solid var(--line);background:#fff;padding:2px;"
+                onload="this.parentNode.style.display='flex'; if (window.fitPanels) fitPanels();" onerror="this.parentNode.style.display='none'">
               <span id="licQrLbl" style="font-size:9.5px;font-weight:700;color:var(--muted);">Scan QR DANA</span>
             </div>
           </div>
         </div>
 
         <!-- Input key (hanya tampil jika belum aktif) -->
-        <div id="licInputWrap" style="display:flex;flex-direction:column;gap:5px;">
-          <div id="aboutLblEnterKey" style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">
-            Masukkan Lisensi Key</div>
+        <div id="licInputWrap" style="display:flex;flex-direction:column;gap:4px;">
+          <div id="aboutLblEnterKey" class="lic-cap">Masukkan Lisensi Key</div>
           <input id="licKeyInput" type="text" placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
-            style="width:100%;height:32px;padding:0 10px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:11.5px;font-family:monospace;letter-spacing:.06em;outline:none;text-transform:uppercase;transition:border-color .15s,box-shadow .15s;"
+            style="width:100%;height:30px;padding:0 10px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:11.5px;font-family:monospace;letter-spacing:.06em;outline:none;text-transform:uppercase;transition:border-color .15s,box-shadow .15s;"
             oninput="this.value=this.value.toUpperCase();this.style.borderColor='var(--line)';"
             onfocus="this.style.borderColor='var(--ink)'" onblur="this.style.borderColor='var(--line)'" />
         </div>
 
         <!-- Tombol aksi ketika belum aktif: Aktifkan Lisensi & Tutup bersebelahan -->
-        <div id="licUnlicensedBtns" style="display:flex;gap:10px;width:100%;margin-top:2px;">
+        <div id="licUnlicensedBtns" style="display:flex;gap:8px;width:100%;">
           <button class="btn primary" id="licActivateBtn"
-            style="flex:1;height:34px;font-size:11.5px;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;"
+            style="flex:1;height:32px;font-size:11.5px;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;"
             onclick="activateLicense(this)">
             <svg aria-hidden="true" style="width:14px;height:14px">
               <use href="#i-key-round" />
@@ -210,16 +247,16 @@
             <span id="licActivateBtnText">Aktifkan Lisensi</span>
           </button>
           <button class="btn ghost" id="licCloseBtn"
-            style="flex:1;height:34px;font-size:11.5px;border-radius:8px;display:flex;align-items:center;justify-content:center;"
-            onclick="closeAbout()">
+            style="flex:1;height:32px;font-size:11.5px;border-radius:8px;display:flex;align-items:center;justify-content:center;"
+            onclick="closeLicense()">
             <span id="licCloseBtnText">Tutup</span>
           </button>
         </div>
 
         <!-- Tombol aksi ketika aktif: Hapus Aktivasi & Tutup bersebelahan -->
-        <div id="licActiveBtns" style="display:none;gap:10px;width:100%;margin-top:2px;">
+        <div id="licActiveBtns" style="display:none;gap:8px;width:100%;">
           <button class="btn danger" id="licRemoveBtn"
-            style="flex:1;height:34px;font-size:11.5px;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;"
+            style="flex:1;height:32px;font-size:11.5px;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;"
             onclick="removeLicense()">
             <svg aria-hidden="true" style="width:14px;height:14px">
               <use href="#i-trash-2" />
@@ -227,8 +264,8 @@
             <span id="licRemoveBtnText">Hapus Aktivasi</span>
           </button>
           <button class="btn primary" id="licActiveCloseBtn"
-            style="flex:1;height:34px;font-size:11.5px;border-radius:8px;display:flex;align-items:center;justify-content:center;"
-            onclick="closeAbout()">
+            style="flex:1;height:32px;font-size:11.5px;border-radius:8px;display:flex;align-items:center;justify-content:center;"
+            onclick="closeLicense()">
             <span id="licActiveCloseBtnText">Tutup</span>
           </button>
         </div>
