@@ -5,6 +5,21 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.7.5] — 2026-10-07
+
+### ✨ Fitur Baru
+
+- **Void pada group non-solid kini didukung.** Void yang bertabrakan dengan group/component biasa (bukan solid) kini dapat memotong child solid di dalamnya (1 level dalam) secara non-destruktif — child asli disimpan tersembunyi sebagai sumber, dan yang terlihat adalah hasil yang berlubang.
+- **Live mode bekerja pada non-solid parent.** Saat void digeser, hasil berlubang di dalam non-solid parent dibangun ulang otomatis dari sumber, identik dengan perilaku solid group.
+- **Finalisasi (Bake) mencakup non-solid parent.** Sumber tersembunyi di dalam group non-solid ikut dibersihkan dan hasil jadi group biasa.
+- **Pemotong void pada non-solid dibuat di ruang lokal parent** (`cutter_from_into`/`duplicate_into`) agar transformasi pemotongan presisi meski parent digeser/dirotasi.
+
+### 🔧 Perbaikan
+
+- Non-solid parent yang masih memiliki child hasil potongan lama dipulihkan dengan benar saat void dipindahkan menjauh atau dilepas, meski void tidak lagi overlap dengan parent.
+
+---
+
 ## [1.7.4] — 2026-10-04
 
 ### ✨ Pembaruan UI — Resize Minimalis

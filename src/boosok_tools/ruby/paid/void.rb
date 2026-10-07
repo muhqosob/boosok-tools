@@ -18,6 +18,8 @@ module BoosokTools::Void
   ROLE = 'void_role'.freeze unless defined?(ROLE)   # 'source' (utuh, tersembunyi) / 'result' (berlubang)
   LINK = 'void_link'.freeze unless defined?(LINK)   # id yang memasangkan sumber dengan hasilnya
   TX = 'void_tx'.freeze unless defined?(TX)         # transformasi hasil saat dibuat (deteksi hasil digeser user)
+  CHILD_LAYER = 'void_child_layer'.freeze unless defined?(CHILD_LAYER) # nama layer child asli (untuk non-solid parent)
+  VOID_HIDDEN_TAG = '#void_hidden'.freeze unless defined?(VOID_HIDDEN_TAG) # tag untuk face/edge di dalam void
   SETTINGS = 'BoosokTools_Void'.freeze unless defined?(SETTINGS)
   MATERIAL_NAME = 'Boosok Void'.freeze unless defined?(MATERIAL_NAME)
   UNTAGGED_NAMES = %w[Untagged Layer0].freeze unless defined?(UNTAGGED_NAMES)
@@ -66,7 +68,20 @@ module BoosokTools::Void
     mat
   end
 
+  # Ambil atau buat tag '#void_hidden' untuk face/edge di dalam void.
+  # Tag ini dibuat dengan visible=false agar geometri void tidak terlihat di viewport.
+  def self.void_hidden_layer(model)
+    layer = model.layers[VOID_HIDDEN_TAG]
+    return layer if layer
+
+    layer = model.layers.add(VOID_HIDDEN_TAG)
+    layer.visible = false
+    layer
+  end
+
   # Tandai / lepas tanda void. Material asli disimpan di atribut lalu dipulihkan saat tanda dilepas.
+  # Saat ditandai: semua face/edge di dalam group diberi tag '#void_hidden'.
+  # Saat dilepas: face/edge dikembalikan ke Untagged.
   def self.mark(model, ent, on)
     if on
       return false if void?(ent) || role(ent)
@@ -74,6 +89,11 @@ module BoosokTools::Void
       ent.set_attribute(DICT, ORIG_MATERIAL, ent.material ? ent.material.name : '')
       ent.set_attribute(DICT, KEY, true)
       ent.material = void_material(model)
+      # Semua face/edge di dalam void diberi tag #void_hidden
+      hidden_tag = void_hidden_layer(model)
+      entities_of(ent).each do |e|
+        e.layer = hidden_tag if e.is_a?(Sketchup::Drawingelement)
+      end
     else
       return false unless void?(ent)
 
@@ -81,6 +101,11 @@ module BoosokTools::Void
       ent.material = orig.empty? ? nil : model.materials[orig]
       ent.delete_attribute(DICT, KEY)
       ent.delete_attribute(DICT, ORIG_MATERIAL)
+      # Kembalikan face/edge ke Untagged saat void dilepas
+      untagged = untagged_layer(model)
+      entities_of(ent).each do |e|
+        e.layer = untagged if e.is_a?(Sketchup::Drawingelement) && e.layer.name == VOID_HIDDEN_TAG
+      end
     end
     true
   end
@@ -132,6 +157,184 @@ module BoosokTools::Void
     entities_of(ent).select { |e| container?(e) }
   end
 
+  # Pulihkan layer entity dari atribut CHILD_LAYER yang tersimpan (dipakai saat src di-unhide).
+  # Fallback ke entity.layer jika atribut tidak ada (source dibuat sebelum fix ini).
+  def self.restore_layer_from_attr(ent, model)
+    saved = ent.get_attribute(DICT, CHILD_LAYER)
+    if saved && !saved.empty?
+      layer = model.layers[saved]
+      ent.layer = layer if layer
+    end
+  rescue StandardError
+    nil
+  end
+
+  # Helper: konversi bounds entity (dalam ruang lokal parent) ke world-space BoundingBox.
+  def self.world_bounds(local_box, parent_tx)
+    box = Geom::BoundingBox.new
+    min = local_box.min
+    max = local_box.max
+    [
+      min,
+      max,
+      Geom::Point3d.new(min.x, min.y, max.z),
+      Geom::Point3d.new(min.x, max.y, min.z),
+      Geom::Point3d.new(max.x, min.y, min.z),
+      Geom::Point3d.new(max.x, max.y, min.z),
+      Geom::Point3d.new(min.x, max.y, max.z),
+      Geom::Point3d.new(max.x, min.y, max.z)
+    ].each { |pt| box.add(pt.transform(parent_tx)) }
+    box
+  end
+
+  # Potong child menggunakan list [void_src, local_tx]. Mengembalikan [result, changed?] atau nil jika gagal.
+  # Semua entity harus berada di dalam parent_entities.
+  def self.cut_child(parent_entities, child, local_voids, stats)
+    cur = child
+    changed = false
+    local_voids.each do |void_src, local_tx|
+      next unless cur.valid? && void_src.valid?
+
+      cutter = cutter_from_into(parent_entities, void_src, local_tx)
+      bmin = cur.bounds.min.to_a
+      bmax = cur.bounds.max.to_a
+      result = cutter.subtract(cur)
+      erase_if_valid(cutter) unless result.equal?(cutter)
+      erase_if_valid(cur) unless result.equal?(cur)
+      unless result && inside?(result.bounds.min.to_a, result.bounds.max.to_a, bmin, bmax)
+        erase_if_valid(result)
+        stats[:failed] += 1
+        return nil
+      end
+      changed = true
+      cur = result
+    end
+    [cur, changed]
+  end
+
+  # Untuk group non-solid: kelola pemotongan child solid di dalamnya (1 level), non-destruktif.
+  # Child asli disimpan sebagai source (tersembunyi di dalam parent), hasil berlubang sebagai result.
+  # Saat void digeser, result dibangun ulang dari source — identik dengan mekanisme solid group.
+  def self.rebuild_nonsolid_children(model, parent, voids, stats)
+    parent_entities = entities_of(parent)
+    parent_tx = parent.transformation
+    parent_tx_inv = parent_tx.inverse
+
+    # Void yang overlap dengan parent, dikonversi ke ruang lokal parent
+    local_voids = voids.select { |v| overlap?(parent.bounds, v.bounds) }.map do |v|
+      [v, parent_tx_inv * v.transformation]
+    end
+
+    child_all = parent_entities.select { |e| container?(e) }
+    child_sources = child_all.select { |e| role(e) == 'source' }
+    child_results = child_all.select { |e| role(e) == 'result' }
+    by_link = child_results.each_with_object({}) { |r, h| h[link_of(r)] = r }
+
+    # ── 1. Rebuild pasangan source/result yang sudah ada ──────────────────────
+    child_sources.each do |src|
+      next unless src.valid?
+
+      old_result = by_link[link_of(src)]
+
+      if local_voids.empty?
+        # Void sudah tidak overlap parent: kembalikan child asli
+        erase_if_valid(old_result)
+        restore_layer_from_attr(src, Sketchup.active_model)
+        src.hidden = false
+        clear_roles(src)
+        next
+      end
+
+      # Buat ulang hasil dari source
+      begin
+        fresh = duplicate(parent_entities, src)
+        fresh.hidden = false
+        done = cut_child(parent_entities, fresh, local_voids, stats)
+        if done
+          new_result, changed = done
+          if changed
+            erase_if_valid(old_result)
+            # Pulihkan layer dari atribut yang disimpan di source (lebih reliable dari src.layer)
+            saved_layer_name = src.get_attribute(DICT, CHILD_LAYER)
+            if saved_layer_name
+              restored_layer = Sketchup.active_model.layers[saved_layer_name]
+              new_result.layer = restored_layer || untagged_layer(Sketchup.active_model)
+            else
+              new_result.layer = src.layer
+            end
+            saved_name = src.get_attribute(DICT, 'void_child_name')
+            new_result.name = saved_name if saved_name && !saved_name.empty?
+            new_result.set_attribute(DICT, ROLE, 'result')
+            new_result.set_attribute(DICT, LINK, link_of(src))
+          else
+            # Void tidak lagi memotong source ini: pulihkan
+            erase_if_valid(new_result)
+            erase_if_valid(old_result)
+            restore_layer_from_attr(src, Sketchup.active_model)
+            src.hidden = false
+            clear_roles(src)
+          end
+        else
+          # Gagal: buang fresh copy, biarkan old_result tetap
+          erase_if_valid(fresh) if fresh&.valid?
+        end
+      rescue => e
+        puts "[Boosok Void] rebuild child gagal: #{e.class}: #{e.message}"
+        stats[:failed] += 1
+      end
+    end
+
+    return if local_voids.empty?
+
+    # ── 2. Child solid baru (belum punya role) ────────────────────────────────
+    fresh_children = parent_entities.select { |e| container?(e) && !e.hidden? && !role(e) }
+    fresh_children.each do |child|
+      next unless child.valid?
+
+      child_world = world_bounds(child.bounds, parent_tx)
+      matching = local_voids.select { |v, _| overlap?(child_world, v.bounds) }
+      next if matching.empty?
+      next unless solid?(child)
+
+      begin
+        # Simpan layer & nama child asli sebelum apapun (subtract akan mengkonsumsi child)
+        orig_layer = child.layer
+        orig_name = child.name
+
+        # Simpan source (salinan tersembunyi dari child asli)
+        src = duplicate(parent_entities, child)
+        link = new_link
+        src.hidden = true
+        src.set_attribute(DICT, ROLE, 'source')
+        src.set_attribute(DICT, LINK, link)
+        # Simpan layer & nama sebagai atribut di source agar reliable saat rebuild live
+        src.set_attribute(DICT, CHILD_LAYER, orig_layer.name)
+        src.set_attribute(DICT, 'void_child_name', orig_name) unless orig_name.to_s.empty?
+
+        done = cut_child(parent_entities, child, matching, stats)
+        if done
+          result, changed = done
+          if changed
+            result.layer = orig_layer
+            result.name = orig_name unless orig_name.to_s.empty?
+            result.set_attribute(DICT, ROLE, 'result')
+            result.set_attribute(DICT, LINK, link)
+          else
+            # Tidak benar-benar terpotong: bersihkan source, child tetap
+            erase_if_valid(src)
+            clear_roles(result) if result&.valid?
+          end
+        else
+          # Gagal: hapus source yang terlanjur dibuat
+          erase_if_valid(src)
+        end
+      rescue => e
+        puts "[Boosok Void] potong child gagal: #{e.class}: #{e.message}"
+        stats[:failed] += 1
+      end
+    end
+  end
+
   def self.untagged_layer(model)
     model.layers.find { |l| UNTAGGED_NAMES.include?(l.name) } || model.layers[0]
   end
@@ -167,6 +370,55 @@ module BoosokTools::Void
     copy = ent.is_a?(Sketchup::Group) ? ent.copy : entities.add_instance(ent.definition, ent.transformation)
     copy.hidden = false
     copy
+  end
+
+  # Duplikasi group/component ke dalam entities LAIN (mis. ke dalam parent_entities).
+  # Untuk group: salin semua face/edge dari definition ke group baru di target entities.
+  # Untuk component: add_instance ke target entities dengan transformasi yang sudah diberikan.
+  def self.duplicate_into(target_entities, ent, new_tx = nil)
+    tx = new_tx || ent.transformation
+    if ent.is_a?(Sketchup::ComponentInstance)
+      copy = target_entities.add_instance(ent.definition, tx)
+      copy.make_unique
+    else
+      # Group: buat group baru di target, lalu isi dengan konten definition void
+      copy = target_entities.add_group
+      copy.transformation = tx
+      src_def = ent.definition
+      src_def.entities.each do |e|
+        case e
+        when Sketchup::Face
+          pts = e.outer_loop.vertices.map(&:position)
+          begin
+            new_face = copy.entities.add_face(pts)
+            # copy material face jika ada
+            new_face.material = e.material if e.material
+          rescue StandardError
+            nil
+          end
+        when Sketchup::Edge
+          begin
+            copy.entities.add_line(e.start.position, e.end.position)
+          rescue StandardError
+            nil
+          end
+        end
+      end
+    end
+    copy.hidden = false
+    copy
+  end
+
+  # Versi cutter_from yang membuat salinan pemotong di dalam target_entities (bukan entities void).
+  def self.cutter_from_into(target_entities, void_src, local_tx)
+    cutter = duplicate_into(target_entities, void_src, local_tx)
+    inner = entities_of(cutter)
+    kids = inner.select { |e| container?(e) }
+    inner.erase_entities(kids) unless kids.empty?
+    untagged = untagged_layer(Sketchup.active_model)
+    cutter.layer = untagged
+    inner.each { |e| e.layer = untagged if e.is_a?(Sketchup::Drawingelement) }
+    cutter
   end
 
   def self.copy_properties(src, dst)
@@ -306,12 +558,24 @@ module BoosokTools::Void
     pairs.each { |s, r| rebuild_source(entities, s, r, voids, stats, out) }
 
     skipped = {}
+    # Non-solid parent yang masih memiliki child source (hasil pemotongan lama) juga perlu diproses,
+    # bahkan jika void sudah tidak overlap lagi — supaya child dipulihkan.
+    nonsolid_with_state = all.select do |t|
+      t.valid? && !void?(t) && !role(t) && !t.hidden? && !solid?(t) &&
+        entities_of(t).any? { |e| container?(e) && role(e) }
+    end
+    nonsolid_with_state.each { |t| rebuild_nonsolid_children(model, t, voids, stats) }
+
     all.each do |t|
       next if !t.valid? || void?(t) || role(t) || t.hidden?
       next unless voids.any? { |v| overlap?(t.bounds, v.bounds) }
 
       unless solid?(t)
-        skipped[t.entityID] = true
+        # Group non-solid: kelola children solid di dalamnya (non-destruktif, dengan live support)
+        # Lewati jika sudah diproses di pass nonsolid_with_state di atas
+        next if nonsolid_with_state.any? { |p| p.equal?(t) }
+
+        rebuild_nonsolid_children(model, t, voids, stats)
         next
       end
 
@@ -359,6 +623,7 @@ module BoosokTools::Void
   end
 
   # Finalisasi: hapus semua sumber tersembunyi, hasil jadi group biasa (void tidak lagi mengendalikannya).
+  # Juga bersihkan source/result di dalam parent group non-solid (1 level dalam).
   def self.bake(model)
     entities = model.active_entities
     all = entities.select { |e| container?(e) }
@@ -366,10 +631,20 @@ module BoosokTools::Void
     @busy = true
     model.start_operation('Finalisasi Void', true)
     begin
+      # Top-level source/result
       all.select { |e| role(e) == 'source' }.each(&:erase!)
       all.select { |e| role(e) == 'result' }.each do |r|
         clear_roles(r)
         count += 1
+      end
+      # Source/result di dalam parent non-solid (1 level)
+      all.select { |e| !void?(e) && !role(e) && !solid?(e) }.each do |parent|
+        inner = entities_of(parent)
+        inner.select { |e| container?(e) && role(e) == 'source' }.each(&:erase!)
+        inner.select { |e| container?(e) && role(e) == 'result' }.each do |r|
+          clear_roles(r)
+          count += 1
+        end
       end
       model.commit_operation
     rescue => e
