@@ -1,4 +1,4 @@
-// Publikasikan update plugin ke server (Cloudflare): hitung SHA-256 .rbz lalu unggah ke server lisensi.
+// Publikasikan update plugin ke server (Cloudflare): enkripsi .rbz lalu unggah ke server lisensi.
 //
 // Alur rilis (paket terenkripsi .rbe):
 //   1. Naikkan PLUGIN_VERSION di src\boosok_tools.rb, jalankan check_sketchup.ps1
@@ -14,10 +14,19 @@
 //                  (v1.6.x ke bawah, yang hanya membaca GitHub) tetap mendapat update. Wajib dengan --file, tidak boleh
 //                  dengan --plain. Menjalankan `git push` (commit yang belum terkirim ikut), membuat release, lalu commit
 //                  + push version.json. Token GitHub: env GITHUB_TOKEN, atau `gh auth token`, atau kredensial git.
+//   --no-encrypt   lewati enkripsi payload sebelum dikirim ke server (tidak direkomendasikan, hanya untuk debug)
+//
+// ENKRIPSI PAYLOAD (default aktif):
+//   Sebelum dikirim ke server, isi .rbz dibungkus dengan AES-256-GCM menggunakan kunci enkripsi yang
+//   dibaca dari server\.secrets\encrypt_key.txt (hex 64 karakter = 32 byte). Server wajib mendekripsi
+//   sebelum menyimpan. Header tambahan dikirim: X-IV (hex 24 karakter) dan X-Auth-Tag (hex 32 karakter).
+//   Selain itu, HMAC-SHA256 dari payload asli (sebelum enkripsi) dikirim di header X-Content-Hmac
+//   menggunakan kunci HMAC yang dibaca dari server\.secrets\hmac_key.txt.
 //
 // Catatan perubahan opsional; kalau kosong dipakai pesan commit terakhir. Versi diambil dari PLUGIN_VERSION di
 // src\boosok_tools.rb. Pengguna yang berlisensi aktif akan melihat update ini lewat tombol "Cek update" di Boosok Tools.
 // Token admin dibaca dari server\.secrets\admin_token.txt. Hanya untuk Windows (memakai tar.exe bawaan Windows).
+
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -32,6 +41,7 @@ function die(msg) { console.error('\n' + msg); process.exit(1); }
 let dry = false;
 let plain = false;
 let github = false;
+let noEncrypt = false;
 let filePath = null;
 const args = [];
 const argv = process.argv.slice(2);
@@ -40,6 +50,7 @@ for (let i = 0; i < argv.length; i++) {
   if (a === '--dry-run') dry = true;
   else if (a === '--plain') plain = true;
   else if (a === '--github') github = true;
+  else if (a === '--no-encrypt') noEncrypt = true;
   else if (a === '--file') { filePath = argv[++i]; if (!filePath) die('--file butuh path ke .rbz'); }
   else if (a.startsWith('--')) die('Opsi tidak dikenal: ' + a);
   else args.push(a);
@@ -47,6 +58,7 @@ for (let i = 0; i < argv.length; i++) {
 
 if (github && !filePath) die('--github hanya bisa bersama --file (paket hasil portal).');
 if (github && plain) die('--github tidak boleh bersama --plain: GitHub bersifat publik, jangan mengunggah kode terbuka ke sana.');
+if (noEncrypt) console.warn('\n⚠️  --no-encrypt aktif: payload dikirim tanpa enkripsi. Hanya untuk debug!\n');
 
 const main = fs.readFileSync(path.join(root, 'src', 'boosok_tools.rb'), 'utf8');
 const version = (main.match(/PLUGIN_VERSION\s*=\s*"([^"]+)"/) || [])[1];
@@ -125,6 +137,51 @@ const tokenFile = path.join(root, 'server', '.secrets', 'admin_token.txt');
 if (!fs.existsSync(tokenFile)) die('Token admin tidak ditemukan: ' + tokenFile);
 const token = fs.readFileSync(tokenFile, 'utf8').trim();
 
+// ── Enkripsi payload (AES-256-GCM) + HMAC-SHA256 ────────────────────────────
+//
+// Struktur kunci:
+//   server/.secrets/encrypt_key.txt  → 64 hex chars (32 byte), kunci AES-256-GCM
+//   server/.secrets/hmac_key.txt     → 64 hex chars (32 byte), kunci HMAC-SHA256
+//
+// Format yang dikirim ke server:
+//   Body          : ciphertext (Buffer)
+//   X-IV          : IV hex (24 chars = 12 byte, acak per upload)
+//   X-Auth-Tag    : GCM auth tag hex (32 chars = 16 byte)
+//   X-Content-Hmac: HMAC-SHA256 dari plaintext asli (buf), hex 64 chars
+//   X-Sha256      : SHA-256 dari plaintext asli (untuk referensi / double-check)
+//
+// Server perlu mendekripsi ciphertext dengan kunci + IV + auth-tag yang sama,
+// lalu verifikasi HMAC sebelum menyimpan file. Kalau verifikasi gagal → tolak.
+
+function readSecretKey(filename, label) {
+  const p = path.join(root, 'server', '.secrets', filename);
+  if (!fs.existsSync(p)) {
+    die(`Kunci ${label} tidak ditemukan: ${p}\n` +
+        `Buat file tersebut berisi 64 karakter hex (32 byte acak):\n` +
+        `  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))" > ${p}`);
+  }
+  const hex = fs.readFileSync(p, 'utf8').trim();
+  if (!/^[0-9a-fA-F]{64}$/.test(hex)) die(`Format ${label} salah: harus 64 karakter hex di ${p}`);
+  return Buffer.from(hex, 'hex');
+}
+
+function encryptPayload(plainBuf) {
+  const key = readSecretKey('encrypt_key.txt', 'enkripsi AES-256-GCM');
+  const hmacKey = readSecretKey('hmac_key.txt', 'HMAC-SHA256');
+
+  const iv = crypto.randomBytes(12); // 96-bit IV (standar GCM)
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const encrypted = Buffer.concat([cipher.update(plainBuf), cipher.final()]);
+  const authTag = cipher.getAuthTag(); // 16 byte
+
+  const hmac = crypto.createHmac('sha256', hmacKey).update(plainBuf).digest();
+
+  console.log(`Enkripsi   : AES-256-GCM | IV: ${iv.toString('hex')} | Tag: ${authTag.toString('hex').slice(0, 8)}...`);
+  console.log(`HMAC-SHA256: ${hmac.toString('hex').slice(0, 16)}...`);
+
+  return { encrypted, iv, authTag, hmac };
+}
+
 // ── GitHub (untuk pengguna lama yang hanya membaca version.json di GitHub) ──
 function git(gitArgs, opts = {}) {
   return execFileSync('git', gitArgs, { cwd: root, encoding: 'utf8', ...opts }).trim();
@@ -149,10 +206,10 @@ function githubToken() {
   return null;
 }
 
-async function ghApi(method, apiUrl, token, body, headers) {
+async function ghApi(method, apiUrl, ghToken, body, headers) {
   const res = await fetch(apiUrl, {
     method,
-    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'boosok-publish-release', ...headers },
+    headers: { Authorization: 'Bearer ' + ghToken, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'boosok-publish-release', ...headers },
     body
   });
   const text = await res.text();
@@ -202,10 +259,33 @@ async function publishGithub() {
 }
 
 (async () => {
+  // Siapkan body + headers berdasarkan mode enkripsi
+  let uploadBody = buf;
+  const extraHeaders = {
+    'X-Sha256': sha, // SHA-256 plaintext, selalu dikirim
+  };
+
+  if (!noEncrypt) {
+    const { encrypted, iv, authTag, hmac } = encryptPayload(buf);
+    uploadBody = encrypted;
+    extraHeaders['X-IV'] = iv.toString('hex');
+    extraHeaders['X-Auth-Tag'] = authTag.toString('hex');
+    extraHeaders['X-Content-Hmac'] = hmac.toString('hex');
+    extraHeaders['X-Encrypted'] = '1'; // sinyal ke server bahwa body dienkripsi
+    console.log(`Upload     : ${(encrypted.length / 1024).toFixed(0)} KB (terenkripsi AES-256-GCM)`);
+  } else {
+    extraHeaders['X-Encrypted'] = '0';
+    console.log(`Upload     : ${(buf.length / 1024).toFixed(0)} KB (TIDAK terenkripsi, --no-encrypt aktif)`);
+  }
+
   const res = await fetch(`${url}/admin/release?version=${encodeURIComponent(version)}&changelog=${encodeURIComponent(changelog)}`, {
     method: 'PUT',
-    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/octet-stream' },
-    body: buf
+    headers: {
+      Authorization: 'Bearer ' + token,
+      'Content-Type': 'application/octet-stream',
+      ...extraHeaders,
+    },
+    body: uploadBody,
   });
   const out = await res.json().catch(() => ({}));
   if (!res.ok || !out.ok) die('GAGAL mengunggah: ' + res.status + ' ' + JSON.stringify(out));
