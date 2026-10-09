@@ -1,6 +1,6 @@
 {
-  "version": "1.7.5",
-  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.7.5/boosok_tools_v1.7.5.rbz",
-  "changelog": "tools: publish-release dengan enkripsi AES-256-GCM payload; tambah keygen.js",
-  "sha256": "1d516dcf7ad2c219b895a00fd742b118f7e3d45f394b4fc342862e36ca7d6eb6"
+  "version": "1.7.6",
+  "download_url": "https://github.com/muhqosob/boosok-tools/releases/download/v1.7.6/boosok_tools_v1.7.6.rbz",
+  "changelog": "Rilis v1.7.6: menu klik kanan, Void batalkan/refresh lubang, Slice geometri lepas; RAB ikut terpasang tapi disembunyikan (HIDDEN_TOOLS).",
+  "sha256": "96e35aab0b056d1a980d2ad5f6e6eb67b8496495a0f48b2922460cb3dcf631a6"
 }
