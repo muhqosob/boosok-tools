@@ -109,49 +109,56 @@ module BoosokTools::ConvertToCleanGroup
     model = Sketchup.active_model
     return dialog.execute_script("resetExecButton(); showToast('Tidak ada model aktif.');") unless model
 
-    sel = model.selection.to_a
-    
-    # Validasi Cepat di Awal
-    if sel.length != 1
-      dialog.execute_script("showToast('Silakan pilih tepat 1 objek di layar!'); resetExecButton();")
-      return
-    elsif !sel[0].is_a?(Sketchup::ComponentInstance)
-      dialog.execute_script("showToast('Error: Objek yang dipilih BUKAN Component!'); resetExecButton();")
+    sel = model.selection.to_a.select { |e| e.is_a?(Sketchup::ComponentInstance) || e.is_a?(Sketchup::Group) }
+
+    if sel.empty?
+      dialog.execute_script("showToast('Silakan pilih minimal 1 group atau component di layar!'); resetExecButton();")
       return
     end
 
-    item = sel[0]
-    main_layer = item.layer
-
+    cleaned = 0
     model.start_operation("Group Cleaner", true)
     begin
-      # 1. Jadikan unik agar instans lain aman
-      item = item.make_unique
+      sel.each do |item|
+        next unless item.valid?
 
-      tr = item.transformation
-      parent_ents = item.parent.entities
-      source_defn = item.definition
+        main_layer = item.layer
+        parent_ents = item.parent.is_a?(Sketchup::Entities) ? item.parent : item.parent.entities
 
-      # 2. Hapus 2d__Line di source_defn
-      remove_target_completely(source_defn.entities)
-      purge_attributes(source_defn)
+        if item.is_a?(Sketchup::ComponentInstance)
+          # Jadikan unik agar instans lain aman
+          item.make_unique # mengubah instance di tempat; nilai kembaliannya tidak dipakai
+          tr = item.transformation
+          source_defn = item.definition
 
-      # 3. Buat Group Master
-      master_group = parent_ents.add_group
-      master_group.transformation = tr
-      master_group.layer = main_layer if main_layer
+          # Hapus 2d__Line di source_defn
+          remove_target_completely(source_defn.entities)
+          purge_attributes(source_defn)
 
-      # 4. Masukkan isi ke dalam master group
-      temp_inst = master_group.entities.add_instance(source_defn, Geom::Transformation.new)
-      temp_inst.explode if temp_inst
+          # Buat Group Master
+          master_group = parent_ents.add_group
+          master_group.transformation = tr
+          master_group.layer = main_layer if main_layer
 
-      # 5. Hapus komponen asli
-      item.erase!
+          # Masukkan isi ke dalam master group
+          temp_inst = master_group.entities.add_instance(source_defn, Geom::Transformation.new)
+          temp_inst.explode if temp_inst
 
-      # 6. Ubah seluruh struktur di dalamnya menjadi grup dan bersihkan atribut
-      purge_attributes(master_group)
-      convert_remaining_to_groups(master_group.entities)
+          # Hapus komponen asli
+          item.erase!
 
+          # Ubah seluruh struktur di dalamnya menjadi grup dan bersihkan atribut
+          purge_attributes(master_group)
+          convert_remaining_to_groups(master_group.entities)
+        else
+          # Group: langsung bersihkan tanpa perlu explode/rebuild
+          remove_target_completely(item.entities)
+          purge_attributes(item)
+          convert_remaining_to_groups(item.entities)
+        end
+
+        cleaned += 1
+      end
       model.commit_operation
     rescue => e
       model.abort_operation
@@ -162,6 +169,6 @@ module BoosokTools::ConvertToCleanGroup
     model.selection.clear
 
     dialog.execute_script("resetExecButton();")
-    dialog.execute_script("showSuccessStep('Selesai! Komponen berhasil dibersihkan menjadi Grup murni.');")
+    dialog.execute_script("showSuccessStep(#{("Selesai! #{cleaned} objek berhasil dibersihkan menjadi Grup murni.").to_json});")
   end
 end

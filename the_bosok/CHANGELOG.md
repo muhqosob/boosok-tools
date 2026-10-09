@@ -5,6 +5,23 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
 ---
 
+## [1.7.6] — 2026-10-09
+
+### ✨ Fitur Baru
+
+- **Menu klik kanan Boosok Tools.** Muncul saat ada group/component terseleksi: Reset Scale dan Make Unique Group (hanya yang dipilih, atau rekursif termasuk isi).
+- **Void: tombol Batalkan Lubang dan Refresh Lubang.** Batalkan Lubang menutup lubang dari void terpilih (semua void bila tidak ada yang dipilih) dan menonaktifkan void-nya; Refresh Lubang membangun ulang lubang dari posisi void saat ini.
+- **Void melewati dynamic component.** Dynamic component (dan isinya) tidak pernah dilubangi atau diubah. Void hasil copy juga dijadikan unik supaya mengubah satu void tidak ikut mengubah salinannya.
+- **Slice memotong geometri lepas (face/edge)** di dalam group, termasuk yang berdampingan dengan sub-group. Slice juga menjalankan ulang Void pada potongan yang berlubang, lengkap dengan progress bar di viewport. Satu operasi tetap satu langkah Undo.
+- **Group Cleaner bisa memproses banyak group/component sekaligus**, tidak lagi harus tepat satu component.
+
+### 🔧 Perbaikan
+
+- **Selector:** isi group/component bertag utama hanya ikut terpilih bila ada filter penyempit (tag kedua, nama, atau atribut). Tanpa filter, hanya group/component bertag itu sendiri yang terpilih.
+- **Select Tools:** highlight dan pemilihan tetap tepat saat mengedit di dalam group yang induknya digeser/dirotasi.
+
+---
+
 ## [1.7.5] — 2026-10-07
 
 ### ✨ Fitur Baru

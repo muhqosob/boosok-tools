@@ -21,7 +21,11 @@ module BoosokTools::SelectTool
       active_path = (model && model.respond_to?(:active_path) && model.active_path) ? model.active_path : []
       picked_path = (ph.respond_to?(:count) && ph.count > 0 && ph.path_at(0)) ? ph.path_at(0) : []
 
-      raw_path = picked_path.empty? ? [] : (active_path + picked_path)
+      # Level 0 = group/komponen yang sedang dibuka (konteks edit), bukan induk terluar model.
+      # Induk di atasnya disimpan terpisah sebagai prefix (dipakai untuk InstancePath & transformasi dunia).
+      active_group = active_path.last
+      @tool.context_prefix = active_path[0...-1].select { |e| e && e.respond_to?(:valid?) && e.valid? }
+      raw_path = picked_path.empty? ? [] : ([active_group].compact + picked_path)
       # Validasi State Management: pastikan semua entitas di path valid & skip Axes (Sumbu Koordinat)
       path = raw_path.select do |e|
         next false unless e && e.respond_to?(:valid?) && e.valid?

@@ -313,6 +313,70 @@ module BoosokTools::Slice
     pts.all? { |v| v == inside }
   end
 
+  # ── Penyaring cepat di ruang layar ────────────────────────────────────────
+
+  BOUNDARY_PX = 2.0 unless defined?(BOUNDARY_PX) # hull yang sedekat ini dengan garis potong tidak dianggap jelas
+
+  # Cangkang cembung (monotone chain) dari titik-titik layar
+  def self.convex_hull(points)
+    pts = points.uniq.sort
+    return pts if pts.size < 3
+
+    cross = ->(o, a, b) { ((a[0] - o[0]) * (b[1] - o[1])) - ((a[1] - o[1]) * (b[0] - o[0])) }
+    build = lambda do |list|
+      chain = []
+      list.each do |pt|
+        chain.pop while chain.size >= 2 && cross.call(chain[-2], chain[-1], pt) <= 0
+        chain << pt
+      end
+      chain.pop
+      chain
+    end
+    build.call(pts) + build.call(pts.reverse)
+  end
+
+  # Jarak titik ke SEGMEN a-b (px) kurang dari tol?
+  def self.near_segment?(pt, a, b, tol)
+    dist, t = seg_dist(pt, a, b)
+    return Math.hypot(pt[0] - a[0], pt[1] - a[1]) <= tol if t < 0
+    return Math.hypot(pt[0] - b[0], pt[1] - b[1]) <= tol if t > 1
+
+    dist <= tol
+  end
+
+  # Posisi entity terhadap area potong, dari bayangan bounding box-nya di layar (cangkang cembung 8 sudut):
+  #   :outside = bayangan seluruhnya di luar area (tidak tersentuh), :inside = seluruhnya di dalam area,
+  #   :cross   = memotong / ragu-ragu (termasuk bersinggungan dengan garis atau ada sudut di belakang kamera).
+  # Hasil :outside / :inside pasti benar, jadi pemanggil boleh melewati operasi mahal.
+  def self.region_class(env, target, ctx_tr)
+    box = target.bounds
+    return :cross if box.empty?
+
+    view = env[:view]
+    cam = view.camera
+    pts = (0..7).map do |i|
+      world = ctx_tr * box.corner(i)
+      return :cross if cam.perspective? && (world - cam.eye).dot(cam.direction) <= 0
+
+      sp = view.screen_coords(world)
+      [sp.x, sp.y]
+    end
+    hull = convex_hull(pts)
+    poly = env[:poly]
+    edges = poly.each_index.map { |i| [poly[i], poly[(i + 1) % poly.size]] }
+    return :cross if hull.any? { |h| edges.any? { |a, b| near_segment?(h, a, b, BOUNDARY_PX) } }
+
+    hull_edges = hull.size < 2 ? [] : hull.each_index.map { |i| [hull[i], hull[(i + 1) % hull.size]] }
+    return :cross if hull_edges.any? { |h1, h2| edges.any? { |a, b| segments_cross?(h1, h2, a, b) } }
+
+    inside = hull.map { |h| point_in_polygon?(h, poly) }
+    return :inside if inside.all?
+    return :cross if inside.any?
+    return :cross if hull.size >= 3 && poly.any? { |v| point_in_polygon?(v, hull) }
+
+    :outside
+  end
+
   def self.unchanged_volume?(vol, ref)
     vol && ref && (vol - ref).abs <= ref.abs * 1e-6
   end
@@ -344,68 +408,28 @@ module BoosokTools::Slice
     [nil, false, false]
   end
 
-  # ── Geometri lepas (face/edge): dipotong seperti Intersect Faces + buang sisi yang tidak diinginkan ──
-
-  # Tambahkan volume pemotong sementara (sebagai group di `ents`) lalu panggil intersect_with agar face/edge yang
-  # menyilang terbelah di sepanjang permukaan pemotong. entities2 harus berupa SATU Entity; bentuk argumen dicoba
-  # berurutan (group dengan recurse, group tanpa recurse, lalu face pemotong satu per satu) dan yang berhasil
-  # menambah edge dipakai. Hasil percobaan dicatat di Ruby Console supaya mudah ditelusuri.
-  def self.raw_cut(env, ents, ctx_tr)
-    tmp = build_cutter(ents, env[:spec], ctx_tr)
-    return false unless tmp
-
-    ident = Geom::Transformation.new
-    edges0 = ents.grep(Sketchup::Edge).size
-    bounds0 = Geom::BoundingBox.new # kotak geometri asli, sebelum pemotong ditambahkan
-    ents.grep(Sketchup::Edge).each { |e| bounds0.add(e.start.position, e.end.position) }
-    attempts = [
-      ['group, recurse', ->(e) { e.intersect_with(true, ident, e, ident, true, tmp) }],
-      ['group', ->(e) { e.intersect_with(false, ident, e, ident, true, tmp) }],
-      ['faces', ->(e) { tmp.entities.grep(Sketchup::Face).each { |f| e.intersect_with(false, ident, e, ident, true, f) } }]
-    ]
-    done = nil
-    attempts.each do |name, call|
-      call.call(ents)
-      if ents.grep(Sketchup::Edge).size != edges0
-        done = name
-        break
-      end
-    rescue StandardError => e
-      puts "[Boosok Slice] intersect_with (#{name}): #{e.class}: #{e.message}"
-    end
-    stray = remove_stray_edges(ents, bounds0)
-    puts "[Boosok Slice] raw_cut: #{done || 'tidak ada edge baru'} (edge #{edges0} -> #{ents.grep(Sketchup::Edge).size}, edge liar dibuang: #{stray})"
-    true
-  rescue StandardError => e
-    puts "[Boosok Slice] raw_cut: #{e.class}: #{e.message}"
-    false
-  ensure
-    BoosokTools::Void.erase_if_valid(tmp)
-  end
-
-  # intersect_with(recurse) juga menyilangkan group pemotong dengan dirinya sendiri dan menaruh tepi pemotong
-  # (raksasa) sebagai edge liar di `ents`. Edge hasil perpotongan yang sah selalu berada di dalam kotak geometri asli.
-  def self.remove_stray_edges(ents, box)
-    return 0 if box.empty?
-
-    tol = [box.diagonal * 0.01, 0.01].max
-    inside = lambda do |pt|
-      (0..2).all? { |i| pt[i] >= box.min[i] - tol && pt[i] <= box.max[i] + tol }
-    end
-    stray = ents.grep(Sketchup::Edge).reject { |e| inside.call(e.start.position) && inside.call(e.end.position) }
-    ents.erase_entities(stray) unless stray.empty?
-    stray.size
-  end
+  # ── Geometri lepas (face/edge): dibelah di Ruby murni sepanjang bidang potong, lalu sisi yang tidak diinginkan dibuang ──
 
   def self.centroid(points)
     n = points.size.to_f
     Geom::Point3d.new(points.sum { |pt| pt.x } / n, points.sum { |pt| pt.y } / n, points.sum { |pt| pt.z } / n)
   end
 
+  # Titik di dalam face: pusat sudut untuk segitiga, selain itu pusat segitiga pertama dari mesh (aman untuk face
+  # cekung yang pusat sudutnya bisa jatuh di luar face)
+  def self.face_center(face)
+    verts = face.outer_loop.vertices
+    return centroid(verts.map(&:position)) if verts.size <= 3
+
+    mesh = face.mesh(0)
+    tri = mesh.polygons.first
+    tri ? centroid(tri.map { |i| mesh.point_at(i.abs) }) : centroid(verts.map(&:position))
+  end
+
   # Titik pusat entity untuk menentukan sisi (nil kalau tidak bisa ditentukan, mis. guide tak hingga)
   def self.center_of(ent)
     case ent
-    when Sketchup::Face then centroid(ent.outer_loop.vertices.map(&:position))
+    when Sketchup::Face then face_center(ent)
     when Sketchup::Edge then Geom.linear_combination(0.5, ent.start.position, 0.5, ent.end.position)
     when Sketchup::ConstructionLine then nil
     else
@@ -457,28 +481,27 @@ module BoosokTools::Slice
     ents.any? { |e| e.is_a?(Sketchup::Face) || e.is_a?(Sketchup::Edge) }
   end
 
+  # Buang sisi yang tidak diinginkan dari geometri lepas yang SUDAH dibelah. Hasil: ada isi di dalam area potong?
+  def self.raw_keep_side(env, ents, tr, want_inside)
+    fin, fout, lin, lout, oin, oout = raw_classify(env, ents, tr)
+    affected = [fin, lin, oin].any?(&:any?)
+    puts "[Boosok Slice] raw_keep_side: face #{fin.size} dalam/#{fout.size} luar, edge lepas #{lin.size}/#{lout.size}, " \
+         "lain #{oin.size}/#{oout.size}, simpan sisi #{want_inside ? 'dalam' : 'luar'}"
+    want_inside ? raw_remove(ents, fout, lout, oout) : raw_remove(ents, fin, lin, oin)
+    affected
+  end
+
   # Potong geometri lepas di `ents` dan buang sisi yang tidak diinginkan. Hasil: [terpengaruh?, ok?]
   def self.raw_slice_entities(env, ents, tr, want_inside)
     return [false, true] unless raw_geometry?(ents)
-    return [false, false] if faces_or_edges?(ents) && !raw_cut(env, ents, tr)
+    return [false, false] if faces_or_edges?(ents) && !raw_split(env, ents, tr)
 
-    manual = faces_or_edges?(ents) ? split_straddlers(env, ents, tr) : 0
-    puts "[Boosok Slice] pembelah manual: #{manual} face dibelah" if manual.positive?
-    fin, fout, lin, lout, oin, oout = raw_classify(env, ents, tr)
-    affected = [fin, lin, oin].any?(&:any?)
-    log_straddlers(env, ents, tr, fin.size, fout.size)
-    want_inside ? raw_remove(ents, fout, lout, oout) : raw_remove(ents, fin, lin, oin)
-    [affected, true]
+    [raw_keep_side(env, ents, tr, want_inside), true]
   end
 
-  # ── Pembelah manual: face yang melintas garis tetapi tidak terbelah oleh intersect_with ──
+  # ── Pembelah geometri lepas ──
 
-  def self.vertex_sides(env, face, tr)
-    face.outer_loop.vertices.map do |v|
-      sp = env[:view].screen_coords(tr * v.position)
-      point_in_polygon?([sp.x, sp.y], env[:poly])
-    end
-  end
+  PX_EPS = 0.01 unless defined?(PX_EPS) # toleransi jarak ke garis potong (px layar)
 
   # Bidang melalui segmen layar a-b (dunia): [titik, normal]. nil kalau degenerat.
   def self.patch_plane(view, a, b)
@@ -508,107 +531,210 @@ module BoosokTools::Slice
     [Math.hypot(pt[0] - cx, pt[1] - cy), t]
   end
 
-  # Bagian-bagian garis perpotongan face dengan bidang (koordinat dunia): array [titik1, titik2]
-  def self.face_plane_segments(face, tr, plane)
-    origin = tr * face.outer_loop.vertices.first.position
-    normal = face.normal.transform(tr).normalize
-    line = Geom.intersect_plane_plane([origin, normal], plane)
-    return [] unless line
+  # Jarak bertanda (px) titik layar ke garis lurus a-b; positif di sisi kiri arah a→b
+  def self.signed_dist(pt, a, b)
+    dx = b[0] - a[0]
+    dy = b[1] - a[1]
+    len = Math.hypot(dx, dy)
+    return 0.0 if len < 1e-9
 
-    p0, dir = line
+    ((dx * (pt[1] - a[1])) - (dy * (pt[0] - a[0]))) / len
+  end
+
+  # Perpotongan face dengan bidang potong (dunia): array [titik1, titik2], tiap pasang = bagian garis yang ada di
+  # dalam face. Sisi dengan ujung tepat di bidang dihitung setengah-terbuka supaya paritas tetap benar.
+  def self.face_plane_chords(face, tr, plane)
+    base, pn = plane
+    pn = pn.normalize
+    dir = face.normal.transform(tr).normalize.cross(pn)
+    return [] if dir.length < 1e-9
+
     dir = dir.normalize
-    ux, vx = normal.axes[0], normal.axes[1]
-    to2d = ->(pt) { [(pt - origin).dot(ux), (pt - origin).dot(vx)] }
-    q0 = to2d.call(p0)
-    d2 = [dir.dot(ux), dir.dot(vx)]
-    ts = []
+    origin = tr * face.outer_loop.vertices.first.position
+    hits = []
     face.loops.each do |lp|
       pts = lp.vertices.map { |v| tr * v.position }
-      pts.each_with_index do |pa, i|
-        pb = pts[(i + 1) % pts.size]
-        a2 = to2d.call(pa)
-        e2 = [to2d.call(pb)[0] - a2[0], to2d.call(pb)[1] - a2[1]]
-        den = (d2[0] * e2[1]) - (d2[1] * e2[0])
-        next if den.abs < 1e-12
+      ds = pts.map { |pt| (pt - base).dot(pn) }
+      pts.each_index do |i|
+        j = (i + 1) % pts.size
+        next if (ds[i] > 0) == (ds[j] > 0)
 
-        diff = [a2[0] - q0[0], a2[1] - q0[1]]
-        sedge = ((diff[0] * d2[1]) - (diff[1] * d2[0])) / den
-        next if sedge < -1e-9 || sedge > 1 + 1e-9
-
-        ts << (((diff[0] * e2[1]) - (diff[1] * e2[0])) / den)
+        s = ds[i] / (ds[i] - ds[j])
+        hits << Geom.linear_combination(1 - s, pts[i], s, pts[j])
       end
     end
-    ts = ts.sort.each_with_object([]) { |t, out| out << t if out.empty? || (t - out.last).abs > 1e-6 }
-    ts.each_slice(2).select { |pair| pair.size == 2 }.map { |t1, t2| [p0.offset(dir, t1), p0.offset(dir, t2)] }
-  rescue StandardError
-    []
+    hits.sort_by { |pt| (pt - origin).dot(dir) }
+        .each_slice(2).select { |a, b| b && a.distance(b) > 1e-6 }
   end
 
-  # Belah face `face` di sepanjang satu segmen potong (a-b, koordinat layar). Hasil: true kalau ada edge ditambahkan.
-  def self.split_face_on_segment(env, ents, face, tr, inv, seg)
-    plane = patch_plane(env[:view], seg[0], seg[1])
-    return false unless plane
+  # Bagian chord [w1, w2] yang berada di rentang segmen layar a-b (t 0..1; ujung garis potong sudah diperpanjang
+  # sampai bingkai). nil kalau tidak ada.
+  def self.clip_chord(view, w1, w2, a, b)
+    s1 = view.screen_coords(w1)
+    s2 = view.screen_coords(w2)
+    t1 = seg_dist([s1.x, s1.y], a, b)[1]
+    t2 = seg_dist([s2.x, s2.y], a, b)[1]
+    return nil if (t2 - t1).abs < 1e-9
 
-    added = false
-    face_plane_segments(face, tr, plane).each do |w1, w2|
-      mid = Geom.linear_combination(0.5, w1, 0.5, w2)
-      ends = [w1, w2, mid].map do |pt|
-        sp = env[:view].screen_coords(pt)
-        seg_dist([sp.x, sp.y], seg[0], seg[1])
-      end
-      next unless ends.all? { |dist, t| dist < 2.0 && t > -0.001 && t < 1.001 }
+    lo = [0.0, [t1, t2].min].max
+    hi = [1.0, [t1, t2].max].min
+    return nil if hi - lo < 1e-6
 
-      ents.add_line(inv * w1, inv * w2)
-      added = true
+    at = lambda do |t|
+      u = (t - t1) / (t2 - t1)
+      Geom.linear_combination(1 - u, w1, u, w2)
     end
-    added
-  rescue StandardError => e
-    puts "[Boosok Slice] split_face: #{e.class}: #{e.message}"
-    false
+    [at.call(lo), at.call(hi)]
   end
 
-  # Belah face yang masih melintas garis (sudutnya di dua sisi). Diulang beberapa putaran karena tiap belahan
-  # mengganti face. Hasil: jumlah face yang berhasil dibelah.
-  def self.split_straddlers(env, ents, tr)
-    path = env[:cut_path]
-    return 0 unless path && path.size >= 2
+  JOIN_TOL = 1e-4 unless defined?(JOIN_TOL) # inci; ujung dua potongan dianggap bertemu
 
+  # Gabungkan potongan garis [p, q] yang bersambung dan segaris menjadi satu garis. SketchUp hanya membelah face
+  # kalau SATU garis menghubungkan dua titik di tepinya; rantai potongan yang bersambung tidak membelahnya.
+  def self.merge_pieces(pieces)
+    lines = pieces.map(&:dup)
+    loop do
+      joined = nil
+      lines.combination(2).each do |l1, l2|
+        joined = join_lines(l1, l2)
+        next unless joined
+
+        lines.delete_if { |l| l.equal?(l1) || l.equal?(l2) }
+        lines << joined
+        break
+      end
+      break unless joined
+    end
+    lines
+  end
+
+  # Satu garis kalau l1 dan l2 bersambung di salah satu ujung dan searah; kalau tidak nil
+  def self.join_lines(l1, l2)
+    a, b = l1
+    c, d = l2
+    ends = if b.distance(c) < JOIN_TOL then [a, d, b]
+           elsif b.distance(d) < JOIN_TOL then [a, c, b]
+           elsif a.distance(c) < JOIN_TOL then [b, d, a]
+           elsif a.distance(d) < JOIN_TOL then [b, c, a]
+           end
+    return nil unless ends
+
+    from, to, mid = ends
+    v1 = mid - from
+    v2 = to - mid
+    return nil if v1.length < JOIN_TOL || v2.length < JOIN_TOL
+
+    sin = v1.cross(v2).length / (v1.length * v2.length)
+    sin < 1e-6 && v1.dot(v2).positive? ? [from, to] : nil
+  end
+
+  # Belah face yang melintas garis potong dengan menggambar garis perpotongannya (add_line). Semua segmen dihitung
+  # sekaligus dari bentuk face semula, potongan yang segaris digabung jadi satu garis per chord, dan kalau masih
+  # ada tikungan, find_faces dipanggil supaya face terbelah. Hanya face yang sudutnya ada di kedua sisi garis
+  # lurus segmen yang dihitung. Hasil: jumlah garis ditambahkan.
+  def self.split_faces(env, ents, tr, scr)
+    view = env[:view]
+    segs = env[:cut_path].each_cons(2).filter_map do |a, b|
+      plane = patch_plane(view, a, b)
+      [a, b, plane] if plane
+    end
     inv = tr.inverse
-    done = 0
-    6.times do
-      todo = ents.grep(Sketchup::Face).select { |f| vertex_sides(env, f, tr).uniq.size > 1 }
-      break if todo.empty?
+    added = 0
+    ents.grep(Sketchup::Face).each do |f|
+      next unless f.valid?
 
-      progressed = false
-      todo.each do |f|
-        next unless f.valid?
+      verts = f.outer_loop.vertices.map { |v| scr.call(v) }
+      pieces = []
+      segs.each do |a, b, plane|
+        ds = verts.map { |pt| signed_dist(pt, a, b) }
+        next unless ds.min < -PX_EPS && ds.max > PX_EPS
 
-        path.each_cons(2) do |seg|
-          next unless split_face_on_segment(env, ents, f, tr, inv, seg)
-
-          progressed = true
-          done += 1
-          break
+        face_plane_chords(f, tr, plane).each do |w1, w2|
+          clipped = clip_chord(view, w1, w2, a, b)
+          pieces << clipped if clipped
         end
       end
-      break unless progressed
+      next if pieces.empty?
+
+      lines = merge_pieces(pieces)
+      edges = lines.map { |p, q| ents.add_line(inv * p, inv * q) }.compact
+      edges.each { |e| e.find_faces if e.valid? } if lines.size > 1
+      added += lines.size
+    end
+    added
+  end
+
+  # Edge lepas (tanpa face) yang menyeberangi segmen potong dipecah di titik silangnya.
+  def self.split_loose_edges_on_segment(ents, seg, scr)
+    a, b = seg
+    done = 0
+    ents.grep(Sketchup::Edge).each do |e|
+      next unless e.valid? && e.faces.empty?
+
+      p1 = scr.call(e.start)
+      p2 = scr.call(e.end)
+      d1 = signed_dist(p1, a, b)
+      d2 = signed_dist(p2, a, b)
+      next unless (d1 > PX_EPS && d2 < -PX_EPS) || (d1 < -PX_EPS && d2 > PX_EPS)
+
+      s = d1 / (d1 - d2)
+      cross = [p1[0] + (s * (p2[0] - p1[0])), p1[1] + (s * (p2[1] - p1[1]))]
+      t = seg_dist(cross, a, b)[1]
+      next unless t > 0.0 && t < 1.0
+
+      e.split(s)
+      done += 1
     end
     done
   end
 
-  # Diagnosa: face yang titik-titik sudutnya berada di dua sisi garis tetapi tidak terbelah (utuh di satu sisi)
-  def self.log_straddlers(env, ents, tr, n_in, n_out)
-    count = 0
-    ents.grep(Sketchup::Face).each do |f|
-      sides = f.outer_loop.vertices.map do |v|
-        sp = env[:view].screen_coords(tr * v.position)
-        point_in_polygon?([sp.x, sp.y], env[:poly])
-      end
-      count += 1 if sides.uniq.size > 1
+  # Jumlah face/edge lepas yang masih melintas garis: sudut-sudutnya (di luar garis itu sendiri) ada di dalam DAN di luar area
+  def self.unsplit_faces(env, ents, scr)
+    path = env[:cut_path]
+    sides_of = lambda do |verts|
+      verts.filter_map do |v|
+        pt = scr.call(v)
+        next if path.each_cons(2).any? { |a, b| near_segment?(pt, a, b, 0.5) }
+
+        point_in_polygon?(pt, env[:poly])
+      end.uniq.size > 1
     end
-    puts "[Boosok Slice] raw leaf: face=#{n_in + n_out} (in #{n_in}/out #{n_out}), face melintas tak terbelah=#{count}" if count.positive?
-  rescue StandardError
-    nil
+    faces = ents.grep(Sketchup::Face).count { |f| sides_of.call(f.outer_loop.vertices) }
+    edges = ents.grep(Sketchup::Edge).count { |e| e.faces.empty? && sides_of.call([e.start, e.end]) }
+    faces + edges
+  end
+
+  # Belah semua face/edge lepas di `ents` sepanjang garis potong (tiap segmen = satu bidang tegak). Posisi layar
+  # tiap vertex dihitung sekali (cache). Hasil: false kalau terjadi error.
+  def self.raw_split(env, ents, tr)
+    path = env[:cut_path]
+    return true unless path && path.size >= 2
+
+    view = env[:view]
+    cache = {}
+    scr = lambda do |v|
+      cache[v.entityID] ||= begin
+        sp = view.screen_coords(tr * v.position)
+        [sp.x, sp.y]
+      end
+    end
+    added = 0
+    left = 0
+    3.times do |round|
+      added += split_faces(env, ents, tr, scr)
+      path.each_cons(2) { |seg| added += split_loose_edges_on_segment(ents, seg, scr) }
+      left = unsplit_faces(env, ents, scr)
+      break if left.zero?
+
+      puts "[Boosok Slice] raw_split putaran #{round + 1}: #{left} face masih melintas garis"
+    end
+    puts "[Boosok Slice] raw_split: garis/edge ditambahkan=#{added}, face melintas tersisa=#{left}"
+    # Face yang tetap melintas akan dibuang/dipertahankan utuh menurut pusatnya: itu bisa menghapus isi group
+    # diam-diam, jadi lebih aman membatalkan potongan ini (group asli tidak disentuh).
+    left.zero?
+  rescue StandardError => e
+    puts "[Boosok Slice] raw_split: #{e.class}: #{e.message}"
+    false
   end
 
   # Satu bagian dari target yang geometrinya lepas (bukan solid / tanpa isi group): salinan yang dipotong
@@ -624,23 +750,51 @@ module BoosokTools::Slice
     end
 
     if ents.length.zero?
+      puts "[Boosok Slice] raw_piece: seluruh isi #{target.name.inspect} jatuh di sisi yang dibuang (group habis)"
       BoosokTools::Void.erase_if_valid(work)
       return [nil, affected, true]
     end
     [work, affected, true]
   end
 
-  # Geometri lepas di tingkat yang JUGA berisi group/component (biasanya sedikit: garis bantu, dsb): tidak
-  # di-intersect (recurse akan ikut menyilangkan isi group dan menaruh edge liar di tingkat ini, dan
-  # memindahkan geometri ke group sementara terbukti membuat SketchUp crash). Cukup dipilah per sisi menurut
-  # titik pusatnya; yang di sisi yang tidak diinginkan dihapus.
+  # Kedua sisi sekaligus (mode split) untuk target geometri lepas: SATU salinan dibelah, lalu digandakan dan tiap
+  # salinan membuang sisi lawannya. Hasil: [[bagian luar, terpengaruh?, ok?], [bagian dalam, terpengaruh?, ok?]]
+  def self.raw_pair(env, entities, target, ctx_tr)
+    void = BoosokTools::Void
+    outer = void.duplicate(entities, target)
+    outer.make_unique if outer.is_a?(Sketchup::ComponentInstance)
+    ents = void.entities_of(outer)
+    if raw_geometry?(ents) && faces_or_edges?(ents) && !raw_split(env, ents, ctx_tr * outer.transformation)
+      void.erase_if_valid(outer)
+      return [[nil, false, false], [nil, false, false]]
+    end
+
+    inner = void.duplicate(entities, outer)
+    inner.make_unique if inner.is_a?(Sketchup::ComponentInstance)
+    [[outer, false], [inner, true]].map do |work, want_inside|
+      wents = void.entities_of(work)
+      affected = raw_geometry?(wents) && raw_keep_side(env, wents, ctx_tr * work.transformation, want_inside)
+      if wents.length.zero?
+        void.erase_if_valid(work)
+        work = nil
+      end
+      [work, affected, true]
+    end
+  end
+
+  def self.raw_leaf?(target)
+    !BoosokTools::Void.solid?(target) && BoosokTools::Void.nested(target).empty?
+  end
+
+  # Geometri lepas di tingkat yang JUGA berisi group/component (face/edge di samping sub-group): dibelah dengan
+  # raw_split, yang hanya menyentuh face/edge langsung di tingkat ini (tidak menyentuh isi sub-group). Tanpa
+  # pembelahan, face yang melintas garis dibuang/dipertahankan utuh menurut pusatnya, sehingga group 2D bisa
+  # lenyap alih-alih terpotong.
   def self.raw_slice_loose(env, ents, tr, want_inside)
     return [false, true] unless raw_geometry?(ents)
+    return [false, false] if faces_or_edges?(ents) && !raw_split(env, ents, tr)
 
-    fin, fout, lin, lout, oin, oout = raw_classify(env, ents, tr)
-    affected = [fin, lin, oin].any?(&:any?)
-    want_inside ? raw_remove(ents, fout, lout, oout) : raw_remove(ents, fin, lin, oin)
-    [affected, true]
+    [raw_keep_side(env, ents, tr, want_inside), true]
   rescue StandardError => e
     puts "[Boosok Slice] raw_slice_loose: #{e.class}: #{e.message}"
     [false, false]
@@ -656,6 +810,15 @@ module BoosokTools::Slice
     affected = false
 
     inner.select { |e| BoosokTools::Void.container?(e) }.each do |kid|
+      # Anak yang seluruhnya di satu sisi tidak perlu dipotong: sisi yang diinginkan dibiarkan, sisi lain dihapus
+      cls = region_class(env, kid, inner_tr)
+      unless cls == :cross
+        tick(env, leaves_of(env, kid)) unless want_inside
+        affected ||= cls == :inside
+        kid.erase! unless cls == (want_inside ? :inside : :outside)
+        next
+      end
+
       piece, aff, ok = side_copy(env, inner, kid, inner_tr, want_inside)
       unless ok
         BoosokTools::Void.erase_if_valid(copy)
@@ -713,14 +876,17 @@ module BoosokTools::Slice
   end
 
   # Solid → operasi solid (ada tutup di bidang potong). Gagal / bukan solid → potong sebagai geometri lepas.
+  # Satu daun dihitung selesai sekali, di putaran sisi luar (selalu dijalankan di kedua mode)
   def self.side_copy(env, entities, target, ctx_tr, want_inside)
     if BoosokTools::Void.solid?(target)
       res = leaf_piece(env, entities, target, ctx_tr, want_inside)
-      return res if res[2]
-
-      raw_piece(env, entities, target, ctx_tr, want_inside)
+      res = raw_piece(env, entities, target, ctx_tr, want_inside) unless res[2]
+      tick(env) unless want_inside
+      res
     elsif BoosokTools::Void.nested(target).empty?
-      raw_piece(env, entities, target, ctx_tr, want_inside)
+      res = raw_piece(env, entities, target, ctx_tr, want_inside)
+      tick(env) unless want_inside
+      res
     else
       container_piece(env, entities, target, ctx_tr, want_inside)
     end
@@ -728,8 +894,31 @@ module BoosokTools::Slice
 
   # Potong satu target tingkat atas. Hasil: array bagian (kosong kalau tidak terpotong / gagal).
   def self.slice_target(env, entities, target, ctx_tr, result_mode, stats)
+    # Seluruh target di satu sisi garis: tidak ada yang perlu dipotong (mode keep: yang di area buang dihapus)
+    cls = region_class(env, target, ctx_tr)
+    puts "[Boosok Slice] target #{target.name.inspect} (#{target.class.name.split('::').last}##{target.persistent_id}): #{cls}"
+    case cls
+    when :outside
+      tick(env, leaves_of(env, target))
+      stats[:notcut] += 1
+      return []
+    when :inside
+      tick(env, leaves_of(env, target))
+      if result_mode == 'keep'
+        target.erase!
+        stats[:cut] += 1
+      else
+        stats[:notcut] += 1
+      end
+      return []
+    end
+
     want = result_mode == 'split' ? [false, true] : [false]
-    results = want.map { |inside| side_copy(env, entities, target, ctx_tr, inside) }
+    results = if result_mode == 'split' && raw_leaf?(target)
+                raw_pair(env, entities, target, ctx_tr).tap { tick(env) }
+              else
+                want.map { |inside| side_copy(env, entities, target, ctx_tr, inside) }
+              end
     pieces = results.map(&:first).compact
 
     if results.any? { |r| !r[2] }
@@ -767,14 +956,52 @@ module BoosokTools::Slice
     env = { view: view, poly: poly, spec: cutter_spec(model, view, poly), cut_path: poly[0..path.size + 1] }
     ctx_tr = model.edit_transform
     stats = { cut: 0, skipped: 0, notcut: 0, failed: 0, pieces: 0 }
+    env[:progress] = self.progress = Progress.new(view, targets.sum { |t| leaves_of(env, t) }, loc('slice_progress_cut', 'Memotong...'))
+    begin
+      progress.phase(progress.label)
+      BoosokTools::Void.hold_live { run_slice(model, targets, env, ctx_tr, result_mode, stats) }
+    ensure
+      self.progress = nil
+      Sketchup.status_text = 'Slice'
+      view.invalidate
+    end
+  end
+
+  # Jalankan Void lagi di dalam operasi Slice. Potongan yang terlubangi tersembunyi sebagai "sumber" dan yang
+  # terlihat adalah hasilnya, jadi daftar potongan (untuk seleksi) diganti dengan hasil itu.
+  def self.reapply_holes(model, pieces, stats)
+    void = BoosokTools::Void
+    results = void.rebuild(model, void.new_stats)
+    by_link = results.each_with_object({}) { |r, h| h[void.link_of(r)] = r }
+    pieces.select(&:valid?).map do |pc|
+      void.role(pc) == 'source' ? by_link[void.link_of(pc)] : pc
+    end.compact
+  rescue StandardError => e
+    puts "[Boosok Slice] lubang void gagal dibuat ulang: #{e.class}: #{e.message}"
+    stats[:failed] += 1
+    pieces
+  end
+
+  # Lubang Void dibatalkan dulu (target berlubang dikembalikan ke sumbernya yang utuh), baru dipotong, lalu
+  # Void dijalankan lagi pada potongannya supaya lubangnya terbentuk kembali. Satu operasi = satu langkah Undo.
+  def self.run_slice(model, targets, env, ctx_tr, result_mode, stats)
+    entities = model.active_entities
     model.start_operation('Slice', true)
     begin
+      targets, holes = BoosokTools::Void.restore_holes(entities, targets)
+      extra = holes.positive? ? [(env[:progress].total * 0.3).ceil, 1].max : 0
+      env[:progress].extend_total(extra)
       pieces = []
       targets.each do |t|
-        pieces.concat(slice_target(env, model.active_entities, t, ctx_tr, result_mode, stats))
+        pieces.concat(slice_target(env, entities, t, ctx_tr, result_mode, stats))
       rescue StandardError => e
         puts "[Boosok Slice] #{e.class}: #{e.message}"
         stats[:failed] += 1
+      end
+      if holes.positive?
+        env[:progress].phase(loc('slice_progress_void', 'Membuat ulang lubang Void...'))
+        pieces = reapply_holes(model, pieces, stats)
+        env[:progress].tick(extra)
       end
       stats[:pieces] = pieces.size
       if result_mode == 'keep'
@@ -842,6 +1069,152 @@ module BoosokTools::Slice
       color = i.zero? ? Sketchup::Color.new(60, 60, 66) : Sketchup::Color.new(105, 105, 115)
       hud_text(view, y + 26 + (i * 20), text, i.zero? ? first_size : sub_size, false, color)
     end
+  rescue StandardError
+    nil
+  end
+
+  # ── Progress bar di viewport ─────────────────────────────────────────────
+
+  # Slice berjalan sinkron dalam satu operasi, jadi layar hanya tergambar ulang kalau kita memanggil View#refresh.
+  # Satuan kerja = satu daun (group solid / geometri lepas); tick dipanggil tiap daun selesai.
+  class Progress
+    REFRESH_EVERY = 0.1 # detik; batasi gambar ulang supaya tidak memperlambat
+
+    attr_reader :total
+
+    def initialize(view, total, label)
+      @view = view
+      @total = [total, 1].max
+      @done = 0
+      @label = label
+      @last = 0.0
+    end
+
+    def fraction
+      [@done.to_f / @total, 1.0].min
+    end
+
+    def percent
+      (fraction * 100).floor
+    end
+
+    attr_reader :label
+
+    def extend_total(count)
+      @total += count
+    end
+
+    def tick(count = 1)
+      @done += count
+      refresh(false)
+    end
+
+    def phase(label)
+      @label = label
+      refresh(true)
+    end
+
+    def refresh(force)
+      now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      return unless force || now - @last >= REFRESH_EVERY
+
+      @last = now
+      Sketchup.status_text = "Slice #{percent}%"
+      @view.refresh
+    rescue StandardError
+      nil
+    end
+  end
+
+  # Jumlah "daun" (group solid / geometri lepas) di dalam entity; sama dengan cabang yang dipilih side_copy
+  def self.leaves_of(env, ent)
+    cache = (env[:leaves] ||= {})
+    cache[ent.persistent_id] ||= begin
+      kids = BoosokTools::Void.nested(ent)
+      if BoosokTools::Void.solid?(ent) || kids.empty?
+        1
+      else
+        kids.sum { |k| leaves_of(env, k) }
+      end
+    end
+  end
+
+  def self.tick(env, count = 1)
+    env[:progress]&.tick(count)
+  end
+
+  # Palet tema Boosok (sama dengan css/ui.css: zinc monokrom, aksen = warna ink; gelap/terang mengikuti pilihan
+  # tema yang disimpan dialog)
+  PROGRESS_THEME = {
+    light: { surface: [255, 255, 255, 246], line: [230, 230, 233], track: [228, 228, 231], ink: [24, 24, 27],
+             muted: [113, 113, 122], fill: [24, 24, 27], ok: [22, 163, 74] },
+    dark: { surface: [30, 30, 34, 246], line: [46, 46, 52], track: [46, 46, 52], ink: [244, 244, 246],
+            muted: [148, 148, 158], fill: [255, 255, 255], ok: [34, 197, 94] }
+  }.freeze unless defined?(PROGRESS_THEME)
+
+  def self.progress_theme
+    dark = Sketchup.read_default('BoosokTools', 'theme', 'light').to_s == 'dark'
+    PROGRESS_THEME[dark ? :dark : :light]
+  rescue StandardError
+    PROGRESS_THEME[:light]
+  end
+
+  # Titik poligon cembung persegi bulat (koordinat layar)
+  def self.rounded_rect(x0, y0, x1, y1, radius)
+    r = [radius, (x1 - x0) / 2.0, (y1 - y0) / 2.0].min
+    corners = [[x1 - r, y0 + r, -90], [x1 - r, y1 - r, 0], [x0 + r, y1 - r, 90], [x0 + r, y0 + r, 180]]
+    corners.flat_map do |cx, cy, start|
+      (0..4).map do |i|
+        ang = (start + (i * 22.5)) * Math::PI / 180.0
+        Geom::Point3d.new(cx + (r * Math.cos(ang)), cy + (r * Math.sin(ang)), 0)
+      end
+    end
+  end
+
+  def self.theme_color(rgb, alpha = nil)
+    Sketchup::Color.new(rgb[0], rgb[1], rgb[2], alpha || rgb[3] || 255)
+  end
+
+  def self.hud_text_at(view, x, y, text, size, bold, color)
+    view.draw_text(Geom::Point3d.new(x, y, 0), text, color: color, font: 'Segoe UI', size: size, bold: bold)
+  end
+
+  # Panel kecil di tengah layar: judul + persentase, bar, keterangan tahap (gaya kartu dialog Boosok)
+  def self.draw_progress(view)
+    pg = progress
+    return unless pg
+
+    th = progress_theme
+    pw = 340.0
+    ph = 82.0
+    px = (view.vpwidth - pw) / 2.0
+    py = (view.vpheight * 0.40) - (ph / 2.0)
+    pad = 16.0
+    bx = px + pad
+    bw = pw - (2 * pad)
+    by = py + 38.0
+    bh = 8.0
+
+    view.drawing_color = Sketchup::Color.new(0, 0, 0, 38) # bayangan lembut
+    view.draw2d(GL_POLYGON, rounded_rect(px, py + 3, px + pw, py + ph + 3, 12))
+    view.drawing_color = theme_color(th[:surface])
+    view.draw2d(GL_POLYGON, rounded_rect(px, py, px + pw, py + ph, 12))
+    view.line_width = 1
+    view.drawing_color = theme_color(th[:line])
+    view.draw2d(GL_LINE_LOOP, rounded_rect(px, py, px + pw, py + ph, 12))
+
+    view.drawing_color = theme_color(th[:track])
+    view.draw2d(GL_POLYGON, rounded_rect(bx, by, bx + bw, by + bh, 4))
+    done = pg.fraction
+    if done.positive?
+      view.drawing_color = theme_color(done >= 1.0 ? th[:ok] : th[:fill])
+      view.draw2d(GL_POLYGON, rounded_rect(bx, by, bx + [bw * done, 2.0 * 4].max, by + bh, 4))
+    end
+
+    pct = "#{pg.percent}%"
+    hud_text_at(view, bx, py + 12, 'SLICE', 13, true, theme_color(th[:ink]))
+    hud_text_at(view, bx + bw - hud_width(view, pct, 13, true), py + 12, pct, 13, true, theme_color(th[:ink]))
+    hud_text_at(view, bx, by + bh + 8, pg.label.to_s, 11, false, theme_color(th[:muted]))
   rescue StandardError
     nil
   end
@@ -1041,6 +1414,7 @@ module BoosokTools::Slice
     def draw(view)
       @ip.draw(view)
       BoosokTools::Slice.draw_hud(view, BoosokTools::Slice.loc('slice_hud_title', 'SLICE'), hud_lines)
+      BoosokTools::Slice.draw_progress(view)
       world = @pts + (@mouse ? [@mouse] : [])
       return if world.size < 2
 
@@ -1169,7 +1543,7 @@ module BoosokTools::Slice
   # ── Dialog ────────────────────────────────────────────────────────────────
 
   class << self
-    attr_accessor :slice_active
+    attr_accessor :slice_active, :progress
   end
 
   def self.start_align

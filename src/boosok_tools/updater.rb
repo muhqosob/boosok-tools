@@ -253,6 +253,7 @@ module BoosokTools
           'ruby/paid/void.rb',
           'ruby/paid/slice.rb',
           'ruby/paid/trowel.rb',
+          'ruby/paid/rab.rb',
           'updater.rb',
           'hub.rb'
         ]

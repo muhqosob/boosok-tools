@@ -225,7 +225,8 @@
       { id: 'purge', icon: 'trash-2', t: 'Purge', s: 'Hapus component, material, tag tak terpakai', needs: 'objects' },
       { id: 'void', icon: 'square-minus', t: 'Void', s: 'Group pelubang group lain', needs: 'objects' },
       { id: 'slice', icon: 'scissors', t: 'Slice', s: 'Potong group dengan garis', needs: 'objects' },
-      { id: 'trowel', icon: 'shovel', t: 'Trowel', s: 'Push/Pull & Offset dalam group', needs: 'objects' }
+      { id: 'trowel', icon: 'shovel', t: 'Trowel', s: 'Push/Pull & Offset dalam group', needs: 'objects' },
+      { id: 'rab', icon: 'calculator', t: 'RAB', s: 'Volume & anggaran biaya dari model', needs: 'objects' }
     ];
 
     var TOOL_MAP = {};
@@ -480,7 +481,7 @@
       }
 
       var lastId = getLastUsed();
-      var lastTool = lastId ? TOOL_MAP[lastId] : null;
+      var lastTool = (lastId && !isHiddenTool(lastId)) ? TOOL_MAP[lastId] : null;
 
       var recentHtml = '';
       if (lastTool) {
@@ -545,10 +546,17 @@
       return ((S.data && S.data.free_tools) || FREE_TOOLS_DEFAULT).indexOf(id) >= 0;
     }
 
+    /* Tool yang disembunyikan (daftar utama dari Ruby: S.data.hidden_tools) */
+    var HIDDEN_TOOLS_DEFAULT = ['rab'];
+    function isHiddenTool(id) {
+      return ((S.data && S.data.hidden_tools) || HIDDEN_TOOLS_DEFAULT).indexOf(id) >= 0;
+    }
+
     /* Satu grid 3 kolom (2 baris terlihat, sisanya di-scroll); tool gratis di bagian atas, lalu yang berbayar (urutan asli dipertahankan di tiap bagian) */
     function buildGrid(stats) {
-      var sorted = TOOLS.filter(function (t) { return isFreeTool(t.id); })
-        .concat(TOOLS.filter(function (t) { return !isFreeTool(t.id); }));
+      var visible = TOOLS.filter(function (t) { return !isHiddenTool(t.id); });
+      var sorted = visible.filter(function (t) { return isFreeTool(t.id); })
+        .concat(visible.filter(function (t) { return !isFreeTool(t.id); }));
       return '<div class="grid4" id="grid4">' + sorted.map(buildTile).join('') + '</div>';
     }
 

@@ -15,6 +15,7 @@
     .warn-intro { margin: 0; font-size: 12.5px; color: var(--ink); }
     .warn { margin: 0; padding-left: 18px; font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
     .stat .num { margin-left: auto; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .divider { border: none; border-top: 1px solid var(--border, #e5e7eb); margin: 4px 0; }
   </style>
 </head>
 <body oncontextmenu="return false;">
@@ -82,6 +83,15 @@
         <svg><use href="#i-focus"/></svg><span data-i18n="void_apply">Terapkan Void</span>
       </button>
     </div>
+    <hr class="divider">
+    <div class="actions row">
+      <button class="btn ghost" id="btnResetCuts" onclick="doResetCuts(this)" title="Tutup lubang dari void terpilih (semua void kalau tidak ada yang dipilih); void jadi nonaktif" data-i18n-title="void_reset_cuts_title">
+        <svg><use href="#i-rotate-ccw"/></svg><span data-i18n="void_reset_cuts">Batalkan Lubang</span>
+      </button>
+      <button class="btn ghost" id="btnRefresh" onclick="doRefresh(this)" title="Bangun ulang lubang dari posisi void saat ini" data-i18n-title="void_refresh_title">
+        <svg><use href="#i-refresh-cw"/></svg><span data-i18n="void_refresh">Refresh Lubang</span>
+      </button>
+    </div>
   </section>
 
   <!-- Konfirmasi Finalisasi -->
@@ -104,7 +114,7 @@
 
   <script>
     var $ = function (id) { return document.getElementById(id); };
-    var BTNS = ['btnMark', 'btnUnmark', 'btnBake', 'btnApply'];
+    var BTNS = ['btnMark', 'btnUnmark', 'btnBake', 'btnApply', 'btnRefresh', 'btnResetCuts'];
 
     function setBusy(btn) {
       busy(btn, true);
@@ -131,8 +141,10 @@
       }
     }
 
-    function doMark(on, btn) { call('void_mark', on, btn); }
-    function doApply(btn) { call('void_apply', undefined, btn); }
+    function doMark(on, btn)      { call('void_mark', on, btn); }
+    function doApply(btn)         { call('void_apply', undefined, btn); }
+    function doRefresh(btn)       { call('void_refresh', undefined, btn); }
+    function doResetCuts(btn)     { call('void_reset_cuts', undefined, btn); }
     // Finalisasi permanen: tampilkan konfirmasi Ya / Tidak lebih dulu
     function doBake(btn) { $('bakeModal').classList.add('open'); }
     function closeBake() { $('bakeModal').classList.remove('open'); }
@@ -179,6 +191,26 @@
         ? t('void_baked', '%{n} group difinalisasi (salinan utuh dihapus).').replace('%{n}', res.count)
         : t('void_nochange', 'Tidak ada yang berubah.'), res.count ? 'success' : undefined);
     }
+    function onRefreshed(st) {
+      resetVoidButtons();
+      if (!st.voids) {
+        return showToast(st.off
+          ? t('void_all_off', 'Semua void sedang nonaktif. Klik Terapkan Void untuk mengaktifkan lagi.')
+          : t('void_none', 'Belum ada group void. Jadikan void dulu.'), 'error');
+      }
+      var msg = t('void_refreshed', '%{n} lubang di-refresh.').replace('%{n}', st.cut);
+      if (st.failed) msg += ' ' + t('void_failed', '%{n} gagal.').replace('%{n}', st.failed);
+      showToast(msg, (!st.failed) ? 'success' : undefined);
+    }
+    function onCutsReset(res) {
+      resetVoidButtons();
+      if (!res.total) return showToast(t('void_none', 'Belum ada group void. Jadikan void dulu.'), 'error');
+      if (!res.voids) return showToast(t('void_already_off', 'Void terpilih sudah nonaktif.'));
+      var msg = res.count
+        ? t('void_cuts_reset', '%{v} void dinonaktifkan, %{n} lubang ditutup. Klik Terapkan Void untuk mengaktifkan lagi.')
+        : t('void_cuts_reset_none', '%{v} void dinonaktifkan. Tidak ada lubang yang perlu ditutup.');
+      showToast(msg.replace('%{v}', res.voids).replace('%{n}', res.count), 'success');
+    }
     function onApplied(st) {
       resetVoidButtons();
       var parts = [];
@@ -187,6 +219,7 @@
       }
       parts.push(t('void_applied', '%{n} group dilubangi.').replace('%{n}', st.cut));
       if (st.skipped) parts.push(t('void_skipped', '%{n} dilewati (bukan solid).').replace('%{n}', st.skipped));
+      if (st.dynamic) parts.push(t('void_dynamic', '%{n} dynamic component dilewati (tidak boleh dilubangi).').replace('%{n}', st.dynamic));
       if (st.bad_voids) parts.push(t('void_bad', '%{n} void bukan solid.').replace('%{n}', st.bad_voids));
       if (st.failed) parts.push(t('void_failed', '%{n} gagal.').replace('%{n}', st.failed));
       showToast(parts.join(' '), (st.cut && !st.failed && !st.bad_voids) ? 'success' : undefined);

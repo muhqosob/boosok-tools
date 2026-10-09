@@ -276,6 +276,10 @@ module BoosokTools::TheSelectorPlugin
 
       geo_tag_counts = Hash.new(0) # diagnosa: tag milik edge/face yang ditemukan saat menelusuri
 
+      # Isi group/component bertag utama hanya boleh ikut terpilih kalau ada filter penyempit
+      # (tag kedua / nama / atribut). Tanpa itu, yang dipilih cuma group/component bertag utama itu sendiri.
+      narrowing_filter = (tag_kedua != all_tags) || !target_keyword.empty? || use_attribute
+
       find_entities = lambda do |entities, current_parent_tag = nil|
         entities.each do |ent|
           if geo_enabled && (ent.is_a?(Sketchup::Edge) || ent.is_a?(Sketchup::Face))
@@ -284,7 +288,7 @@ module BoosokTools::TheSelectorPlugin
             geo_tag_counts[ent_tag] += 1
 
             match_tag_utama = (tag_utama == all_tags) || ent_tag.downcase == tag_utama.downcase ||
-                              (current_parent_tag && current_parent_tag.downcase == tag_utama.downcase)
+                              (narrowing_filter && current_parent_tag && current_parent_tag.downcase == tag_utama.downcase)
             match_tag_kedua = (tag_kedua == all_tags) || (ent_tag.downcase == tag_kedua.downcase)
             next unless match_tag_utama && match_tag_kedua
 
@@ -309,7 +313,7 @@ module BoosokTools::TheSelectorPlugin
             match_tag_utama = true
             if tag_utama != "(Semua Tag / Abaikan)"
               is_self_tag = (ent_tag.downcase == tag_utama.downcase)
-              is_inside_parent = (active_parent_tag && active_parent_tag.downcase == tag_utama.downcase)
+              is_inside_parent = narrowing_filter && active_parent_tag && active_parent_tag.downcase == tag_utama.downcase
               match_tag_utama = is_self_tag || is_inside_parent
             end
 

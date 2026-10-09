@@ -51,7 +51,7 @@ module BoosokTools::SelectTool
       instance_path = nil
       if defined?(Sketchup::InstancePath)
         begin
-          ip = Sketchup::InstancePath.new(target_path_array)
+          ip = Sketchup::InstancePath.new(@tool.context_prefix + target_path_array)
           instance_path = ip if ip.respond_to?(:valid?) && ip.valid?
         rescue => e
           instance_path = nil

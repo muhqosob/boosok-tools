@@ -32,13 +32,23 @@ module BoosokTools
       'purge'         => { file: 'ruby/free/purge',               page: 'purge.html',           title: 'Purge' },
       'void'          => { file: 'ruby/paid/void',                page: 'void.html',            title: 'Void' },
       'slice'         => { file: 'ruby/paid/slice',               page: 'slice.html',           title: 'Slice' },
-      'trowel'        => { file: 'ruby/paid/trowel',              page: 'trowel.html',          title: 'Trowel' }
+      'trowel'        => { file: 'ruby/paid/trowel',              page: 'trowel.html',          title: 'Trowel' },
+      'rab'           => { file: 'ruby/paid/rab',                 page: 'rab.html',             title: 'RAB', width: 800 }
     }.freeze
 
     # Tool yang tetap bisa dipakai walau trial habis dan belum berlisensi. Sisanya (Select Tools, Hide Scene,
     # Deep Props, Void, Slice) butuh lisensi aktif atau masa trial. Tanpa `unless defined?` supaya daftar ikut berubah saat reload.
     remove_const(:FREE_TOOLS) if defined?(FREE_TOOLS)
     FREE_TOOLS = %w[selector replacer reset clean untag purge].freeze
+
+    # Tool yang file-nya tetap ikut terpasang tapi disembunyikan dari menu Extensions, grid Hub, dan tidak bisa dibuka.
+    # Kosongkan daftar ini (atau hapus id-nya) untuk memunculkan tool-nya lagi.
+    remove_const(:HIDDEN_TOOLS) if defined?(HIDDEN_TOOLS)
+    HIDDEN_TOOLS = %w[rab].freeze
+
+    def self.tool_hidden?(id)
+      HIDDEN_TOOLS.include?(id.to_s)
+    end
 
     # Boleh dibuka? Tool gratis selalu boleh; selain itu butuh lisensi aktif / masa trial.
     def self.tool_allowed?(id)
@@ -153,6 +163,7 @@ module BoosokTools
           Void.release_dialog if defined?(Void)
           Slice.release_dialog if defined?(Slice)
           Trowel.release_dialog if defined?(Trowel)
+          Rab.release_dialog if defined?(Rab)
           DeepProperties.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(DeepProperties)
           DeepProperties.instance_variable_set(:@dialog_registered_id, nil) rescue nil if defined?(DeepProperties)
           TheSelectorPlugin.instance_variable_set(:@callbacks_registered, false) rescue nil if defined?(TheSelectorPlugin)
@@ -189,6 +200,7 @@ module BoosokTools
     def self.open_or_show(id)
       cfg = TOOL_PAGES[id.to_s]
       return unless cfg
+      return if tool_hidden?(id)
 
       # Trial habis & belum berlisensi: tool berbayar cukup diberi notifikasi terkunci (tanpa popup aktivasi)
       unless tool_allowed?(id)
@@ -222,7 +234,7 @@ module BoosokTools
       end
 
       cfg = TOOL_PAGES[id.to_s]
-      return toast("Tool \"#{id}\" tidak dikenal.") unless cfg
+      return toast("Tool \"#{id}\" tidak dikenal.") if !cfg || tool_hidden?(id)
 
       if id.to_s == 'custom_select'
         load_tool_file(id.to_s) unless defined?(BoosokTools::SelectTool)
@@ -264,7 +276,7 @@ module BoosokTools
     def self.preload_tools
       @preloaded ||= {}
       TOOL_PAGES.each do |id, cfg|
-        next if id == 'custom_select' || @preloaded[id]
+        next if id == 'custom_select' || tool_hidden?(id) || @preloaded[id]
         @preloaded[id] = true if load_tool_file(id)
       end
     end
@@ -329,6 +341,8 @@ module BoosokTools
           Slice.send_init_data(dlg)
         elsif @current_tool == 'trowel' && defined?(Trowel)
           Trowel.send_init_data(dlg)
+        elsif @current_tool == 'rab' && defined?(Rab)
+          Rab.send_init_data(dlg)
         end
       end
 
@@ -520,6 +534,8 @@ module BoosokTools
         Slice.attach_callbacks(dlg) if defined?(Slice)
       when 'trowel'
         Trowel.attach_callbacks(dlg) if defined?(Trowel)
+      when 'rab'
+        Rab.attach_callbacks(dlg) if defined?(Rab)
       end
     end
 
@@ -555,6 +571,7 @@ module BoosokTools
         language: cur_lang,
         license: lic_st,
         free_tools: FREE_TOOLS,
+        hidden_tools: HIDDEN_TOOLS,
         stats: model_stats(model)
       }
     rescue => e

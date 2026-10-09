@@ -1,0 +1,746 @@
+{
+  "meta": {
+    "nama": "AHSP Starter Boosok Tools",
+    "versi": "0.1.0",
+    "acuan": "Koefisien berbasis SNI 7394:2008 (tata cara perhitungan harga satuan pekerjaan), ditulis dari ingatan - BELUM dicocokkan baris-per-baris dengan dokumen resmi.",
+    "catatan_harga": "Semua harga dasar adalah CONTOH (kira-kira level Jawa 2024). Wajib diganti dengan harga daerah/proyek.",
+    "mata_uang": "IDR",
+    "overhead_profit_persen": 10,
+    "ppn_persen": 11
+  },
+  "harga_dasar": [
+    {
+      "kode": "L.01",
+      "jenis": "upah",
+      "nama": "Pekerja",
+      "satuan": "OH",
+      "harga": 120000
+    },
+    {
+      "kode": "L.02",
+      "jenis": "upah",
+      "nama": "Tukang Batu",
+      "satuan": "OH",
+      "harga": 150000
+    },
+    {
+      "kode": "L.03",
+      "jenis": "upah",
+      "nama": "Tukang Kayu",
+      "satuan": "OH",
+      "harga": 150000
+    },
+    {
+      "kode": "L.04",
+      "jenis": "upah",
+      "nama": "Tukang Besi",
+      "satuan": "OH",
+      "harga": 150000
+    },
+    {
+      "kode": "L.05",
+      "jenis": "upah",
+      "nama": "Tukang Cat",
+      "satuan": "OH",
+      "harga": 150000
+    },
+    {
+      "kode": "L.06",
+      "jenis": "upah",
+      "nama": "Kepala Tukang",
+      "satuan": "OH",
+      "harga": 165000
+    },
+    {
+      "kode": "L.07",
+      "jenis": "upah",
+      "nama": "Mandor",
+      "satuan": "OH",
+      "harga": 175000
+    },
+    {
+      "kode": "M.01",
+      "jenis": "bahan",
+      "nama": "Semen Portland (PC)",
+      "satuan": "kg",
+      "harga": 1400
+    },
+    {
+      "kode": "M.02",
+      "jenis": "bahan",
+      "nama": "Pasir pasang",
+      "satuan": "m3",
+      "harga": 280000
+    },
+    {
+      "kode": "M.03",
+      "jenis": "bahan",
+      "nama": "Pasir urug",
+      "satuan": "m3",
+      "harga": 220000
+    },
+    {
+      "kode": "M.04",
+      "jenis": "bahan",
+      "nama": "Bata merah",
+      "satuan": "bh",
+      "harga": 900
+    },
+    {
+      "kode": "M.05",
+      "jenis": "bahan",
+      "nama": "Batu belah",
+      "satuan": "m3",
+      "harga": 300000
+    },
+    {
+      "kode": "M.06",
+      "jenis": "bahan",
+      "nama": "Pasir beton",
+      "satuan": "kg",
+      "harga": 200
+    },
+    {
+      "kode": "M.07",
+      "jenis": "bahan",
+      "nama": "Split / kerikil beton",
+      "satuan": "kg",
+      "harga": 240
+    },
+    {
+      "kode": "M.08",
+      "jenis": "bahan",
+      "nama": "Air kerja",
+      "satuan": "L",
+      "harga": 30
+    },
+    {
+      "kode": "M.09",
+      "jenis": "bahan",
+      "nama": "Besi beton",
+      "satuan": "kg",
+      "harga": 14500
+    },
+    {
+      "kode": "M.10",
+      "jenis": "bahan",
+      "nama": "Kawat beton",
+      "satuan": "kg",
+      "harga": 22000
+    },
+    {
+      "kode": "M.11",
+      "jenis": "bahan",
+      "nama": "Kayu kelas III (bekisting)",
+      "satuan": "m3",
+      "harga": 3500000
+    },
+    {
+      "kode": "M.12",
+      "jenis": "bahan",
+      "nama": "Paku 5-12 cm",
+      "satuan": "kg",
+      "harga": 20000
+    },
+    {
+      "kode": "M.13",
+      "jenis": "bahan",
+      "nama": "Minyak bekisting",
+      "satuan": "L",
+      "harga": 25000
+    },
+    {
+      "kode": "M.14",
+      "jenis": "bahan",
+      "nama": "Balok kayu kelas II",
+      "satuan": "m3",
+      "harga": 4500000
+    },
+    {
+      "kode": "M.15",
+      "jenis": "bahan",
+      "nama": "Plywood 9 mm",
+      "satuan": "lbr",
+      "harga": 150000
+    },
+    {
+      "kode": "M.16",
+      "jenis": "bahan",
+      "nama": "Dolken kayu",
+      "satuan": "btg",
+      "harga": 15000
+    },
+    {
+      "kode": "M.17",
+      "jenis": "bahan",
+      "nama": "Plamir tembok",
+      "satuan": "kg",
+      "harga": 25000
+    },
+    {
+      "kode": "M.18",
+      "jenis": "bahan",
+      "nama": "Cat dasar (sealer)",
+      "satuan": "kg",
+      "harga": 35000
+    },
+    {
+      "kode": "M.19",
+      "jenis": "bahan",
+      "nama": "Cat tembok penutup",
+      "satuan": "kg",
+      "harga": 45000
+    },
+    {
+      "kode": "M.20",
+      "jenis": "bahan",
+      "nama": "Keramik 20x20",
+      "satuan": "bh",
+      "harga": 4000
+    },
+    {
+      "kode": "M.21",
+      "jenis": "bahan",
+      "nama": "Semen warna (nat)",
+      "satuan": "kg",
+      "harga": 12000
+    }
+  ],
+  "ahsp": [
+    {
+      "kode": "A.01",
+      "divisi": "A. Pekerjaan Tanah",
+      "uraian": "Galian tanah biasa sedalam s.d. 1 m",
+      "satuan": "m3",
+      "keyakinan": "tinggi",
+      "komponen": [
+        {
+          "kode": "L.01",
+          "koef": 0.75
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.025
+        }
+      ]
+    },
+    {
+      "kode": "A.02",
+      "divisi": "A. Pekerjaan Tanah",
+      "uraian": "Urugan pasir",
+      "satuan": "m3",
+      "keyakinan": "tinggi",
+      "komponen": [
+        {
+          "kode": "M.03",
+          "koef": 1.2
+        },
+        {
+          "kode": "L.01",
+          "koef": 0.3
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.01
+        }
+      ]
+    },
+    {
+      "kode": "B.01",
+      "divisi": "B. Pekerjaan Pondasi",
+      "uraian": "Pondasi batu belah, campuran 1 PC : 5 PS",
+      "satuan": "m3",
+      "keyakinan": "tinggi",
+      "komponen": [
+        {
+          "kode": "M.05",
+          "koef": 1.2
+        },
+        {
+          "kode": "M.01",
+          "koef": 163
+        },
+        {
+          "kode": "M.02",
+          "koef": 0.52
+        },
+        {
+          "kode": "L.01",
+          "koef": 1.5
+        },
+        {
+          "kode": "L.02",
+          "koef": 0.75
+        },
+        {
+          "kode": "L.06",
+          "koef": 0.075
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.075
+        }
+      ]
+    },
+    {
+      "kode": "B.02",
+      "divisi": "B. Pekerjaan Pondasi",
+      "uraian": "Pondasi batu belah, campuran 1 PC : 4 PS",
+      "satuan": "m3",
+      "keyakinan": "tinggi",
+      "komponen": [
+        {
+          "kode": "M.05",
+          "koef": 1.2
+        },
+        {
+          "kode": "M.01",
+          "koef": 202
+        },
+        {
+          "kode": "M.02",
+          "koef": 0.485
+        },
+        {
+          "kode": "L.01",
+          "koef": 1.5
+        },
+        {
+          "kode": "L.02",
+          "koef": 0.75
+        },
+        {
+          "kode": "L.06",
+          "koef": 0.075
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.075
+        }
+      ]
+    },
+    {
+      "kode": "C.01",
+      "divisi": "C. Pekerjaan Beton",
+      "uraian": "Beton K-175 (site mix)",
+      "satuan": "m3",
+      "keyakinan": "tinggi",
+      "komponen": [
+        {
+          "kode": "M.01",
+          "koef": 326
+        },
+        {
+          "kode": "M.06",
+          "koef": 760
+        },
+        {
+          "kode": "M.07",
+          "koef": 1029
+        },
+        {
+          "kode": "M.08",
+          "koef": 215
+        },
+        {
+          "kode": "L.01",
+          "koef": 1.65
+        },
+        {
+          "kode": "L.02",
+          "koef": 0.275
+        },
+        {
+          "kode": "L.06",
+          "koef": 0.028
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.083
+        }
+      ]
+    },
+    {
+      "kode": "C.02",
+      "divisi": "C. Pekerjaan Beton",
+      "uraian": "Beton K-225 (site mix)",
+      "satuan": "m3",
+      "keyakinan": "tinggi",
+      "komponen": [
+        {
+          "kode": "M.01",
+          "koef": 371
+        },
+        {
+          "kode": "M.06",
+          "koef": 698
+        },
+        {
+          "kode": "M.07",
+          "koef": 1047
+        },
+        {
+          "kode": "M.08",
+          "koef": 215
+        },
+        {
+          "kode": "L.01",
+          "koef": 1.65
+        },
+        {
+          "kode": "L.02",
+          "koef": 0.275
+        },
+        {
+          "kode": "L.06",
+          "koef": 0.028
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.083
+        }
+      ]
+    },
+    {
+      "kode": "C.03",
+      "divisi": "C. Pekerjaan Beton",
+      "uraian": "Beton K-250 (site mix)",
+      "satuan": "m3",
+      "keyakinan": "tinggi",
+      "komponen": [
+        {
+          "kode": "M.01",
+          "koef": 384
+        },
+        {
+          "kode": "M.06",
+          "koef": 692
+        },
+        {
+          "kode": "M.07",
+          "koef": 1039
+        },
+        {
+          "kode": "M.08",
+          "koef": 215
+        },
+        {
+          "kode": "L.01",
+          "koef": 1.65
+        },
+        {
+          "kode": "L.02",
+          "koef": 0.275
+        },
+        {
+          "kode": "L.06",
+          "koef": 0.028
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.083
+        }
+      ]
+    },
+    {
+      "kode": "C.04",
+      "divisi": "C. Pekerjaan Beton",
+      "uraian": "Beton K-300 (site mix)",
+      "satuan": "m3",
+      "keyakinan": "tinggi",
+      "komponen": [
+        {
+          "kode": "M.01",
+          "koef": 413
+        },
+        {
+          "kode": "M.06",
+          "koef": 681
+        },
+        {
+          "kode": "M.07",
+          "koef": 1021
+        },
+        {
+          "kode": "M.08",
+          "koef": 215
+        },
+        {
+          "kode": "L.01",
+          "koef": 1.65
+        },
+        {
+          "kode": "L.02",
+          "koef": 0.275
+        },
+        {
+          "kode": "L.06",
+          "koef": 0.028
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.083
+        }
+      ]
+    },
+    {
+      "kode": "C.05",
+      "divisi": "C. Pekerjaan Beton",
+      "uraian": "Pembesian dengan besi polos/ulir (per 10 kg)",
+      "satuan": "10 kg",
+      "keyakinan": "tinggi",
+      "komponen": [
+        {
+          "kode": "M.09",
+          "koef": 10.5
+        },
+        {
+          "kode": "M.10",
+          "koef": 0.15
+        },
+        {
+          "kode": "L.01",
+          "koef": 0.07
+        },
+        {
+          "kode": "L.04",
+          "koef": 0.07
+        },
+        {
+          "kode": "L.06",
+          "koef": 0.007
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.004
+        }
+      ]
+    },
+    {
+      "kode": "C.06",
+      "divisi": "C. Pekerjaan Beton",
+      "uraian": "Bekisting kolom (kayu + plywood)",
+      "satuan": "m2",
+      "keyakinan": "sedang",
+      "komponen": [
+        {
+          "kode": "M.11",
+          "koef": 0.04
+        },
+        {
+          "kode": "M.12",
+          "koef": 0.4
+        },
+        {
+          "kode": "M.13",
+          "koef": 0.2
+        },
+        {
+          "kode": "M.14",
+          "koef": 0.015
+        },
+        {
+          "kode": "M.15",
+          "koef": 0.35
+        },
+        {
+          "kode": "M.16",
+          "koef": 2
+        },
+        {
+          "kode": "L.01",
+          "koef": 0.52
+        },
+        {
+          "kode": "L.03",
+          "koef": 0.26
+        },
+        {
+          "kode": "L.06",
+          "koef": 0.026
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.026
+        }
+      ]
+    },
+    {
+      "kode": "D.01",
+      "divisi": "D. Pekerjaan Dinding",
+      "uraian": "Pasangan dinding bata merah 1/2 bata, campuran 1 PC : 4 PS",
+      "satuan": "m2",
+      "keyakinan": "tinggi",
+      "komponen": [
+        {
+          "kode": "M.04",
+          "koef": 70
+        },
+        {
+          "kode": "M.01",
+          "koef": 11.5
+        },
+        {
+          "kode": "M.02",
+          "koef": 0.043
+        },
+        {
+          "kode": "L.01",
+          "koef": 0.3
+        },
+        {
+          "kode": "L.02",
+          "koef": 0.1
+        },
+        {
+          "kode": "L.06",
+          "koef": 0.01
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.015
+        }
+      ]
+    },
+    {
+      "kode": "D.02",
+      "divisi": "D. Pekerjaan Dinding",
+      "uraian": "Plesteran 1 PC : 4 PS, tebal 15 mm",
+      "satuan": "m2",
+      "keyakinan": "tinggi",
+      "komponen": [
+        {
+          "kode": "M.01",
+          "koef": 6.24
+        },
+        {
+          "kode": "M.02",
+          "koef": 0.024
+        },
+        {
+          "kode": "L.01",
+          "koef": 0.3
+        },
+        {
+          "kode": "L.02",
+          "koef": 0.15
+        },
+        {
+          "kode": "L.06",
+          "koef": 0.015
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.015
+        }
+      ]
+    },
+    {
+      "kode": "D.03",
+      "divisi": "D. Pekerjaan Dinding",
+      "uraian": "Acian",
+      "satuan": "m2",
+      "keyakinan": "tinggi",
+      "komponen": [
+        {
+          "kode": "M.01",
+          "koef": 3.25
+        },
+        {
+          "kode": "L.01",
+          "koef": 0.2
+        },
+        {
+          "kode": "L.02",
+          "koef": 0.1
+        },
+        {
+          "kode": "L.06",
+          "koef": 0.01
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.01
+        }
+      ]
+    },
+    {
+      "kode": "E.01",
+      "divisi": "E. Pekerjaan Finishing",
+      "uraian": "Pengecatan tembok baru (1 plamir, 1 cat dasar, 2 cat penutup)",
+      "satuan": "m2",
+      "keyakinan": "sedang",
+      "komponen": [
+        {
+          "kode": "M.17",
+          "koef": 0.1
+        },
+        {
+          "kode": "M.18",
+          "koef": 0.1
+        },
+        {
+          "kode": "M.19",
+          "koef": 0.26
+        },
+        {
+          "kode": "L.01",
+          "koef": 0.02
+        },
+        {
+          "kode": "L.05",
+          "koef": 0.063
+        },
+        {
+          "kode": "L.06",
+          "koef": 0.006
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.003
+        }
+      ]
+    },
+    {
+      "kode": "E.02",
+      "divisi": "E. Pekerjaan Finishing",
+      "uraian": "Pasang lantai keramik 20x20 (spesi + nat)",
+      "satuan": "m2",
+      "keyakinan": "sedang",
+      "komponen": [
+        {
+          "kode": "M.20",
+          "koef": 11
+        },
+        {
+          "kode": "M.01",
+          "koef": 10
+        },
+        {
+          "kode": "M.02",
+          "koef": 0.045
+        },
+        {
+          "kode": "M.21",
+          "koef": 1.5
+        },
+        {
+          "kode": "L.01",
+          "koef": 0.7
+        },
+        {
+          "kode": "L.02",
+          "koef": 0.35
+        },
+        {
+          "kode": "L.06",
+          "koef": 0.035
+        },
+        {
+          "kode": "L.07",
+          "koef": 0.035
+        }
+      ]
+    }
+  ]
+}

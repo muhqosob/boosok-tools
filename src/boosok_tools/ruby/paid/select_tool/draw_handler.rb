@@ -205,8 +205,17 @@ module BoosokTools::SelectTool
 
     # Menghitung transformasi kumulatif dunia untuk container (Group / ComponentInstance)
     # dari root model sampai ke container pada index depth (inklusif)
+    # Transformasi kumulatif induk di atas konteks edit aktif (identity kalau edit di root model)
+    def context_transform
+      (@tool.context_prefix || []).inject(Geom::Transformation.new) do |tr, ent|
+        ent.respond_to?(:transformation) && ent.transformation ? tr * ent.transformation : tr
+      end
+    rescue
+      Geom::Transformation.new
+    end
+
     def container_world_transform(path, depth)
-      tr = Geom::Transformation.new
+      tr = context_transform
       (0..depth).each do |i|
         ent = path[i]
         if ent && ent.respond_to?(:transformation) && ent.transformation
@@ -221,7 +230,7 @@ module BoosokTools::SelectTool
     # Menghitung transformasi kumulatif dunia untuk parent container dari suatu entitas (Face / Edge)
     # dari root model sampai ke index depth - 1
     def parent_world_transform(path, depth)
-      tr = Geom::Transformation.new
+      tr = context_transform
       (0...depth).each do |i|
         ent = path[i]
         if ent && ent.respond_to?(:transformation) && ent.transformation

@@ -2,10 +2,11 @@ Sketchup.require 'boosok_tools/ruby/locale' unless defined?(::BoosokTools::Local
 
 module BoosokTools::SelectTool
   class CoreTool
-    attr_accessor :hover_path, :target_depth, :ctrl_pressed, :cursor_x, :cursor_y
+    attr_accessor :hover_path, :target_depth, :ctrl_pressed, :cursor_x, :cursor_y, :context_prefix
 
     def initialize
       @hover_path = []
+      @context_prefix = [] # induk di atas konteks edit aktif (hover_path[0] = konteks edit itu sendiri)
       @target_depth = 0
       @ctrl_pressed = false
       @cursor_x = nil
@@ -95,6 +96,7 @@ module BoosokTools::SelectTool
     def reset_state!
       @area_handler.reset if @area_handler
       @hover_path = []
+      @context_prefix = []
       @ctrl_pressed = false
       @cursor_x = nil
       @cursor_y = nil

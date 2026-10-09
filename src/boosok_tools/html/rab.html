@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>RAB</title>
+  <link rel="stylesheet" href="../css/ui.css">
+  <script src="../js/strings.js"></script>
+  <script src="../js/locale.js"></script>
+  <style>
+    .pnl { display: none; flex-direction: column; gap: 9px; min-width: 0; }
+    .pnl.active { display: flex; }
+    .bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .bar .grow { flex: 1; }
+    .seg .tab-n { font-size: 10.5px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .seg .tab-n:not(:empty) { margin-left: 2px; }
+    .seg .tab-n:not(:empty)::before { content: "("; } .seg .tab-n:not(:empty)::after { content: ")"; }
+    .bar .proj { color: var(--muted); font-size: 12px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fld { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .input.sm { height: 26px; padding: 0 6px; font-size: 12px; border-radius: 6px; }
+    select.input.sm { appearance: menulist; -webkit-appearance: menulist; padding-right: 2px; text-overflow: ellipsis; }
+    .input.num { width: 58px; text-align: right; }
+    .rab .input.num { width: 100%; }
+    .input[disabled] { opacity: .45; }
+
+    .tw { overflow: auto; max-height: 290px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); position: relative; }
+    .tw::-webkit-scrollbar { width: 8px; height: 8px; }
+    .tw::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 8px; border: 2px solid var(--surface); }
+    table.rab { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+    .rab th { position: sticky; top: 0; z-index: 2; background: var(--bg); color: var(--muted); font-size: 11px; font-weight: 600; text-align: left;
+      padding: 6px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    .rab td { padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    .rab tr:last-child td { border-bottom: 0; }
+    .rab .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .rab th.n { text-align: right; }
+    .rab td.sat { color: var(--muted); text-align: center; white-space: nowrap; font-size: 11.5px; }
+    .rab .tg { overflow: hidden; }
+    .rab .tg .nm { font-weight: 600; display: inline-block; max-width: calc(100% - 20px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+    .rab .tg .ms { color: var(--muted); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sw { display: inline-block; width: 11px; height: 11px; border-radius: 4px; margin-right: 6px; border: 1px solid var(--line-strong); vertical-align: -1px; }
+    .rab tr.off td.n, .rab tr.off td.sat { color: var(--line-strong); }
+    .rab tr.warn td.qtyc { box-shadow: inset 3px 0 0 #f59e0b; }
+    .rab tr.bad td.qtyc { box-shadow: inset 3px 0 0 var(--err); }
+    .qtyc { position: relative; }
+    .qtyc .input { padding-right: 4px; }
+    .qtyc.manual .input { border-color: var(--ink); font-weight: 600; }
+    .qtyc .rst { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; display: none; cursor: pointer; color: var(--muted); background: var(--surface); border-radius: 50%; }
+    .qtyc.manual .rst { display: grid; place-items: center; }
+    .qtyc .rst svg { width: 11px; height: 11px; }
+    .qtyc.manual .input { padding-right: 20px; }
+    .tw .empty { padding: 22px 16px; text-align: center; color: var(--muted); font-size: 12px; }
+
+    .sum { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 6px 10px; display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; }
+    .sum .ln { display: flex; align-items: center; gap: 8px; min-height: 24px; }
+    .sum .ln .k { flex: 1; color: var(--muted); }
+    .sum .ln .v { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 120px; text-align: right; }
+    .sum .ln.dv .k { font-size: 11.5px; padding-left: 4px; }
+    .sum .ln.dv .v { font-weight: 500; font-size: 12px; }
+    .sum .ln.tot { border-top: 1px solid var(--line); padding-top: 4px; margin-top: 2px; }
+    .sum .ln.tot .k { color: var(--ink); font-weight: 600; }
+    .sum .ln.tot .v { font-size: 14px; }
+    .sum .check { padding: 0 4px; }
+    .note.wrap > span { white-space: normal; overflow: visible; }
+    .actions.row .btn { flex: 1; }
+
+    .ptw { max-height: 300px; }
+    .rab.pr td.kd { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .rab.pr tr.chg td { background: var(--accent-soft); }
+    .rab.pr .jn { font-size: 10.5px; color: var(--muted); }
+    .link-row { display: flex; align-items: center; gap: 8px; }
+    .link-row .grow { flex: 1; }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+  <script src="../js/ui.js"></script>
+
+  <header class="head">
+    <button class="back-btn" type="button" title="Kembali ke Boosok Tools" aria-label="Kembali ke Hub" onclick="backToHub()" data-i18n-title="back_to_hub" data-i18n-aria="back_aria"><svg><use href="#i-arrow-left"/></svg></button>
+    <div class="mark"><svg><use href="#i-calculator"/></svg></div>
+    <div class="txt">
+      <h1 data-i18n="rab_title">RAB</h1>
+      <p data-i18n="rab_sub">Hitung volume dari model lalu susun anggaran biaya</p>
+    </div>
+    <span class="pill" id="totalPill"></span>
+    <button class="theme-btn" id="themeToggle" type="button" title="Ganti Tema" aria-label="Ganti Tema" data-i18n-title="theme_toggle" data-i18n-aria="theme_toggle"></button>
+  </header>
+
+  <section class="step active" id="step1">
+    <div class="seg" id="tabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-tab="pnlRab" data-i18n="rab_tab_rab">RAB</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="pnlPrice" data-i18n="rab_tab_price">Harga Dasar</button>
+    </div>
+
+    <!-- ── Tab RAB ── -->
+    <div class="pnl active" id="pnlRab">
+      <div class="bar">
+        <button class="btn ghost sm" id="btnScan" type="button" onclick="doScan()">
+          <svg><use href="#i-refresh-cw"/></svg><span data-i18n="rab_scan">Scan Model</span>
+        </button>
+        <label class="fld"><span data-i18n="rab_op">Overhead &amp; Profit</span>
+          <input class="input sm num" id="opPct" type="number" min="0" max="100" step="any"> %</label>
+        <span class="grow"></span>
+        <span class="proj" id="projName"></span>
+      </div>
+
+      <div class="seg" id="srcSeg" role="tablist">
+        <button type="button" role="tab" aria-selected="true" data-src="tag"><span data-i18n="rab_src_tag">Tag</span><span class="tab-n" id="nTag"></span></button>
+        <button type="button" role="tab" aria-selected="false" data-src="mat"><span data-i18n="rab_src_mat">Material face</span><span class="tab-n" id="nMat"></span></button>
+      </div>
+
+      <div class="tw">
+        <table class="rab">
+          <colgroup>
+            <col style="width:116px"><col style="width:196px"><col style="width:72px"><col style="width:50px">
+            <col style="width:84px"><col style="width:42px"><col style="width:78px"><col style="width:92px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th data-i18n="rab_col_tag">Sumber</th>
+              <th data-i18n="rab_col_job">Pekerjaan (AHSP)</th>
+              <th data-i18n="rab_col_basis">Ukur</th>
+              <th class="n" data-i18n="rab_col_factor">Faktor</th>
+              <th class="n" data-i18n="rab_col_qty">Volume</th>
+              <th data-i18n="rab_col_unit">Sat.</th>
+              <th class="n" data-i18n="rab_col_hsp">Hrg Satuan</th>
+              <th class="n" data-i18n="rab_col_total">Jumlah</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="empty" id="emptyMsg" data-i18n="rab_empty">Belum ada tag yang punya ukuran. Beri tag pada group/component (mis. “Dinding Bata”) lalu klik Scan Model.</div>
+      </div>
+
+      <div class="note err" id="warnBox" style="display:none"><svg><use href="#i-triangle-alert"/></svg><span id="warnTxt"></span></div>
+
+      <div class="sum" id="sumBox">
+        <div id="dvList"></div>
+        <div class="ln"><span class="k" data-i18n="rab_subtotal">Jumlah</span><span class="v" id="sSub">0</span></div>
+        <div class="ln">
+          <label class="check"><input type="checkbox" id="ppnOn"><span class="box"><svg><use href="#i-check"/></svg></span><span data-i18n="rab_ppn">PPN</span></label>
+          <input class="input sm num" id="ppnPct" type="number" min="0" max="100" step="any"> <span class="k">%</span>
+          <span class="v" id="sPpn">0</span>
+        </div>
+        <div class="ln tot"><span class="k" data-i18n="rab_grand">Total</span><span class="v" id="sTotal">0</span></div>
+      </div>
+
+      <div class="actions row">
+        <button class="btn primary" id="btnXlsx" type="button" onclick="doExport('rab_export_xlsx', this)">
+          <svg><use href="#i-download"/></svg><span data-i18n="rab_btn_xlsx">Export Excel</span>
+        </button>
+        <button class="btn ghost" id="btnPrint" type="button" onclick="doExport('rab_export_print', this)">
+          <svg><use href="#i-external-link"/></svg><span data-i18n="rab_btn_pdf">Cetak / PDF</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Tab Harga Dasar ── -->
+    <div class="pnl" id="pnlPrice">
+      <div class="note tip"><svg><use href="#i-info"/></svg><span data-i18n="rab_price_note">Harga di bawah adalah CONTOH. Ganti sesuai harga daerah/proyek; perubahan disimpan di model ini.</span></div>
+      <div class="link-row">
+        <div class="with-ic grow">
+          <svg class="lead"><use href="#i-search"/></svg>
+          <input class="input" id="priceSearch" placeholder="Cari bahan / upah…" data-i18n-placeholder="rab_price_search" autocomplete="off" spellcheck="false">
+        </div>
+        <button class="btn ghost sm" type="button" onclick="resetPrices()">
+          <svg><use href="#i-rotate-ccw"/></svg><span data-i18n="rab_price_reset">Reset harga</span>
+        </button>
+      </div>
+      <div class="tw ptw">
+        <table class="rab pr">
+          <colgroup><col style="width:56px"><col><col style="width:50px"><col style="width:130px"></colgroup>
+          <thead><tr>
+            <th data-i18n="rab_pcol_kode">Kode</th><th data-i18n="rab_pcol_nama">Nama</th>
+            <th data-i18n="rab_col_unit">Sat.</th><th class="n" data-i18n="rab_pcol_harga">Harga (Rp)</th>
+          </tr></thead>
+          <tbody id="pbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    var $ = function (id) { return document.getElementById(id); };
+
+    var S = {
+      catalog: [], byKode: {}, base: [], tags: [], report: null, view: 'tag',
+      state: { map: {}, prices: {}, op: 10, ppn: 11, ppn_on: true }
+    };
+    var BASIS = ['auto', 'count', 'length', 'area', 'plane', 'volume'];
+    var calcTimer = null, saveTimer = null;
+
+    function fmt(n, d) {
+      return Number(n || 0).toLocaleString('id-ID', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 });
+    }
+    function rp(n) { return fmt(Math.round(n || 0), 0); }
+    function basisLabel(b) {
+      var labels = {
+        auto: t('rab_basis_auto', 'Auto'), count: t('rab_basis_count', 'Jumlah'), length: t('rab_basis_length', 'Panjang'),
+        area: t('rab_basis_area', 'Luas'), plane: t('rab_basis_plane', 'Luas bidang'), volume: t('rab_basis_volume', 'Volume'),
+        manual: t('rab_basis_manual', 'Manual')
+      };
+      return labels[b] || b;
+    }
+
+    // ── Panggilan ke Ruby ──
+    function call(name, arg, btn) {
+      try {
+        if (window.sketchup && typeof sketchup[name] === 'function') {
+          if (btn) busy(btn, true);
+          sketchup[name](arg === undefined ? '' : arg);
+        } else {
+          showToast(t('rab_err_notready', 'Fungsi RAB belum siap.'), 'error');
+        }
+      } catch (err) {
+        if (btn) busy(btn, false);
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+    function stateJson() { return JSON.stringify(S.state); }
+    function scheduleCalc() {
+      clearTimeout(calcTimer);
+      calcTimer = setTimeout(function () { call('rab_calc', stateJson()); }, 150);
+    }
+
+    // ── Render tabel RAB ──
+    function jobOptions() {
+      var html = '<option value="">' + esc(t('rab_job_none', '— pilih pekerjaan —')) + '</option>';
+      var cur = null;
+      S.catalog.forEach(function (a) {
+        if (a.divisi !== cur) {
+          if (cur !== null) html += '</optgroup>';
+          html += '<optgroup label="' + esc(a.divisi) + '">';
+          cur = a.divisi;
+        }
+        html += '<option value="' + esc(a.kode) + '">' + esc(a.kode + ' · ' + a.uraian + ' (' + a.satuan + ')') + '</option>';
+      });
+      return html + (cur !== null ? '</optgroup>' : '');
+    }
+    function basisOptions() {
+      return BASIS.map(function (b) { return '<option value="' + b + '">' + esc(basisLabel(b)) + '</option>'; }).join('');
+    }
+    function measureText(tg) {
+      var p = [];
+      if (tg.kind === 'mat') {
+        if (tg.count) p.push(fmt(tg.count) + ' face');
+      } else {
+        if (tg.count) p.push(fmt(tg.count) + ' ' + t('rab_m_count', 'obj'));
+        if (tg.length) p.push(fmt(tg.length, 2) + ' m');
+        if (tg.volume) p.push(fmt(tg.volume, 3) + ' m³');
+        if (tg.plane) p.push(fmt(tg.plane, 2) + ' m² ' + t('rab_m_plane', 'bidang'));
+      }
+      if (tg.area) p.push(fmt(tg.area, 2) + ' m²');
+      if (tg.nonsolid) p.push(tg.nonsolid + ' ' + t('rab_m_nonsolid', 'non-solid'));
+      return p.join(' · ') || '—';
+    }
+
+    function renderTags() {
+      var jobs = jobOptions(), basis = basisOptions();
+      var nTag = 0, nMat = 0;
+      S.tags.forEach(function (tg) { if (tg.kind === 'mat') nMat++; else nTag++; });
+      $('nTag').textContent = nTag || '';
+      $('nMat').textContent = nMat || '';
+      var shown = S.tags.filter(function (tg) { return tg.kind === S.view; });
+      $('tbody').innerHTML = shown.map(function (tg) {
+        var ms = measureText(tg);
+        return '<tr data-key="' + esc(tg.key) + '" class="off">' +
+          '<td class="tg" title="' + esc(tg.name + ' — ' + ms) + '"><span class="sw" style="background:' + esc(tg.color) + '"></span><span class="nm">' + esc(tg.name) + '</span><div class="ms">' + esc(ms) + '</div></td>' +
+          '<td><select class="input sm job">' + jobs + '</select></td>' +
+          '<td><select class="input sm basis">' + basis + '</select></td>' +
+          '<td><input class="input sm num factor" type="number" min="0" step="any" value="1"></td>' +
+          '<td class="qtyc"><input class="input sm num qty" type="number" min="0" step="any"><span class="rst" title="' + esc(t('rab_qty_reset', 'Kembali ke hasil ukur')) + '">' + icon('x') + '</span></td>' +
+          '<td class="sat"></td><td class="n hsp"></td><td class="n jml"></td></tr>';
+      }).join('');
+      Array.prototype.forEach.call($('tbody').children, syncRow);
+      $('emptyMsg').style.display = shown.length ? 'none' : '';
+      $('emptyMsg').textContent = S.view === 'mat'
+        ? t('rab_empty_mat', 'Belum ada material yang dipakai di face. Beri material (mis. “Cat Putih”) pada face lalu klik Scan Model.')
+        : t('rab_empty', 'Belum ada tag yang punya ukuran. Beri tag pada group/component (mis. “Dinding Bata”) lalu klik Scan Model.');
+      $('totalPill').textContent = S.tags.length ? S.tags.length + ' ' + t('rab_sources', 'sumber') : '';
+      if (S.report) onReport(S.report);
+      autoFitHeight(0);
+    }
+
+    // Samakan kontrol satu baris dengan state (tanpa menyentuh angka hasil hitung)
+    function syncRow(tr) {
+      var e = S.state.map[tr.dataset.key];
+      tr.querySelector('.job').value = e ? e.kode : '';
+      tr.querySelector('.basis').value = e ? e.basis : 'auto';
+      var f = tr.querySelector('.factor');
+      if (document.activeElement !== f) f.value = e ? e.factor : 1;
+      ['.basis', '.factor', '.qty'].forEach(function (s) { tr.querySelector(s).disabled = !e; });
+      tr.classList.toggle('off', !e);
+      tr.querySelector('.qtyc').classList.toggle('manual', !!(e && e.manual != null));
+    }
+
+    // ── Hasil hitung dari Ruby ──
+    function onReport(rep) {
+      S.report = rep;
+      var byKey = {};
+      rep.rows.forEach(function (r) { byKey[r.key] = r; });
+      Array.prototype.forEach.call($('tbody').children, function (tr) {
+        var r = byKey[tr.dataset.key];
+        var q = tr.querySelector('.qty');
+        tr.classList.remove('warn', 'bad');
+        tr.querySelector('.qtyc').title = '';
+        if (!r) {
+          q.value = '';
+          tr.querySelector('.sat').textContent = '';
+          tr.querySelector('.hsp').textContent = '';
+          tr.querySelector('.jml').textContent = '';
+          return;
+        }
+        if (document.activeElement !== q) q.value = r.src === 'manual' ? r.qty : round(r.qty, 4);
+        tr.querySelector('.basis').title = t('rab_basis_used', 'Dipakai: %{b}').replace('%{b}', basisLabel(r.basis));
+        tr.querySelector('.sat').textContent = r.satuan;
+        tr.querySelector('.hsp').textContent = rp(r.hsp);
+        tr.querySelector('.jml').textContent = rp(r.jumlah);
+        if (r.warn === 'nonsolid') {
+          tr.classList.add('bad');
+          tr.querySelector('.qtyc').title = t('rab_warn_row_nonsolid', 'Ada objek yang bukan solid, volumenya tidak terhitung.');
+        } else if (r.warn === 'zero') {
+          tr.classList.add('warn');
+          tr.querySelector('.qtyc').title = r.basis === 'manual'
+            ? t('rab_warn_row_manual', 'Satuan ini tidak bisa diukur dari model, isi volume manual.')
+            : t('rab_warn_row_zero', 'Hasil ukur 0. Cek tag, dasar ukur, atau isi volume manual.');
+        }
+      });
+
+      $('dvList').innerHTML = rep.divisi.map(function (d) {
+        return '<div class="ln dv"><span class="k">' + esc(d.name) + '</span><span class="v">' + rp(d.subtotal) + '</span></div>';
+      }).join('');
+      $('sSub').textContent = rp(rep.subtotal);
+      $('sPpn').textContent = rp(rep.ppn);
+      $('sTotal').textContent = 'Rp ' + rp(rep.total);
+
+      var nonsolid = 0, zero = 0;
+      rep.rows.forEach(function (r) { if (r.warn === 'nonsolid') nonsolid += r.nonsolid; else if (r.warn === 'zero') zero++; });
+      var msgs = [];
+      if (nonsolid) msgs.push(t('rab_warn_nonsolid', '%{count} objek bukan solid, volumenya tidak dihitung.').replace('%{count}', nonsolid));
+      if (zero) msgs.push(t('rab_warn_zero', '%{count} item bervolume 0.').replace('%{count}', zero));
+      $('warnBox').style.display = msgs.length ? '' : 'none';
+      $('warnTxt').textContent = msgs.join(' ');
+      autoFitHeight(0);
+    }
+    function round(n, d) { var m = Math.pow(10, d); return Math.round(n * m) / m; }
+
+    function onScan(data) {
+      busy('btnScan', false);
+      S.tags = data.tags;
+      renderTags();
+      onReport(data.report);
+      showToast(t('rab_scanned', 'Scan selesai: %{count} tag.').replace('%{count}', data.tags.length));
+    }
+
+    function init(data) {
+      S.catalog = data.catalog;
+      S.byKode = {};
+      S.catalog.forEach(function (a) { S.byKode[a.kode] = a; });
+      S.base = data.base;
+      S.state = data.state;
+      S.tags = data.tags;
+      $('projName').textContent = data.project || '';
+      $('projName').title = data.project || '';
+      $('opPct').value = S.state.op;
+      $('ppnPct').value = S.state.ppn;
+      $('ppnOn').checked = !!S.state.ppn_on;
+      renderTags();
+      renderPrices();
+      onReport(data.report);
+    }
+
+    // ── Interaksi tabel RAB ──
+    var tbody = $('tbody');
+    tbody.addEventListener('change', function (ev) {
+      var tr = ev.target.closest('tr');
+      if (!tr) return;
+      var tag = tr.dataset.key, el = ev.target;
+      if (el.classList.contains('job')) {
+        if (!el.value) delete S.state.map[tag];
+        else {
+          var prev = S.state.map[tag];
+          S.state.map[tag] = { kode: el.value, basis: prev ? prev.basis : 'auto', factor: prev ? prev.factor : 1, manual: prev ? prev.manual : null };
+        }
+        syncRow(tr);
+      } else if (el.classList.contains('basis') && S.state.map[tag]) {
+        S.state.map[tag].basis = el.value;
+      } else {
+        return;
+      }
+      scheduleCalc();
+    });
+    tbody.addEventListener('input', function (ev) {
+      var tr = ev.target.closest('tr');
+      if (!tr) return;
+      var e = S.state.map[tr.dataset.key];
+      if (!e) return;
+      var el = ev.target, v = parseFloat(el.value);
+      if (el.classList.contains('factor')) {
+        if (!(v > 0)) return; // kosong / 0 / negatif: tunggu isian valid
+        e.factor = v;
+      } else if (el.classList.contains('qty')) {
+        e.manual = el.value === '' || isNaN(v) || v < 0 ? null : v;
+        tr.querySelector('.qtyc').classList.toggle('manual', e.manual != null);
+      } else {
+        return;
+      }
+      scheduleCalc();
+    });
+    tbody.addEventListener('click', function (ev) {
+      var rst = ev.target.closest('.rst');
+      if (!rst) return;
+      var tr = rst.closest('tr'), e = S.state.map[tr.dataset.key];
+      if (!e) return;
+      e.manual = null;
+      tr.querySelector('.qty').value = '';
+      tr.querySelector('.qtyc').classList.remove('manual');
+      scheduleCalc();
+    });
+
+    $('opPct').addEventListener('input', function () {
+      var v = parseFloat(this.value);
+      if (isNaN(v) || v < 0 || v > 100) return;
+      S.state.op = v;
+      scheduleCalc();
+    });
+    $('ppnPct').addEventListener('input', function () {
+      var v = parseFloat(this.value);
+      if (isNaN(v) || v < 0 || v > 100) return;
+      S.state.ppn = v;
+      scheduleCalc();
+    });
+    $('ppnOn').addEventListener('change', function () {
+      S.state.ppn_on = this.checked;
+      scheduleCalc();
+    });
+
+    // ── Tab Harga Dasar ──
+    function renderPrices() {
+      var q = $('priceSearch').value.toLowerCase().trim();
+      var html = '', lastJenis = null;
+      S.base.forEach(function (b) {
+        if (q && (b.kode + ' ' + b.nama).toLowerCase().indexOf(q) < 0) return;
+        if (b.jenis !== lastJenis) {
+          lastJenis = b.jenis;
+          html += '<tr><td colspan="4" class="jn">' + esc(b.jenis === 'upah' ? t('rab_jenis_upah', 'UPAH') : t('rab_jenis_bahan', 'BAHAN')) + '</td></tr>';
+        }
+        var changed = S.state.prices[b.kode] != null;
+        var val = changed ? S.state.prices[b.kode] : b.harga;
+        html += '<tr data-kode="' + esc(b.kode) + '"' + (changed ? ' class="chg"' : '') + '>' +
+          '<td class="kd">' + esc(b.kode) + '</td><td>' + esc(b.nama) + '</td><td class="sat">' + esc(b.satuan) + '</td>' +
+          '<td><input class="input sm" style="text-align:right" type="number" min="0" step="any" value="' + esc(val) + '"></td></tr>';
+      });
+      $('pbody').innerHTML = html || '<tr><td colspan="4" class="jn" style="text-align:center;padding:14px">—</td></tr>';
+    }
+    $('pbody').addEventListener('input', function (ev) {
+      var tr = ev.target.closest('tr'), kode = tr && tr.dataset.kode;
+      if (!kode) return;
+      var base = S.base.filter(function (b) { return b.kode === kode; })[0];
+      var v = parseFloat(ev.target.value);
+      if (isNaN(v) || v < 0) return;
+      if (v === base.harga) delete S.state.prices[kode]; else S.state.prices[kode] = v;
+      tr.classList.toggle('chg', S.state.prices[kode] != null);
+      scheduleCalc();
+    });
+    $('priceSearch').addEventListener('input', renderPrices);
+    function resetPrices() {
+      S.state.prices = {};
+      renderPrices();
+      scheduleCalc();
+    }
+
+    // ── Tab ──
+    function showTab(id) {
+      document.querySelectorAll('#tabs button').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tab === id ? 'true' : 'false'); });
+      document.querySelectorAll('.pnl').forEach(function (p) { p.classList.toggle('active', p.id === id); });
+      autoFitHeight(0);
+    }
+    document.querySelectorAll('#tabs button').forEach(function (b) {
+      b.addEventListener('click', function () { showTab(b.dataset.tab); });
+    });
+
+    // Sumber ukur: tag (objek) atau material face (luas permukaan yang dicat/dilapis)
+    document.querySelectorAll('#srcSeg button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        S.view = b.dataset.src;
+        document.querySelectorAll('#srcSeg button').forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+        renderTags();
+      });
+    });
+
+    // ── Aksi ──
+    function doScan() { call('rab_scan', stateJson(), 'btnScan'); }
+    function doExport(name, btn) {
+      if (!S.report || !S.report.rows.length) return showToast(t('rab_export_empty', 'Pilih pekerjaan untuk minimal satu tag dulu.'), 'error');
+      call(name, stateJson(), btn);
+    }
+
+    // ── Dipanggil dari Ruby ──
+    function onExported(path) {
+      busy('btnXlsx', false);
+      if (path) showToast(t('rab_exported', 'Tersimpan: %{path}').replace('%{path}', path), 'success');
+    }
+    function onPrinted() { busy('btnPrint', false); }
+    function rabError(msg) {
+      ['btnScan', 'btnXlsx', 'btnPrint'].forEach(function (id) { if ($(id).dataset.html != null) busy(id, false); });
+      showToast(msg, 'error');
+    }
+
+    function requestInit() {
+      function tryReady() {
+        if (window.sketchup && typeof sketchup.ready === 'function') { sketchup.ready(); return true; }
+        return false;
+      }
+      if (!tryReady()) {
+        var retries = 0;
+        var iv = setInterval(function () {
+          retries++;
+          if (tryReady() || retries > 30) clearInterval(iv);
+        }, 50);
+      }
+    }
+
+    autoFitHeight(0);
+    requestInit();
+  </script>
+</body>
+</html>
