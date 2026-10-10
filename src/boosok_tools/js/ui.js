@@ -61,6 +61,11 @@
     '<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>' +
     '<symbol id="i-folder-open" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></symbol>' +
     '<symbol id="i-calculator" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></symbol>' +
+    '<symbol id="i-maximize-2" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/></symbol>' +
+    '<symbol id="i-minimize-2" viewBox="0 0 24 24"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" x2="21" y1="10" y2="3"/><line x1="3" x2="10" y1="21" y2="14"/></symbol>' +
+    '<symbol id="i-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>' +
+    '<symbol id="i-zoom-in" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/></symbol>' +
+    '<symbol id="i-zoom-out" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="8" x2="14" y1="11" y2="11"/></symbol>' +
     '</svg>';
   document.body.insertAdjacentHTML('afterbegin', sprite);
 })();
@@ -495,7 +500,17 @@ function showTip(hit) {
     _tipEl.setAttribute('role', 'tooltip');
     document.body.appendChild(_tipEl);
   }
-  _tipEl.textContent = text;
+  _tipEl.textContent = '';
+  var nl = text.indexOf('\n');
+  if (nl > 0) { // baris pertama = judul (tebal), sisanya keterangan
+    var head = document.createElement('b'), rest = document.createElement('span');
+    head.textContent = text.slice(0, nl);
+    rest.textContent = text.slice(nl + 1);
+    _tipEl.appendChild(head);
+    _tipEl.appendChild(rest);
+  } else {
+    _tipEl.textContent = text;
+  }
   _tipEl.style.left = '0px';
   _tipEl.style.top = '0px';
   _tipEl.style.display = 'block';
@@ -511,7 +526,17 @@ function showTip(hit) {
   _tipEl.classList.add('show');
 }
 
+// Atribut title bawaan browser (kotak abu-abu OS) dialihkan ke data-tip supaya tampil sebagai bubble bertema
+function adoptTitle(el) {
+  var h = el.closest ? el.closest('[title]') : null;
+  if (!h) return;
+  var v = h.getAttribute('title');
+  h.removeAttribute('title');
+  if (v) h.setAttribute('data-tip', v); else h.removeAttribute('data-tip');
+}
+
 document.addEventListener('mouseover', function (e) {
+  adoptTitle(e.target);
   var hit = findTipHost(e.target);
   if (hit && hit.host === _tipHost) return;
   hideTip();
@@ -523,6 +548,109 @@ document.documentElement.addEventListener('mouseleave', hideTip);
 ['mousedown', 'keydown', 'wheel'].forEach(function (ev) { document.addEventListener(ev, hideTip, true); });
 window.addEventListener('scroll', hideTip, true);
 window.addEventListener('blur', hideTip);
+
+// ==========================================
+// MENU <select> BERTEMA
+// ==========================================
+// Daftar pilihan bawaan browser (biru, ikut tema OS) diganti menu yang memakai warna Boosok Tools.
+// <select> aslinya tetap dipakai: nilainya diisi lalu event 'change' dikirim, jadi kode pemakai tidak berubah.
+var _selMenu = null, _selFor = null, _selHl = -1;
+
+function closeSelMenu() {
+  if (_selMenu) { _selMenu.remove(); _selMenu = null; }
+  _selFor = null;
+  _selHl = -1;
+}
+
+function pickSelOption(idx) {
+  var s = _selFor;
+  if (!s || !s.options[idx]) return closeSelMenu();
+  var changed = s.selectedIndex !== idx;
+  s.selectedIndex = idx;
+  closeSelMenu();
+  s.focus();
+  if (changed) {
+    s.dispatchEvent(new Event('input', { bubbles: true }));
+    s.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+}
+
+function hlSelItem(i) {
+  var items = _selMenu ? _selMenu.children : [];
+  if (!items.length) return;
+  _selHl = (i + items.length) % items.length;
+  for (var k = 0; k < items.length; k++) items[k].classList.toggle('hl', k === _selHl);
+  items[_selHl].scrollIntoView({ block: 'nearest' });
+}
+
+function openSelMenu(s) {
+  closeSelMenu();
+  hideTip();
+  _selFor = s;
+  var m = document.createElement('div');
+  m.className = 'sel-menu';
+  m.setAttribute('role', 'listbox');
+  for (var i = 0; i < s.options.length; i++) {
+    var o = s.options[i], d = document.createElement('div');
+    d.setAttribute('role', 'option');
+    d.dataset.i = i;
+    d.textContent = o.textContent;
+    if (i === s.selectedIndex) d.className = 'selected';
+    m.appendChild(d);
+  }
+  document.body.appendChild(m);
+  var r = s.getBoundingClientRect(), vh = window.innerHeight;
+  var room = vh - r.bottom - 10, up = room < 140 && r.top > room;
+  m.style.minWidth = r.width + 'px';
+  m.style.maxHeight = Math.max(100, Math.min(260, (up ? r.top : room) - 4)) + 'px';
+  var left = Math.min(r.left, Math.max(6, document.documentElement.clientWidth - m.offsetWidth - 6));
+  m.style.left = Math.round(left) + 'px';
+  if (up) m.style.top = Math.round(Math.max(6, r.top - m.offsetHeight - 4)) + 'px';
+  else m.style.top = Math.round(r.bottom + 4) + 'px';
+  _selMenu = m;
+  hlSelItem(s.selectedIndex);
+}
+
+document.addEventListener('mousedown', function (e) {
+  var t = e.target;
+  if (_selMenu && _selMenu.contains(t)) {
+    e.preventDefault(); // fokus tetap di <select>
+    var it = t.closest('div[data-i]');
+    if (it) pickSelOption(parseInt(it.dataset.i, 10));
+    return;
+  }
+  var s = t.closest ? t.closest('select') : null;
+  if (s && !s.disabled) {
+    e.preventDefault();
+    var was = _selFor === s;
+    s.focus();
+    if (was) closeSelMenu(); else openSelMenu(s);
+    return;
+  }
+  closeSelMenu();
+}, true);
+
+document.addEventListener('keydown', function (e) {
+  var t = e.target, k = e.key;
+  if (_selMenu) {
+    if (k === 'ArrowDown') hlSelItem(_selHl + 1);
+    else if (k === 'ArrowUp') hlSelItem(_selHl - 1);
+    else if (k === 'Home') hlSelItem(0);
+    else if (k === 'End') hlSelItem(_selMenu.children.length - 1);
+    else if (k === 'Enter' || k === ' ') pickSelOption(_selHl);
+    else if (k === 'Escape' || k === 'Tab') { closeSelMenu(); if (k === 'Tab') return; }
+    else return;
+    e.preventDefault();
+    e.stopPropagation();
+  } else if (t && t.tagName === 'SELECT' && !t.disabled && (k === 'Enter' || k === ' ')) {
+    e.preventDefault();
+    openSelMenu(t);
+  }
+}, true);
+
+window.addEventListener('scroll', function (e) { if (_selMenu && !_selMenu.contains(e.target)) closeSelMenu(); }, true);
+window.addEventListener('resize', closeSelMenu);
+window.addEventListener('blur', closeSelMenu);
 
 // Auto save position jika window digeser
 var _lastSavedX = null, _lastSavedY = null;

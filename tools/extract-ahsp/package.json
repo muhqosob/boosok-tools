@@ -1,0 +1,12 @@
+{
+  "name": "boosok-extract-ahsp",
+  "private": true,
+  "type": "module",
+  "description": "Ekstrak AHSP dari PDF Lampiran VI SE DJBK 47/2026 jadi JSON untuk fitur RAB",
+  "scripts": {
+    "extract": "node extract.mjs"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^6.4.0"
+  }
+}

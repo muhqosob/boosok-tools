@@ -2,6 +2,7 @@ require 'sketchup'
 require 'json'
 Sketchup.require 'boosok_tools/ruby/titlebar'
 Sketchup.require 'boosok_tools/license'
+Sketchup.require 'boosok_tools/flags'
 Sketchup.require 'boosok_tools/ruby/locale'
 
 module BoosokTools
@@ -33,7 +34,7 @@ module BoosokTools
       'void'          => { file: 'ruby/paid/void',                page: 'void.html',            title: 'Void' },
       'slice'         => { file: 'ruby/paid/slice',               page: 'slice.html',           title: 'Slice' },
       'trowel'        => { file: 'ruby/paid/trowel',              page: 'trowel.html',          title: 'Trowel' },
-      'rab'           => { file: 'ruby/paid/rab',                 page: 'rab.html',             title: 'RAB', width: 800 }
+      'rab'           => { file: 'ruby/paid/rab',                 page: 'rab.html',             title: 'RAB', width: 1040, height: 720 }
     }.freeze
 
     # Tool yang tetap bisa dipakai walau trial habis dan belum berlisensi. Sisanya (Select Tools, Hide Scene,
@@ -43,11 +44,61 @@ module BoosokTools
 
     # Tool yang file-nya tetap ikut terpasang tapi disembunyikan dari menu Extensions, grid Hub, dan tidak bisa dibuka.
     # Kosongkan daftar ini (atau hapus id-nya) untuk memunculkan tool-nya lagi.
+    # Di mode developer (ada file penanda .dev_mode di folder plugin) tool ini tetap tampil supaya bisa dikembangkan.
     remove_const(:HIDDEN_TOOLS) if defined?(HIDDEN_TOOLS)
     HIDDEN_TOOLS = %w[rab].freeze
 
+    def self.dev_mode?
+      File.exist?(File.join(BoosokTools::SUPPORT_DIR, '.dev_mode'))
+    end
+
+    # Pindah halaman di dialog yang sama: lebar (dan tinggi tetap, kalau tool menentukannya) dianimasikan halus oleh
+    # TitleBar.apply_size, lalu halaman tujuan dimuat. Hub dan semua tool hanya beda isi HTML-nya.
+    def self.go_page(page, width, height = nil)
+      dlg = BoosokTools.dialog
+      return unless dlg && dlg.visible?
+
+      TitleBar.apply_size(dlg, width, height)
+      navigate_to(page)
+    end
+
+    # Daftar tool yang sedang disembunyikan (kosong saat mode developer)
+    def self.hidden_tools
+      dev_mode? ? [] : HIDDEN_TOOLS
+    end
+
     def self.tool_hidden?(id)
-      HIDDEN_TOOLS.include?(id.to_s)
+      hidden_tools.include?(id.to_s)
+    end
+
+    # Tool yang dimatikan sementara dari server (kill-switch, lihat flags.rb). Pesannya dari admin; kosong = pesan bawaan.
+    def self.tool_disabled?(id)
+      defined?(BoosokTools::Flags) && BoosokTools::Flags.disabled?(id) ? true : false
+    end
+
+    def self.disabled_message(id)
+      msg = defined?(BoosokTools::Flags) ? BoosokTools::Flags.message(id).strip : ''
+      msg.empty? ? BoosokTools::Locale.t('tool_disabled_toast', 'Fitur ini sedang dinonaktifkan sementara. Coba lagi nanti.') : msg
+    end
+
+    # {id => pesan} untuk dikirim ke halaman Hub
+    def self.disabled_map
+      return {} unless defined?(BoosokTools::Flags)
+
+      BoosokTools::Flags.disabled.keys.each_with_object({}) { |id, h| h[id] = disabled_message(id) }
+    end
+
+    # Daftar terbaru dari server berubah: perbarui Hub, dan kalau tool yang sedang dibuka ikut dimatikan, kembali ke Hub.
+    def self.flags_changed
+      dlg = BoosokTools.dialog
+      return unless dlg && dlg.visible?
+
+      if @current_tool != 'hub' && tool_disabled?(@current_tool)
+        @pending_notice = disabled_message(@current_tool)
+        back_to_hub
+      elsif @current_tool == 'hub'
+        dlg.execute_script("if (typeof onHubRefresh === 'function') onHubRefresh(#{{ disabled_tools: disabled_map }.to_json});")
+      end
     end
 
     # Boleh dibuka? Tool gratis selalu boleh; selain itu butuh lisensi aktif / masa trial.
@@ -116,14 +167,10 @@ module BoosokTools
       pos = BoosokTools.get_position(WIDTH, DEFAULT_HEIGHT)
 
       width = (tool_id && TOOL_PAGES[tool_id.to_s] && TOOL_PAGES[tool_id.to_s][:width]) || WIDTH
-      dlg = UI::HtmlDialog.new(
-        dialog_title: TITLE,
-        scrollable: false,
-        resizable: false,
-        width: width,
-        height: DEFAULT_HEIGHT,
-        style: UI::HtmlDialog::STYLE_DIALOG
-      )
+      tool_height = tool_id && TOOL_PAGES[tool_id.to_s] && TOOL_PAGES[tool_id.to_s][:height] # tinggi tetap (bukan mengikuti isi)
+      height = tool_height || DEFAULT_HEIGHT
+      opts = { dialog_title: TITLE, scrollable: false, resizable: false, width: width, height: height, style: UI::HtmlDialog::STYLE_DIALOG }
+      dlg = UI::HtmlDialog.new(opts)
       dlg.extend(SlowCallbackLog)
       BoosokTools.dialog = dlg
 
@@ -133,7 +180,7 @@ module BoosokTools
 
       page_file = custom_page || 'hub.html'
       dlg.set_file(File.join(::BoosokTools::SUPPORT_DIR, 'html', page_file))
-      TitleBar.attach(dlg, TITLE, width: width)
+      TitleBar.attach(dlg, TITLE, width: width, height: tool_height)
 
       @current_tool = tool_id ? tool_id.to_s : 'hub'
       # Dibuka langsung ke sebuah tool (menu/hotkey): loader pembuka tidak perlu muncul nanti
@@ -183,6 +230,7 @@ module BoosokTools
 
       # State dikirim saat halaman memanggil hub_ready/ready — tidak perlu timer di sini.
       dlg.show
+
     end
 
     # Matikan timer/observer milik tool yang sedang tidak dibuka.
@@ -201,6 +249,11 @@ module BoosokTools
       cfg = TOOL_PAGES[id.to_s]
       return unless cfg
       return if tool_hidden?(id)
+
+      if tool_disabled?(id)
+        notify_message(disabled_message(id))
+        return
+      end
 
       # Trial habis & belum berlisensi: tool berbayar cukup diberi notifikasi terkunci (tanpa popup aktivasi)
       unless tool_allowed?(id)
@@ -226,6 +279,11 @@ module BoosokTools
     def self.open_tool(id)
       dlg = BoosokTools.dialog
       return unless dlg && dlg.visible?
+
+      if tool_disabled?(id)
+        notify_message(disabled_message(id))
+        return
+      end
 
       # Tool berbayar terkunci jika trial habis dan belum berlisensi
       unless tool_allowed?(id)
@@ -254,8 +312,7 @@ module BoosokTools
       # File tool cukup di-load sekali per sesi (tidak di-parse ulang tiap buka)
       preload_tools
       attach_tool_callbacks(id.to_s)
-      TitleBar.apply_width(dlg, cfg[:width] || WIDTH)
-      navigate_to(cfg[:page])
+      go_page(cfg[:page], cfg[:width] || WIDTH, cfg[:height])
     rescue Exception => e
       puts "[Boosok Tools] Gagal membuka #{id}: #{e.class}: #{e.message}\n#{e.backtrace.first(5).join("\n") rescue ''}"
       toast("Gagal membuka tool: #{e.message}")
@@ -293,9 +350,8 @@ module BoosokTools
       rescue
       end
       @current_tool = 'hub'
-      TitleBar.apply_width(dlg, WIDTH)
       # Callback hub sudah terdaftar sejak show — tidak perlu didaftarkan ulang tiap kembali
-      navigate_to('hub.html')
+      go_page('hub.html', WIDTH)
     end
 
     def self.navigate_to(page)
@@ -321,7 +377,8 @@ module BoosokTools
         model = Sketchup.active_model
         lite = {
           stats: model ? model_stats(model) : { objects: 0, scenes: 0, selected: 0 },
-          license: (defined?(BoosokTools::License) ? BoosokTools::License.status : nil)
+          license: (defined?(BoosokTools::License) ? BoosokTools::License.status : nil),
+          disabled_tools: disabled_map
         }
         dlg.execute_script("if (typeof onHubRefresh === 'function') onHubRefresh(#{lite.to_json});")
       end
@@ -350,7 +407,7 @@ module BoosokTools
       dlg.add_action_callback("activate_select_tool") do |_ctx|
         begin
           # Tanpa lisensi / trial habis: pakai tool Select bawaan SketchUp, bukan Select Tools Boosok
-          boosok_select = tool_allowed?('custom_select')
+          boosok_select = tool_allowed?('custom_select') && !tool_disabled?('custom_select')
           if boosok_select
             load_tool_file('custom_select') unless defined?(BoosokTools::SelectTool)
             BoosokTools::SelectTool.activate_tool if defined?(BoosokTools::SelectTool)
@@ -571,7 +628,8 @@ module BoosokTools
         language: cur_lang,
         license: lic_st,
         free_tools: FREE_TOOLS,
-        hidden_tools: HIDDEN_TOOLS,
+        hidden_tools: hidden_tools,
+        disabled_tools: disabled_map,
         stats: model_stats(model)
       }
     rescue => e
@@ -586,7 +644,10 @@ module BoosokTools
     # Notifikasi biasa (bukan popup aktivasi). Kalau dialog Hub belum terbuka, buka dulu lalu
     # tampilkan notifnya setelah halaman siap (lihat flush_notice).
     def self.notify_locked
-      msg = locked_message
+      notify_message(locked_message)
+    end
+
+    def self.notify_message(msg)
       begin
         Sketchup.status_text = msg # juga tampil di status bar SketchUp
       rescue

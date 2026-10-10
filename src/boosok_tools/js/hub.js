@@ -401,7 +401,9 @@
       var lic = d.license || oldLic;
       S.data.stats = d.stats || S.data.stats;
       S.data.license = lic;
-      if (lic.status !== oldLic.status || lic.can_use !== oldLic.can_use) { draw(); return; }
+      var oldOff = JSON.stringify(S.data.disabled_tools || {});
+      if (d.disabled_tools) S.data.disabled_tools = d.disabled_tools;
+      if (lic.status !== oldLic.status || lic.can_use !== oldLic.can_use || JSON.stringify(S.data.disabled_tools || {}) !== oldOff) { draw(); return; }
       var sub = document.getElementById('hubSub');
       if (sub) sub.innerHTML = statsNoteInner(S.data.stats);
       var tt = document.querySelector('.tb-trial-text span');
@@ -487,7 +489,15 @@
       if (lastTool) {
         var lTitle = getToolTitle(lastTool);
         var lDesc = getToolDesc(lastTool);
-        if (isToolLocked(lastTool.id)) {
+        if (isToolDisabled(lastTool.id)) {
+          recentHtml =
+            '<div id="recentSection">' +
+            '<div id="recentCard" class="locked" role="button" tabindex="0" onclick="onToolDisabledPrompt(\'' + lastTool.id + '\')">' +
+            '<div class="rc-ic">' + icon(lastTool.icon) + '</div>' +
+            '<div class="rc-txt"><div class="t">' + esc(lTitle) + '</div><div class="s">' + esc(lDesc) + '</div></div>' +
+            '<span class="rc-badge" style="background:var(--err-soft,#fff0f0);color:var(--err,#dc2626);border-color:var(--err,#dc2626);font-weight:700;">' + esc(ht('tool_paused', 'Dijeda')) + '</span>' +
+            '</div></div>';
+        } else if (isToolLocked(lastTool.id)) {
           recentHtml =
             '<div id="recentSection">' +
             '<div id="recentCard" class="locked" role="button" tabindex="0" onclick="onLicenseExpiredPrompt()">' +
@@ -546,6 +556,17 @@
       return ((S.data && S.data.free_tools) || FREE_TOOLS_DEFAULT).indexOf(id) >= 0;
     }
 
+    /* Tool yang dimatikan sementara dari server (kill-switch): S.data.disabled_tools = {id: pesan} */
+    function isToolDisabled(id) {
+      var off = S.data && S.data.disabled_tools;
+      return !!off && Object.prototype.hasOwnProperty.call(off, id);
+    }
+    function disabledMsg(id) {
+      var off = S.data && S.data.disabled_tools;
+      return (off && off[id]) || ht('tool_disabled_toast', 'Fitur ini sedang dinonaktifkan sementara. Coba lagi nanti.');
+    }
+    function onToolDisabledPrompt(id) { showToast(disabledMsg(id), 'error'); }
+
     /* Tool yang disembunyikan (daftar utama dari Ruby: S.data.hidden_tools) */
     var HIDDEN_TOOLS_DEFAULT = ['rab'];
     function isHiddenTool(id) {
@@ -562,12 +583,16 @@
 
     function buildTile(tool) {
       {
-        var isLocked = isToolLocked(tool.id);
+        var isOff = isToolDisabled(tool.id);
+        var isLocked = !isOff && isToolLocked(tool.id);
         var cls = 'tile4';
         var attr = '';
         var tTitle = getToolTitle(tool);
         var tDesc = getToolDesc(tool);
-        if (isLocked) {
+        if (isOff) {
+          cls += ' locked';
+          attr = ' onclick="onToolDisabledPrompt(\'' + tool.id + '\')" data-tip="' + esc(tTitle + '\n' + disabledMsg(tool.id)) + '"';
+        } else if (isLocked) {
           cls += ' locked';
           attr = ' onclick="onLicenseExpiredPrompt()" data-tip="' + esc(tTitle + '\n' + ht('locked_trial_title', 'Terkunci — Masa trial 7 hari telah habis')) + '"';
         } else {
@@ -575,7 +600,7 @@
         }
         var searchLabel = (tTitle + ' ' + tool.id + ' ' + tDesc).toLowerCase();
         return '<button class="' + cls + '" data-id="' + tool.id + '" data-label="' + esc(searchLabel) + '"' + attr + '>' +
-          (isLocked ? '<span class="lock-tag">' + icon('key-round') + '</span>' : '') +
+          (isOff ? '<span class="lock-tag">' + icon('triangle-alert') + '</span>' : isLocked ? '<span class="lock-tag">' + icon('key-round') + '</span>' : '') +
           '<div class="ic4">' + icon(tool.icon) + '</div>' +
           '<div class="t4">' + esc(tTitle) + '</div>' +
           '</button>';
@@ -627,6 +652,7 @@
 
     function openTool(id) {
       if (S.status !== 'ready') return;
+      if (isToolDisabled(id)) { onToolDisabledPrompt(id); return; }
       if (isToolLocked(id)) {
         onLicenseExpiredPrompt();
         return;

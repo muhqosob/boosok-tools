@@ -71,6 +71,21 @@ module BoosokTools
       end
     end
 
+    # SystemParametersInfo / MonitorFromWindow: batas area kerja layar (di luar taskbar) untuk animasi ukuran jendela
+    unless defined?(SystemParametersInfoFn)
+      begin
+        SystemParametersInfoFn = Fiddle::Function.new(
+          User32['SystemParametersInfoA'],
+          [Fiddle::TYPE_INT, Fiddle::TYPE_INT, Fiddle::TYPE_VOIDP, Fiddle::TYPE_INT],
+          Fiddle::TYPE_INT
+        )
+        MonitorFromWindowFn = Fiddle::Function.new(User32['MonitorFromWindow'], [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_INT], Fiddle::TYPE_INTPTR_T)
+        GetMonitorInfoFn = Fiddle::Function.new(User32['GetMonitorInfoA'], [Fiddle::TYPE_INTPTR_T, Fiddle::TYPE_VOIDP], Fiddle::TYPE_INT)
+      rescue StandardError, LoadError
+        nil
+      end
+    end
+
     def self.log(msg)
       log_file = File.join(::BoosokTools::SUPPORT_DIR, 'ruby', 'titlebar.log')
       File.open(log_file, 'a') { |f| f.puts("[#{Time.now.strftime('%H:%M:%S')}] #{msg}") }
@@ -292,6 +307,166 @@ module BoosokTools
       @height_timer = UI.start_timer(0.016, true) { step.call } if @height_timer.nil? && @cur_h != target
     end
 
+    # Area kerja (di luar taskbar) monitor tempat jendela berada: [left, top, right, bottom] atau nil
+    def self.work_area_for(title)
+      hwnd = find_hwnd(title)
+      if hwnd != 0 && defined?(MonitorFromWindowFn)
+        mon = MonitorFromWindowFn.call(hwnd, 2) # MONITOR_DEFAULTTONEAREST
+        if mon != 0
+          buf = [40].pack('l') + ([0] * 9).pack('l9') # MONITORINFO: cbSize, rcMonitor, rcWork, dwFlags
+          return buf.unpack('l10')[5, 4] if GetMonitorInfoFn.call(mon, buf) != 0
+        end
+      end
+      return nil unless defined?(SystemParametersInfoFn)
+
+      buf = [0, 0, 0, 0].pack('l4')
+      SystemParametersInfoFn.call(0x0030, 0, buf, 0) != 0 ? buf.unpack('l4') : nil # SPI_GETWORKAREA
+    rescue StandardError => e
+      log("work_area_for error: #{e.message}")
+      nil
+    end
+
+    BOX_SECONDS = 0.3 unless defined?(BOX_SECONDS)
+    BOX_DEFAULT_H = 440 unless defined?(BOX_DEFAULT_H)
+
+    # Lebar + (opsional) tinggi tetap untuk halaman tujuan. height nil = tinggi mengikuti isi halaman (autoFitHeight).
+    # Ke tool bertinggi tetap (RAB) dan kembali: jendela tumbuh/menyusut ke semua arah dari titik tengahnya, jadi Hub
+    # berada di tengah jendela RAB, dan tidak pernah melewati area kerja layar (taskbar tidak tertutup).
+    def self.apply_size(dialog, width, height = nil)
+      return unless dialog
+
+      if height
+        @fixed_h = height
+        box_resize(dialog, width, height, true)
+      elsif @in_fixed
+        @fixed_h = nil
+        box_resize(dialog, width, nil, false)
+      else
+        @fixed_h = nil
+        apply_width(dialog, width)
+      end
+    end
+
+    # Animasi lebar + tinggi + posisi sekaligus (ease in-out) ke jendela selebar width x height di sekitar titik tengah.
+    # entering: true = masuk ke tool bertinggi tetap (titik tengah Hub diingat), false = kembali (ke titik tengah yang diingat
+    # kalau jendela belum dipindah user).
+    def self.box_resize(dialog, width, height, entering)
+      [@slide_timer, @height_timer, @box_timer].each { |t| UI.stop_timer(t) if t }
+      @slide_timer = @height_timer = @box_timer = nil
+      @pending_fit = nil
+
+      rect = @dialog_title && get_window_rect(@dialog_title)
+      from_w = @dialog_width || width
+      from_h = @cur_h || @fit_h || BOX_DEFAULT_H
+      unless rect
+        @in_fixed = entering
+        @target_width = width
+        @dialog_width = width
+        @cur_h = height || from_h
+        dialog.set_size(width, @cur_h)
+        return
+      end
+
+      extra_w = (rect[2] - rect[0]) - from_w # bingkai/bayangan jendela di luar ukuran isi
+      extra_h = (rect[3] - rect[1]) - from_h
+      cx = rect[0] + ((rect[2] - rect[0]) / 2.0)
+      cy = rect[1] + ((rect[3] - rect[1]) / 2.0)
+      pb = @prev_box
+      if entering
+        @prev_box = { left: rect[0], top: rect[1], h: from_h } unless @in_fixed
+      else
+        @prev_box = nil
+      end
+      to_w = width
+      to_h = height || (pb && pb[:h]) || BOX_DEFAULT_H
+
+      wa = work_area_for(@dialog_title)
+      if wa
+        to_w = [to_w, (wa[2] - wa[0]) - extra_w].min
+        to_h = [to_h, (wa[3] - wa[1]) - extra_h].min
+      end
+      ow = to_w + extra_w
+      oh = to_h + extra_h
+      left = (cx - (ow / 2.0)).round
+      top = (cy - (oh / 2.0)).round
+      if wa
+        left = [[left, wa[2] - ow].min, wa[0]].max
+        top = [[top, wa[3] - oh].min, wa[1]].max
+      end
+      # Kembali: Hub persis di posisi terakhirnya sebelum tool lebar dibuka (juga kalau jendela tool sempat digeser)
+      left, top = pb[:left], pb[:top] if !entering && pb
+
+      @target_width = to_w
+      @last_h = to_h
+      @fit_h = to_h
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      done = false
+
+      step = lambda do
+        k = [(Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) / BOX_SECONDS, 1.0].min
+        e = k < 0.5 ? 4 * k * k * k : 1 - ((-2 * k + 2)**3) / 2 # easeInOutCubic
+        @dialog_width = (from_w + ((to_w - from_w) * e)).round
+        @cur_h = (from_h + ((to_h - from_h) * e)).round
+        dialog.set_size(@dialog_width, @cur_h)
+        x = (rect[0] + ((left - rect[0]) * e)).round
+        y = (rect[1] + ((top - rect[1]) * e)).round
+        # Ukuran luar sebenarnya diukur ulang (satuan set_size bisa beda dengan piksel layar), jadi jendela tidak
+        # pernah melewati area kerja walau perhitungan di atas meleset
+        if wa && entering && (cur = get_window_rect(@dialog_title))
+          x = [[x, wa[2] - (cur[2] - cur[0])].min, wa[0]].max
+          y = [[y, wa[3] - (cur[3] - cur[1])].min, wa[1]].max
+        end
+        set_window_pos(@dialog_title, x, y)
+        if k >= 1.0 || !dialog.visible?
+          UI.stop_timer(@box_timer) if @box_timer
+          @box_timer = nil
+          fit_into_work_area(dialog, wa) if wa && entering && dialog.visible?
+          @in_fixed = entering
+          @slide_left = nil # apply_width menghitung ulang titik tengahnya dari posisi sekarang
+          if @pending_fit && !entering && dialog.visible?
+            h = @pending_fit
+            @pending_fit = nil
+            @last_h = h
+            @fit_h = h
+            animate_height(dialog, h)
+          end
+          done = true
+        end
+      end
+
+      step.call
+      @box_timer = UI.start_timer(0.016, true) { step.call } unless done
+    end
+
+    # Pastikan ukuran luar jendela yang sebenarnya muat di area kerja: kalau melebihi, isi dikecilkan (dua kali
+    # percobaan), lalu posisinya digeser masuk. Dipanggil di akhir animasi.
+    def self.fit_into_work_area(dialog, wa)
+      2.times do
+        r = get_window_rect(@dialog_title)
+        break unless r
+
+        ow = r[2] - r[0]
+        oh = r[3] - r[1]
+        over_w = ow - (wa[2] - wa[0])
+        over_h = oh - (wa[3] - wa[1])
+        break if over_w <= 0 && over_h <= 0
+
+        scale = @dialog_width.to_i > 0 ? [[ow.to_f / @dialog_width, 1.0].max, 3.0].min : 1.0
+        @dialog_width = [@dialog_width - (over_w > 0 ? (over_w / scale).ceil : 0), 200].max
+        @cur_h = [@cur_h - (over_h > 0 ? (over_h / scale).ceil : 0), 200].max
+        dialog.set_size(@dialog_width, @cur_h)
+      end
+      r = get_window_rect(@dialog_title)
+      return unless r
+
+      x = [[r[0], wa[2] - (r[2] - r[0])].min, wa[0]].max
+      y = [[r[1], wa[3] - (r[3] - r[1])].min, wa[1]].max
+      set_window_pos(@dialog_title, x, y) if x != r[0] || y != r[1]
+      @target_width = @dialog_width
+      @last_h = @cur_h
+      @fit_h = @cur_h
+    end
+
     # Lebar jendela aktif. Default 380; tool lebar (mis. Purge) mengubahnya lewat apply_width.
     # Lebar dianimasikan (ease in-out) dan sisi kirinya digeser setengah selisih lebar, jadi jendela
     # melebar/menyempit ke kiri-kanan sama rata. Titik tengah (anchor) disimpan supaya bolak-balik
@@ -299,6 +474,7 @@ module BoosokTools
     def self.apply_width(dialog, width)
       width = width.to_i
       return unless dialog && width > 0
+      return if @box_timer # jendela sedang berganti ukuran (apply_size)
       return if @target_width == width
 
       @target_width = width
@@ -341,8 +517,14 @@ module BoosokTools
       @slide_timer = UI.start_timer(0.016, true) { step.call } if @slide_timer.nil? && @dialog_width != width
     end
 
-    def self.attach(dialog, title, width: nil)
+    def self.attach(dialog, title, width: nil, height: nil)
       return unless dialog
+      @fixed_h = height
+      @in_fixed = !height.nil?
+      @prev_box = nil
+      @pending_fit = nil
+      UI.stop_timer(@box_timer) if @box_timer
+      @box_timer = nil
       @applied_theme = nil
       @dialog_width = width ? width.to_i : 380
       @target_width = @dialog_width
@@ -352,7 +534,7 @@ module BoosokTools
       @dialog_title = title
       @last_h = nil
       @fit_h = nil
-      @cur_h = nil
+      @cur_h = height
       UI.stop_timer(@height_timer) if @height_timer
       @height_timer = nil
 
@@ -389,7 +571,14 @@ module BoosokTools
       end
 
       dialog.add_action_callback("set_dialog_height") do |_ctx, height|
+        next if @fixed_h # tool dengan tinggi tetap (mis. RAB): tinggi tidak mengikuti isi
+
         h = height.to_i
+        # Jendela sedang berganti ukuran (kembali dari RAB): tinggi pas-isi diterapkan setelah gerakannya selesai
+        if @box_timer
+          @pending_fit = h if h > 200 && h < 1200
+          next
+        end
         # set_size = resize jendela native + relayout; lewati kalau tingginya tidak berubah
         if h > 200 && h < 1200 && (@last_h.nil? || (h - @last_h).abs >= 4)
           @last_h = h

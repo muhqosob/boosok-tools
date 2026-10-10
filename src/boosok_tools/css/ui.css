@@ -704,11 +704,35 @@ input[type="checkbox"] { accent-color: var(--dark-gray); }
 .head p, .toggle .s, .opt-desc, .steps .s, .card.stat .s, .tile .s { display: none; }
 #tip {
   position: fixed; z-index: 300; display: none; max-width: 250px; padding: 6px 9px; border-radius: 8px;
-  background: var(--ink); color: var(--bg); font-size: 11.5px; line-height: 1.4; white-space: pre-line;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); font-size: 11.5px; line-height: 1.4; white-space: pre-line;
   box-shadow: 0 8px 20px -6px rgba(0,0,0,.35); pointer-events: none;
   opacity: 0; transform: translateY(3px); transition: opacity .12s ease, transform .15s var(--ease);
 }
+#tip b { display: block; font-weight: 600; }
+#tip b + span { color: var(--muted); }
 #tip.show { opacity: 1; transform: none; }
+
+/* Kolom angka tanpa tombol naik/turun */
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; display: none; }
+
+/* <select> memakai menu bertema (lihat enhanceSelects di ui.js), panah bawaan diganti chevron */
+select.input { background-repeat: no-repeat; background-position: right 8px center; background-size: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
+[data-theme="dark"] select.input {
+  background-repeat: no-repeat; background-position: right 8px center; background-size: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394949e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
+.sel-menu {
+  position: fixed; z-index: 400; overflow-y: auto; padding: 4px;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r);
+  box-shadow: 0 12px 24px -12px rgba(0,0,0,.45); animation: rise .15s var(--ease);
+}
+.sel-menu::-webkit-scrollbar { width: 8px; }
+.sel-menu::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 8px; border: 2px solid var(--surface); }
+.sel-menu div { padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12.5px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sel-menu div:hover, .sel-menu div.hl { background: var(--accent-soft); }
+.sel-menu div.selected { font-weight: 600; background: var(--line); }
+.sel-menu div.selected.hl, .sel-menu div.selected:hover { background: var(--line-strong); }
 
 /* Konten lebih tinggi dari layar (laptop kecil): jendela dibatasi tinggi layar dan halaman bisa di-scroll (lihat autoFitHeight). */
 html.fit-scroll { overflow-y: auto; }

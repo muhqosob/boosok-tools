@@ -121,6 +121,7 @@ module Sketchup
 
   class AppObserver; end
   class ModelObserver; end
+  class ViewObserver; end
 
   class Entities
     include Enumerable
@@ -149,8 +150,14 @@ module Sketchup
       @items.delete(ent)
     end
 
-    def add_group
-      self << Group.new
+    # Entities#add_group(entities): entitas yang diberikan dipindahkan ke dalam group baru.
+    def add_group(*ents)
+      group = self << Group.new
+      ents.flatten.each do |e|
+        delete(e)
+        group.definition.entities << e
+      end
+      group
     end
 
     def add_instance(defn, tx)
@@ -284,7 +291,9 @@ module Sketchup
     end
   end
 
-  class Face < Drawingelement; end
+  class Face < Drawingelement
+    attr_accessor :back_material
+  end
   class Edge < Drawingelement; end
 
   # Definisi dipakai bersama oleh Group/ComponentInstance. `solid` menggantikan ComponentDefinition#manifold?.
@@ -404,12 +413,23 @@ module Sketchup
       definition.entities
     end
 
+    # Group#explode: isi dipindahkan ke entities induk, group dihapus.
+    def explode
+      guard!
+      items = definition.entities.to_a
+      items.each do |e|
+        definition.entities.delete(e)
+        parent << e
+      end
+      erase!
+      items
+    end
+
     # Group#copy: salinan terpisah (definisi sendiri) di entities yang sama.
     def copy
       guard!
       dup_group = Group.new(tx: transformation, box: @box, solid: definition.solid)
-      dup_group.layer = layer
-      parent << dup_group if parent
+      parent << dup_group if parent # seperti SketchUp asli: tag dan material level-group tidak ikut tersalin
       dup_group
     end
   end
@@ -459,6 +479,21 @@ module Sketchup
     end
   end
 
+  class View
+    attr_reader :model
+
+    def initialize(model)
+      @model = model
+    end
+
+    def add_observer(*); end
+    def remove_observer(*); end
+  end
+
+  class Pages
+    attr_accessor :selected_page
+  end
+
   class Model
     attr_reader :active_entities, :layers, :materials, :operations, :selection
 
@@ -493,6 +528,18 @@ module Sketchup
 
     def add_observer(*); end
     def remove_observer(*); end
+
+    def entities
+      active_entities
+    end
+
+    def active_view
+      @active_view ||= View.new(self)
+    end
+
+    def pages
+      @pages ||= Pages.new
+    end
 
     def get_attribute(dict, key, default = nil)
       (@attrs[dict] || {}).fetch(key, default)

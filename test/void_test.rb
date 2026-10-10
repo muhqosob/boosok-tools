@@ -10,6 +10,8 @@ class VoidTest < Minitest::Test
   def setup
     Sketchup.reset_model!
     @model = Sketchup.active_model
+    V.void_material(@model) # di SketchUp asli material ini dibuat saat void pertama ditandai (gerbang void_possible?)
+    V.instance_variable_set(:@gated, false)
   end
 
   def stats
@@ -57,9 +59,11 @@ class VoidTest < Minitest::Test
     g = solid_box
     @model.active_entities << g
     assert V.mark(@model, g, true)
-    assert V.void?(g)
-    refute V.mark(@model, g, true), 'void ganda ditolak'
-    assert V.mark(@model, g, false)
+    outer = @model.active_entities.first
+    assert V.void?(outer), 'pembungkus yang jadi void'
+    refute V.void?(g), 'group asli hanya bentuk pemotong'
+    refute V.mark(@model, outer, true), 'void ganda ditolak'
+    assert V.mark(@model, outer, false)
     refute V.void?(g)
     refute V.mark(@model, g, false), 'unmark pada non-void ditolak'
   end
@@ -131,6 +135,53 @@ class VoidTest < Minitest::Test
     refute nested_src.valid?
     assert_nil role_of(res)
     assert_nil role_of(nested_res)
+  end
+
+  def test_duplicate_keeps_group_material_and_tag
+    wall = solid_box
+    wall.material = @model.materials.add('Dulux')
+    wall.layer = @model.layers.add('I. PARTITION')
+    @model.active_entities << wall
+
+    copy = V.duplicate(@model.active_entities, wall)
+    assert_equal wall.material, copy.material
+    assert_equal wall.layer, copy.layer
+  end
+
+  # ── pindah scene: scene memunculkan lagi source yang tersembunyi ────────
+
+  def test_rehide_sources_hides_visible_top_level_and_nested_sources
+    top = mark_role(solid_box, 'source', 'A')
+    inner = mark_role(solid_box, 'source', 'B')
+    inner_res = mark_role(solid_box, 'result', 'B')
+    parent = plain([plain([inner, inner_res])])
+    plain_wall = solid_box
+    [top, parent, plain_wall].each { |e| @model.active_entities << e }
+
+    assert_equal 2, V.rehide_sources(@model)
+    assert top.hidden?
+    assert inner.hidden?
+    refute inner_res.hidden?, 'hasil berlubang tetap terlihat'
+    refute plain_wall.hidden?
+  end
+
+  def test_rehide_sources_ignores_already_hidden
+    src = mark_role(solid_box, 'source')
+    src.hidden = true
+    @model.active_entities << src
+    assert_equal 0, V.rehide_sources(@model)
+  end
+
+  def test_fix_after_scene_change_commits_only_when_something_was_shown
+    src = mark_role(solid_box, 'source')
+    @model.active_entities << src
+    V.fix_after_scene_change(@model)
+    assert src.hidden?
+    assert_equal [[:start, 'Sembunyikan Source Void'], [:commit]], @model.operations
+
+    @model.operations.clear
+    V.fix_after_scene_change(@model)
+    assert_equal [[:start, 'Sembunyikan Source Void'], [:abort]], @model.operations, 'tidak ada perubahan = tidak ada langkah undo'
   end
 
   # ── rebuild_nonsolid_children: overlap harus dihitung di ruang WORLD ────
@@ -712,15 +763,15 @@ class VoidTest < Minitest::Test
   end
 
   %i[component group].each do |kind|
-    define_method("test_mark_makes_shared_#{kind}_void_unique") do
-      a, b = shared_pair(kind)
-      assert V.shared_definition?(a)
-      V.mark(@model, a, true)
-      refute_same a.definition, b.definition
-      refute V.shared_definition?(a)
-      assert_equal ['#void_hidden'], face_layer_names(a)
-      assert_equal ['Layer0'], face_layer_names(b), 'salinan lain tidak boleh ikut ditandai'
-    end
+define_method("test_mark_of_shared_#{kind}_does_not_touch_the_other") do
+  a, b = shared_pair(kind)
+  V.mark(@model, a, true)
+  refute V.void?(b)
+  assert_equal ['Layer0'], face_layer_names(b), 'salinan lain tidak boleh ikut ditandai'
+  assert_equal ['Layer0'], face_layer_names(a), 'isi group tidak diubah, hanya dibungkus'
+  outer = @model.active_entities.find { |e| V.void?(e) && e != b }
+  assert_equal 1, V.cutter_shapes(V.entities_of(outer)).size
+end
 
     define_method("test_unmark_of_one_copied_#{kind}_void_does_not_touch_the_other") do
       a, b = shared_pair(kind)
@@ -746,6 +797,64 @@ class VoidTest < Minitest::Test
       refute_same a.definition, b.definition
     end
   end
+
+# ── Group yang dijadikan void: group(Untagged) > group(#void_hidden) > face & edge ──
+
+def test_mark_tags_selected_group_and_wraps_it_in_untagged_void_group
+  g = solid_box
+  g.definition.entities << Sketchup::Face.new
+  g.layer = @model.layers.add('I. PARTITION')
+  @model.active_entities << g
+  assert V.mark(@model, g, true)
+
+  outers = @model.active_entities.to_a
+  assert_equal 1, outers.size
+  outer = outers.first
+  refute_same g, outer
+  assert V.void?(outer)
+  assert_equal 'Layer0', outer.layer.name
+  assert_same V.void_material(@model), outer.material
+  assert_equal [g], V.cutter_shapes(outer.entities), 'group asli ada di dalam pembungkus'
+  assert_equal '#void_hidden', g.layer.name
+  assert_same V.void_material(@model), g.material
+  assert_equal 1, g.definition.entities.count, 'face tetap polos di dalam group asli'
+end
+
+def test_unmark_restores_original_group_tag_and_material_and_removes_wrapper
+  g = solid_box
+  g.definition.entities << Sketchup::Face.new
+  g.layer = @model.layers.add('I. PARTITION')
+  g.material = @model.materials.add('Beton')
+  @model.active_entities << g
+  V.mark(@model, g, true)
+  outer = @model.active_entities.first
+  assert V.mark(@model, outer, false)
+
+  assert_equal [g], @model.active_entities.to_a
+  refute V.void?(g)
+  assert_equal 'I. PARTITION', g.layer.name
+  assert_equal 'Beton', g.material.name
+  assert_nil g.get_attribute('BoosokTools', 'void_cutter')
+end
+
+def test_mark_ignores_group_that_is_already_void
+  v = solid_box
+  v.set_attribute('BoosokTools', 'void', true)
+  @model.active_entities << v
+  refute V.mark(@model, v, true)
+  assert_equal [v], @model.active_entities.to_a
+end
+
+def test_unmark_of_legacy_void_with_tagged_plain_faces_untags_them
+  v = solid_box
+  face = Sketchup::Face.new
+  face.layer = V.void_hidden_layer(@model)
+  v.definition.entities << face
+  v.set_attribute('BoosokTools', 'void', true)
+  @model.active_entities << v
+  assert V.mark(@model, v, false)
+  assert_equal 'Layer0', face.layer.name
+end
 
   def test_ensure_unique_is_noop_for_unshared_void_and_dynamic_component
     v = solid_box
@@ -791,6 +900,135 @@ class VoidTest < Minitest::Test
 
   def holes(model = @model)
     V.count_results(model.active_entities)
+  end
+
+  # ── Material hasil lubang harus sama dengan target asli ───────────────────
+
+  def face_with(material = nil, back = nil)
+    f = Sketchup::Face.new
+    f.material = material
+    f.back_material = back
+    f
+  end
+
+  def test_restore_look_removes_void_material_but_keeps_all_original_materials
+    brick = Sketchup::Material.new('Bata')
+    paint = Sketchup::Material.new('Cat')
+    void_mat = V.void_material(@model)
+    base = plain([])
+    [face_with(brick), face_with(paint)].each { |f| base.definition.entities << f }
+    result = plain([])
+    result.material = void_mat # dibawa dari pemotong
+    kept1 = face_with(brick)
+    kept2 = face_with(paint)
+    hole_wall = face_with(void_mat, void_mat) # face lubang yang mewarisi material pemotong
+    [kept1, kept2, hole_wall].each { |f| result.definition.entities << f }
+
+    V.restore_look(result, base)
+
+    assert_nil result.material, 'target asli tanpa material group: hasil juga tanpa'
+    assert_same brick, kept1.material
+    assert_same paint, kept2.material, 'target dengan lebih dari satu material: semuanya tetap'
+    assert_nil hole_wall.material, 'material void tidak boleh tersisa di face lubang'
+    assert_nil hole_wall.back_material
+  end
+
+  # Face fake dengan geometri minimal: bounds, luas, dan tetangga lewat edge.
+  def shaped_face(min, max, area: 1.0, material: nil, neighbours: [])
+    f = face_with(material)
+    f.define_singleton_method(:bounds) { Geom::BoundingBox.from(min, max) }
+    f.define_singleton_method(:area) { area }
+    edge = Struct.new(:faces).new(neighbours)
+    f.define_singleton_method(:edges) { [edge] }
+    f
+  end
+
+  def test_hole_faces_take_the_material_of_the_adjacent_wall_face
+    brick = Sketchup::Material.new('Bata')
+    paint = Sketchup::Material.new('Cat')
+    base = plain([])
+    base.material = nil
+    [shaped_face([0, 0, 0], [100, 1, 100], area: 100.0, material: brick),
+     shaped_face([0, 5, 0], [100, 6, 100], area: 40.0, material: paint)].each { |f| base.definition.entities << f }
+
+    front = shaped_face([0, 0, 0], [100, 1, 100], area: 90.0, material: brick)
+    back = shaped_face([0, 5, 0], [100, 6, 100], area: 30.0, material: paint)
+    hole_a = shaped_face([40, 0, 40], [60, 5, 40], area: 5.0, neighbours: [front, back])
+    hole_b = shaped_face([40, 0, 40], [60, 5, 60], area: 5.0, neighbours: [back])
+    result = plain([])
+    [front, back, hole_a, hole_b].each { |f| result.definition.entities << f }
+
+    V.restore_look(result, base, [Geom::BoundingBox.from([40, -1, 40], [60, 7, 60])])
+
+    assert_same brick, hole_a.material, 'bersebelahan dengan face terbesar (bata)'
+    assert_same paint, hole_b.material
+    assert_same brick, front.material, 'material dinding asli tidak berubah'
+    assert_same paint, back.material
+  end
+
+  def test_hole_faces_without_neighbours_use_the_dominant_material
+    brick = Sketchup::Material.new('Bata')
+    paint = Sketchup::Material.new('Cat')
+    base = plain([])
+    [shaped_face([0, 0, 0], [1, 1, 1], area: 100.0, material: brick),
+     shaped_face([0, 0, 0], [1, 1, 1], area: 20.0, material: paint)].each { |f| base.definition.entities << f }
+    hole = shaped_face([40, 0, 40], [60, 5, 40], area: 5.0)
+    result = plain([])
+    result.definition.entities << hole
+
+    V.restore_look(result, base, [Geom::BoundingBox.from([40, -1, 40], [60, 7, 60])])
+
+    assert_same brick, hole.material
+  end
+
+  def test_restore_look_uses_the_group_material_for_hole_faces
+    wood = Sketchup::Material.new('Kayu')
+    base = plain([])
+    base.material = wood
+    result = plain([])
+    hole_wall = face_with(V.void_material(@model))
+    result.definition.entities << hole_wall
+
+    V.restore_look(result, base)
+
+    assert_same wood, result.material
+    assert_same wood, hole_wall.material
+  end
+
+  def test_cutter_copy_does_not_carry_the_void_material
+    v = void_box([2, 2, 2], [8, 8, 8])
+    v.material = V.void_material(@model)
+    @model.active_entities << v
+    cutter = V.cutter_from(@model.active_entities, v)
+    assert_nil cutter.material
+  end
+
+  def test_incremental_rebuild_only_recuts_sources_whose_input_changed
+    _w1, _w2, v1, _v2 = two_walls
+    calls = 0
+    base = fake_cut_copy
+    counting = ->(*args) { calls += 1; base.call(*args) }
+    V.stub(:cut_copy, counting) do
+      V.rebuild(@model, stats)
+      assert_equal 2, calls, 'rebuild penuh memotong semua'
+
+      V.instance_variable_set(:@incremental, true)
+      calls = 0
+      V.rebuild(@model, stats)
+      assert_equal 0, calls, 'tidak ada yang berubah: tidak ada pemotongan ulang'
+
+      v1.transformation = tx(1, 0, 0)
+      V.rebuild(@model, stats)
+      assert_equal 1, calls, 'hanya dinding yang disentuh void yang digeser yang dipotong ulang'
+      assert_equal 2, holes
+
+      V.instance_variable_set(:@incremental, false)
+      calls = 0
+      V.rebuild(@model, stats)
+      assert_equal 2, calls, 'tombol manual (Refresh/Terapkan) selalu memotong ulang semua'
+    end
+  ensure
+    V.instance_variable_set(:@incremental, false)
   end
 
   def test_cancel_holes_only_closes_the_selected_void
@@ -999,6 +1237,70 @@ class VoidTest < Minitest::Test
     refute commit_triggers_recut?
     @model.active_entities << solid_box([0, 0, 0], [10, 10, 10])
     assert commit_triggers_recut?
+  end
+
+  # ── Navigasi konteks tidak boleh memindai ────────────────────────────────
+
+  def test_path_change_only_marks_stale_and_does_not_scan
+    @model.active_entities << void_box([2, 2, 2], [8, 8, 8])
+    V.rescan(@model)
+    scans = 0
+    V.stub(:scan_top, ->(_m) { scans += 1; [[], 0] }) do
+      V.mark_stale(@model)
+      assert_equal 0, scans, 'buka/tutup group tidak boleh memindai'
+      V.refresh_if_stale(@model)
+      assert_equal 1, scans, 'baseline diambil lazy sebelum transaksi berikutnya'
+      V.refresh_if_stale(@model)
+      assert_equal 1, scans, 'sudah segar: tidak memindai lagi'
+    end
+  end
+
+  def test_model_without_any_void_is_never_scanned
+    Sketchup.reset_model!
+    model = Sketchup.active_model # tanpa material/tag Void
+    model.active_entities << solid_box([0, 0, 0], [10, 10, 10])
+    scans = 0
+    V.stub(:scan_top, ->(_m) { scans += 1; [[], 0] }) do
+      V.stub(:signature, ->(_m) { scans += 1; [] }) do
+        V.rescan(model)
+        V.on_commit(model)
+      end
+    end
+    assert_equal 0, scans
+  end
+
+  # ── Cache bendera & signature terpangkas (skala project besar) ───────────
+
+  def test_subtree_flags_are_cached_and_reused_across_scans
+    building, = nested_building
+    reads = 0
+    kids = building.definition.entities
+    kids.define_singleton_method(:each) { |&b| reads += 1; super(&b) }
+    V.invalidate_scan_cache
+    2.times { V.watched_ids(@model) }
+    assert_equal 1, reads, 'isi group hanya ditelusuri sekali, scan berikutnya memakai cache'
+  end
+
+  def test_flags_are_dropped_when_group_content_changes
+    parent = plain([solid_box])
+    @model.active_entities << parent
+    V.invalidate_scan_cache
+    refute_includes V.watched_ids(@model), parent.persistent_id
+
+    parent.definition.entities << void_box([2, 2, 2], [8, 8, 8])
+    assert_includes V.watched_ids(@model), parent.persistent_id, 'void baru di dalam group harus ketahuan tanpa invalidasi manual'
+  end
+
+  def test_signature_ignores_nested_walls_far_from_every_void
+    far = solid_box([0, 0, 0], [10, 10, 10], at: [900, 0, 0])
+    building, _wall, = nested_building
+    building.definition.entities << far
+    V.rescan(@model)
+    before = V.signature(@model)
+    far.transformation = tx(950, 0, 0)
+    assert_equal before, V.signature(@model), 'dinding jauh dari void tidak memengaruhi lubang'
+    far.transformation = tx(0, 0, 0)
+    refute_equal before, V.signature(@model), 'dinding yang bergeser masuk ke area void harus terdeteksi'
   end
 
   def test_touching_an_inactive_void_does_not_trigger_recut

@@ -10,6 +10,9 @@
 //     POST /admin/revoke {key, revoked}      -> cabut / pulihkan key
 //     POST /admin/unbind {key, hwid}         -> lepas satu perangkat
 //     POST /admin/update {key, name, phone, note, max_devices}
+//     GET  /admin/flags                      -> daftar fitur yang sedang dimatikan (semua user + per key)
+//     POST /admin/flags {tool_id, disabled, message, key?}  -> matikan / hidupkan fitur (key kosong = semua user)
+//   POST /flags {key?}  (publik)             -> fitur yang dimatikan untuk key ini: {tool_id: pesan}
 //
 // Token = {payload, sig}. payload = string JSON; sig = RSA-SHA256 (PKCS#1 v1.5) base64 atas string payload itu persis.
 // Plugin hanya menyimpan KUNCI PUBLIK, jadi tidak ada rahasia di dalam plugin.
@@ -125,6 +128,47 @@ async function handleClient(path, request, env) {
   return json({ ok: true, token: await makeToken(env, key, hwid, used, row.max_devices, row.name, row.phone) });
 }
 
+// ── Kill-switch fitur ──
+const TOOL_ID_RE = /^[a-z0-9_]{1,40}$/;
+
+// Fitur yang dimatikan untuk key ini = flag global + flag khusus key (pesan khusus key menimpa pesan global bila diisi).
+// Key tidak dikenal / kosong: cukup flag global. Balasan selalu berbentuk sama, jadi key tidak bisa ditebak lewat sini.
+async function handleFlags(request, env) {
+  const body = await readBody(request);
+  const key = normKey(body.key);
+  const rows = (await env.DB.prepare('SELECT key, tool_id, message FROM tool_flags WHERE key = ?' + (key ? ' OR key = ?' : ''))
+    .bind(...(key ? ['', key] : [''])).all()).results;
+  const flags = {};
+  rows.filter((r) => r.key === '').forEach((r) => { flags[r.tool_id] = r.message; });
+  rows.filter((r) => r.key !== '').forEach((r) => { flags[r.tool_id] = r.message || flags[r.tool_id] || ''; });
+  return json({ ok: true, flags: flags });
+}
+
+async function handleAdminFlags(request, env) {
+  if (request.method === 'GET') {
+    const rows = (await env.DB.prepare('SELECT key, tool_id, message, updated_at FROM tool_flags ORDER BY updated_at DESC').all()).results;
+    return json({ ok: true, flags: rows });
+  }
+  const body = await readBody(request);
+  const toolId = String(body.tool_id || '').trim();
+  if (!TOOL_ID_RE.test(toolId)) return json({ ok: false, error: 'bad_request' }, 400);
+  let key = '';
+  if (body.key) {
+    key = normKey(body.key);
+    if (!key) return json({ ok: false, error: 'bad_request' }, 400);
+    const exists = await env.DB.prepare('SELECT key FROM keys WHERE key = ?').bind(key).first();
+    if (!exists) return json({ ok: false, error: 'invalid_key' }, 404);
+  }
+  if (body.disabled === false) {
+    await env.DB.prepare('DELETE FROM tool_flags WHERE key = ? AND tool_id = ?').bind(key, toolId).run();
+  } else {
+    await env.DB.prepare('INSERT INTO tool_flags (key, tool_id, message, updated_at) VALUES (?, ?, ?, ?) ' +
+      'ON CONFLICT(key, tool_id) DO UPDATE SET message = excluded.message, updated_at = excluded.updated_at')
+      .bind(key, toolId, String(body.message || '').slice(0, 300), Math.floor(Date.now() / 1000)).run();
+  }
+  return json({ ok: true });
+}
+
 // ── Update plugin (file .rbz disimpan di Workers KV) ──
 const VERSION_RE = /^[0-9A-Za-z][0-9A-Za-z.\-]{0,30}$/;
 
@@ -188,6 +232,7 @@ async function handleAdmin(path, request, env) {
   if (!adminToken || auth !== 'Bearer ' + adminToken) return json({ ok: false, error: 'unauthorized' }, 401);
 
   if (path === '/admin/release') return await handleRelease(request, env);
+  if (path === '/admin/flags') return await handleAdminFlags(request, env);
 
   const now = Math.floor(Date.now() / 1000);
   if (path === '/admin/keys' && request.method === 'GET') {
@@ -238,6 +283,7 @@ export default {
       if (path === '/') return json({ ok: true, service: 'boosok-license' });
       if (path.startsWith('/admin')) return await handleAdmin(path, request, env);
       if (request.method === 'GET' && ['/update/latest', '/update/download'].includes(path)) return await handleUpdate(path, request, env);
+      if (request.method === 'POST' && path === '/flags') return await handleFlags(request, env);
       if (request.method === 'POST' && ['/activate', '/check', '/release'].includes(path)) return await handleClient(path, request, env);
       return json({ ok: false, error: 'not_found' }, 404);
     } catch (e) {

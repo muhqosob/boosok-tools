@@ -16,3 +16,13 @@ CREATE TABLE IF NOT EXISTS devices (
   last_seen  INTEGER NOT NULL,
   PRIMARY KEY (key, hwid)
 );
+
+-- Kill-switch fitur: tool yang dimatikan sementara dari server (mis. ada bug). key = '' berarti berlaku untuk semua user,
+-- selain itu hanya untuk key itu. message = pesan bebas yang tampil ke user.
+CREATE TABLE IF NOT EXISTS tool_flags (
+  key        TEXT NOT NULL DEFAULT '',
+  tool_id    TEXT NOT NULL,
+  message    TEXT NOT NULL DEFAULT '',
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (key, tool_id)
+);

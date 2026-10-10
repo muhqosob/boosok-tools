@@ -10,6 +10,7 @@ module BoosokTools
     BoosokTools::Locale.export_js
     Sketchup.require 'boosok_tools/updater'
     Sketchup.require 'boosok_tools/license'
+    Sketchup.require 'boosok_tools/flags'
     Sketchup.require 'boosok_tools/hub'
     Sketchup.require 'boosok_tools/ruby/paid/select_tool'
 
@@ -89,6 +90,8 @@ module BoosokTools
     # berlaku di sini, selain itu lisensi yang sudah aktif tetap jalan offline tanpa batas waktu.
     # Ditunda: verifikasi token memuat OpenSSL, jangan memperlambat startup SketchUp.
     UI.start_timer(5, false) { License.maybe_refresh rescue nil }
+    # Kill-switch fitur dari server: cek saat startup lalu tiap 30 menit; tool yang dimatikan tidak bisa dibuka
+    Flags.start { BoosokTools::Hub.flags_changed rescue nil }
 
     # ── Helpers Make Unique (dipakai context menu + bisa dipanggil internal) ──
     # Untuk ComponentInstance: pakai make_unique bawaan SketchUp API.
@@ -219,6 +222,10 @@ module BoosokTools
       # ── Reset Scale ────────────────────────────────────────────────────────
       bt_menu.add_item('Reset Scale') do
         begin
+          if BoosokTools::Hub.tool_disabled?('reset')
+            UI.messagebox(BoosokTools::Hub.disabled_message('reset'), MB_OK)
+            next
+          end
           BoosokTools.load_module('ruby/free/reset')
           result = BoosokTools::TheResetScale.reset_selection('preserve', false)
           if result.is_a?(Integer)

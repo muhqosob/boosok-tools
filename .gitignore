@@ -17,3 +17,6 @@ tools/license-admin.config.json
 # Hasil build update (.rbz)
 dist/
 tools/keygen.rb
+
+# Tool ekstrak AHSP
+tools/extract-ahsp/node_modules/

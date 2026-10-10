@@ -1,0 +1,4473 @@
+{
+ "sumber": "Harga Satuan Dasar BPJN Banten, Ditjen Bina Marga, Kementerian PU",
+ "url": "https://binamarga.pu.go.id/balai-banten/hsd",
+ "wilayah": "Kota Serang",
+ "tahun": 2024,
+ "diambil": "2026-10-09",
+ "items": [
+  {
+   "jenis": "upah",
+   "kode": "L01",
+   "nama": "Pekerja",
+   "satuan": "Hari",
+   "harga": 183967,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L02",
+   "nama": "Tukang",
+   "satuan": "Hari",
+   "harga": 190504,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L03",
+   "nama": "Mandor",
+   "satuan": "Hari",
+   "harga": 228093,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L04",
+   "nama": "Operator",
+   "satuan": "Hari",
+   "harga": 228093,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L05",
+   "nama": "Pembantu Operator",
+   "satuan": "Hari",
+   "harga": 206847,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L06",
+   "nama": "Sopir / Driver",
+   "satuan": "Hari",
+   "harga": 190504,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L07",
+   "nama": "Pembantu Sopir / Driver",
+   "satuan": "Hari",
+   "harga": 183967,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L08",
+   "nama": "Mekanik",
+   "satuan": "Hari",
+   "harga": 183967,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L09",
+   "nama": "Pembantu Mekanik",
+   "satuan": "Hari",
+   "harga": 183967,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L10",
+   "nama": "Kepala Tukang",
+   "satuan": "Hari",
+   "harga": 206847,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L11",
+   "nama": "Tenaga Ahli Muda S1 (1 Tahun)",
+   "satuan": "Hari",
+   "harga": 1065514,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L12",
+   "nama": "Tenaga Ahli Muda S1 (5 Tahun)",
+   "satuan": "Hari",
+   "harga": 1318598,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L16",
+   "nama": "CAD / CAM Operator",
+   "satuan": "Hari",
+   "harga": 530772,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L17",
+   "nama": "Software Programmer / Implementer",
+   "satuan": "Hari",
+   "harga": 634863,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L18",
+   "nama": "Hardware Technician",
+   "satuan": "Hari",
+   "harga": 530772,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L19",
+   "nama": "Facilitator",
+   "satuan": "Hari",
+   "harga": 530772,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L20",
+   "nama": "Senior Assistant Professional Staff",
+   "satuan": "Hari",
+   "harga": 634863,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L21",
+   "nama": "Assistant Professional Staff",
+   "satuan": "Hari",
+   "harga": 634863,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L22",
+   "nama": "Special Technician / Inspector",
+   "satuan": "Hari",
+   "harga": 614453,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L23",
+   "nama": "Technician",
+   "satuan": "Hari",
+   "harga": 530772,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L24",
+   "nama": "Inspector",
+   "satuan": "Hari",
+   "harga": 530772,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "upah",
+   "kode": "L25",
+   "nama": "Surveyor",
+   "satuan": "Hari",
+   "harga": 502198,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M01b",
+   "nama": "Pasir Pasang (AC-WC, Mortar)",
+   "satuan": "m3",
+   "harga": 124000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M01a",
+   "nama": "Pasir Kasar (Beton, Lapis Drainase)",
+   "satuan": "m3",
+   "harga": 226500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M01c",
+   "nama": "Pasir Halus (HRS)",
+   "satuan": "m3",
+   "harga": 104100,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M01d",
+   "nama": "Pasir Urug",
+   "satuan": "m3",
+   "harga": 113200,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M02",
+   "nama": "Batu Kali",
+   "satuan": "m3",
+   "harga": 112800,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M03",
+   "nama": "Agregat Pecah Kasar (5 sd 20 mm)",
+   "satuan": "m3",
+   "harga": 134889,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M04",
+   "nama": "Boulder (Berangkal)",
+   "satuan": "m3",
+   "harga": 112800,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M05",
+   "nama": "Filler (non semen) (limestone dust, kapur padam, dolomit, fly ash)",
+   "satuan": "Kg",
+   "harga": 400,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M06",
+   "nama": "Batu Belah",
+   "satuan": "m3",
+   "harga": 112800,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M07",
+   "nama": "Gravel / Kerakal / Koral",
+   "satuan": "m3",
+   "harga": 73400,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M08",
+   "nama": "Bahan Timbunan Biasa (Tanah Urug)",
+   "satuan": "m3",
+   "harga": 55700,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M09",
+   "nama": "Bahan Timbunan Pilihan",
+   "satuan": "m3",
+   "harga": 77200,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M10",
+   "nama": "Aspal 60/70",
+   "satuan": "Kg",
+   "harga": 18200,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M11",
+   "nama": "Kerosen / Minyak Tanah",
+   "satuan": "ltr",
+   "harga": 8600,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M11x",
+   "nama": "Semen/PC (50 kg)",
+   "satuan": "Zak",
+   "harga": 59448,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M12",
+   "nama": "Semen/PC (kg)",
+   "satuan": "Kg",
+   "harga": 1189,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M13",
+   "nama": "Silica Fume (powder)",
+   "satuan": "Kg",
+   "harga": 45000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M14",
+   "nama": "Kawat Beton",
+   "satuan": "Kg",
+   "harga": 25000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M15",
+   "nama": "Kawat Bronjong",
+   "satuan": "Kg",
+   "harga": 17700,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M16",
+   "nama": "Besi Siku",
+   "satuan": "Kg",
+   "harga": 25250,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M16a",
+   "nama": "Sirtu (4 ? PI ?10 ; LL ? 35 %)",
+   "satuan": "m3",
+   "harga": 84400,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M16b",
+   "nama": "Sirtu (4 ? PI ?15 ; LL ? 35 %)",
+   "satuan": "m3",
+   "harga": 84400,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M17a",
+   "nama": "Cat Marka (Non Thermoplas)",
+   "satuan": "Kg",
+   "harga": 367683,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M17b",
+   "nama": "Cat Marka (Thermoplastic)",
+   "satuan": "Kg",
+   "harga": 40000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M18",
+   "nama": "Paku",
+   "satuan": "Kg",
+   "harga": 13900,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M19",
+   "nama": "Kayu Perancah",
+   "satuan": "m3",
+   "harga": 2100000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M20",
+   "nama": "Bensin",
+   "satuan": "ltr",
+   "harga": 12900,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M21",
+   "nama": "Solar",
+   "satuan": "ltr",
+   "harga": 14550,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M22",
+   "nama": "Minyak Pelumas / Oli",
+   "satuan": "ltr",
+   "harga": 63800,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M23",
+   "nama": "Geotextile Filter Kelas 2",
+   "satuan": "m2",
+   "harga": 100000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M24",
+   "nama": "Poliurerhane foam raw material",
+   "satuan": "Kg",
+   "harga": 125000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M25",
+   "nama": "Pipa Porous diameter 4\"",
+   "satuan": "m",
+   "harga": 39500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M26",
+   "nama": "Agegat Kelas A",
+   "satuan": "m3",
+   "harga": 146267,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M27",
+   "nama": "Agegat Kelas B",
+   "satuan": "m3",
+   "harga": 123599,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M29a",
+   "nama": "Agegat Kelas S",
+   "satuan": "m3",
+   "harga": 124633,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M29b",
+   "nama": "Agegat Kelas C",
+   "satuan": "m3",
+   "harga": 101078,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M38",
+   "nama": "Lapis Drainase",
+   "satuan": "m3",
+   "harga": 168967,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M30",
+   "nama": "Aspal Emulsi Modifikasi Polimer 1h",
+   "satuan": "ltr",
+   "harga": 13650,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M31",
+   "nama": "Aspal Emulsi",
+   "satuan": "ltr",
+   "harga": 18800,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M32",
+   "nama": "Lem Kayu",
+   "satuan": "Kg",
+   "harga": 31080,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M33",
+   "nama": "Thinner",
+   "satuan": "ltr",
+   "harga": 21000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M34",
+   "nama": "Glass Bead",
+   "satuan": "Kg",
+   "harga": 28000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M35a",
+   "nama": "Rambu (Eng. Grade) - Jalan Nasional Kelas 1 Dia 90 mm",
+   "satuan": "Bh",
+   "harga": 1000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M35b",
+   "nama": "Rambu (High I. Grade) - Jalan Nasional Kelas 1 Dia 90 mm",
+   "satuan": "Bh",
+   "harga": 671000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M36",
+   "nama": "Rel Pengaman",
+   "satuan": "m",
+   "harga": 425000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M37",
+   "nama": "Beton Struktur Fc' 25 MPa",
+   "satuan": "m3",
+   "harga": 1715206,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M39a",
+   "nama": "BjTP 280",
+   "satuan": "Kg",
+   "harga": 20000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M39b",
+   "nama": "BjTS 280",
+   "satuan": "Kg",
+   "harga": 20000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M40",
+   "nama": "Kapur",
+   "satuan": "m3",
+   "harga": 169565,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M41",
+   "nama": "Chipping (m3)",
+   "satuan": "m3",
+   "harga": 134889,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M41x",
+   "nama": "Chipping (kg)",
+   "satuan": "Kg",
+   "harga": 72,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M42",
+   "nama": "Performed joint sealent",
+   "satuan": "m",
+   "harga": 24723,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M44",
+   "nama": "Geotextile stabilisator Kelas 1",
+   "satuan": "m2",
+   "harga": 100000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M46",
+   "nama": "Baja Bergelombang",
+   "satuan": "Kg",
+   "harga": 26000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M47",
+   "nama": "Beton Fc' 10 MPa",
+   "satuan": "m3",
+   "harga": 1428162,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M48",
+   "nama": "Baja Struktur Grade 240 (Kuat Leleh 240 MPa)",
+   "satuan": "Kg",
+   "harga": 25000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M49",
+   "nama": "Baja Struktur Baja Grade 250 (Kuat Leleh 250 Mpa)",
+   "satuan": "Kg",
+   "harga": 25000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M50",
+   "nama": "Tiang Pancang Beton Pratekan",
+   "satuan": "m3",
+   "harga": 1000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M51",
+   "nama": "Kawat Las",
+   "satuan": "Dos",
+   "harga": 33500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M45",
+   "nama": "Aspal Modifikasi PG 70",
+   "satuan": "Kg",
+   "harga": 16500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M53",
+   "nama": "Baja Grade 345 (Kuat Leleh 345 Mpa)",
+   "satuan": "Kg",
+   "harga": 35000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M54",
+   "nama": "Baja Grade 485 (Kuat Leleh 485 Mpa)",
+   "satuan": "Kg",
+   "harga": 40000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M57a",
+   "nama": "BjTS 420A",
+   "satuan": "Kg",
+   "harga": 22000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M57b",
+   "nama": "BjTS 420B",
+   "satuan": "Kg",
+   "harga": 22000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M57c",
+   "nama": "BjTS 520",
+   "satuan": "Kg",
+   "harga": 30000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M57d",
+   "nama": "BjTS 550",
+   "satuan": "Kg",
+   "harga": 30000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M57e",
+   "nama": "BjTS 700",
+   "satuan": "Kg",
+   "harga": 40000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M58a",
+   "nama": "Geotextile separator Kelas 1",
+   "satuan": "m2",
+   "harga": 100000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M58b",
+   "nama": "Geotextile separator Kelas 2",
+   "satuan": "m2",
+   "harga": 100000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M58c",
+   "nama": "Geotextile separator Kelas 3",
+   "satuan": "m2",
+   "harga": 100000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M59",
+   "nama": "Beton Struktur Fc' 30 MPa",
+   "satuan": "m3",
+   "harga": 1739875,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M60",
+   "nama": "Beton Struktur Fc' 15 MPa",
+   "satuan": "m3",
+   "harga": 1366168,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M61",
+   "nama": "Cerucuk",
+   "satuan": "m",
+   "harga": 50000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M64",
+   "nama": "Paku Jalan Memantul Bulat",
+   "satuan": "Bh",
+   "harga": 62000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M66",
+   "nama": "Anti stripping agent",
+   "satuan": "Kg",
+   "harga": 84032,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M68",
+   "nama": "Beton Struktur Fc' 50 MPa",
+   "satuan": "m3",
+   "harga": 2758364,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M69",
+   "nama": "Beton Struktur Fc' 40 MPa",
+   "satuan": "m3",
+   "harga": 2676271,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M72",
+   "nama": "Beton Fc' 35 MPa",
+   "satuan": "m3",
+   "harga": 1353638,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M73",
+   "nama": "Multipleks 12 mm",
+   "satuan": "Lbr",
+   "harga": 150850,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M74a",
+   "nama": "Elastomer jenis 1 ukuran 350 x 300 x 36 mm",
+   "satuan": "Bh",
+   "harga": 700000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M74b",
+   "nama": "Elastomer jenis 2 ukuran 400 x 350 x 39 mm",
+   "satuan": "Bh",
+   "harga": 920000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M74c",
+   "nama": "Elastomer jenis 3 ukuran 450 x 400 x 45 mm",
+   "satuan": "Bh",
+   "harga": 920000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M75d",
+   "nama": "Expansion Tipe Joint Asphaltic Plug",
+   "satuan": "m",
+   "harga": 2000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M75e",
+   "nama": "Expansion Join Tipe Rubber",
+   "satuan": "m",
+   "harga": 1000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M75f",
+   "nama": "Expansion Join Baja Siku",
+   "satuan": "m",
+   "harga": 4300000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M76",
+   "nama": "Agregat 14 mm - 20 mm (zak)",
+   "satuan": "Zak",
+   "harga": 166750,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M77",
+   "nama": "Agregat 14 mm - 20 mm (kg)",
+   "satuan": "Kg",
+   "harga": 4169,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M78",
+   "nama": "Paving Block",
+   "satuan": "m2",
+   "harga": 65000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M79",
+   "nama": "Mini Timber Pile",
+   "satuan": "m",
+   "harga": 26000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M81",
+   "nama": "Strip Bearing",
+   "satuan": "m",
+   "harga": 3000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M24a",
+   "nama": "Pipa Galvanis Dia 3\"",
+   "satuan": "m",
+   "harga": 118463,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M91",
+   "nama": "Agregat Pecah Mesin 0-5 mm",
+   "satuan": "m3",
+   "harga": 134889,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M92",
+   "nama": "Agregat Pecah Mesin 5-10 & 10-20 mm",
+   "satuan": "m3",
+   "harga": 134889,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M93",
+   "nama": "Agregat Pecah Mesin 20-30 mm",
+   "satuan": "m3",
+   "harga": 124434,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M94",
+   "nama": "Joint Sealent",
+   "satuan": "Kg",
+   "harga": 27000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M95",
+   "nama": "Cat Anti Karat",
+   "satuan": "Kg",
+   "harga": 29500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M96",
+   "nama": "Expansion Cap",
+   "satuan": "Kg",
+   "harga": 6050,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M97",
+   "nama": "Plastik MembranePolytene 125 mikron",
+   "satuan": "m2",
+   "harga": 63200,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M98",
+   "nama": "Curing Compound",
+   "satuan": "ltr",
+   "harga": 10900,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M67a",
+   "nama": "Additive",
+   "satuan": "Kg",
+   "harga": 32000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M100",
+   "nama": "Casing Dia 800 mm",
+   "satuan": "m",
+   "harga": 24000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M102",
+   "nama": "Polimer Latex",
+   "satuan": "ltr",
+   "harga": 64000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M112",
+   "nama": "Elastomer Sintetis 450 x 400 x 45 mm",
+   "satuan": "Bh",
+   "harga": 891000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M113",
+   "nama": "Anchorage",
+   "satuan": "Bh",
+   "harga": 255750,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M114",
+   "nama": "Anchorage (Hidup)",
+   "satuan": "Bh",
+   "harga": 750000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M115",
+   "nama": "Anchorage (Mati)",
+   "satuan": "Bh",
+   "harga": 400000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M116",
+   "nama": "Kabel Prategang",
+   "satuan": "Kg",
+   "harga": 218700,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M117",
+   "nama": "Kabel Prategang - Selongsong",
+   "satuan": "m",
+   "harga": 98400,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M118",
+   "nama": "Kabel Prategang - Baja Prategang",
+   "satuan": "Kg",
+   "harga": 218700,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M119",
+   "nama": "Kabel Prategang - Grouting",
+   "satuan": "m2",
+   "harga": 6759,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M120",
+   "nama": "Angkur Kabel Prategang (m2)",
+   "satuan": "m2",
+   "harga": 300000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M121",
+   "nama": "Angkur Kabel Prategang (bh)",
+   "satuan": "Bh",
+   "harga": 17000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M122",
+   "nama": "Baja Profil",
+   "satuan": "Kg",
+   "harga": 15500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M125",
+   "nama": "Cairan Perekat (Epoxy Resin)",
+   "satuan": "Kg",
+   "harga": 300000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M126",
+   "nama": "Epoxy Bahan Penutup (sealant)",
+   "satuan": "Kg",
+   "harga": 300000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M127",
+   "nama": "Alat Penyuntik Anti Gravitasi",
+   "satuan": "Bh",
+   "harga": 13000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M128",
+   "nama": "Polymer Mortar",
+   "satuan": "Kg",
+   "harga": 21400,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M129",
+   "nama": "Anti Korosif Baja",
+   "satuan": "Kg",
+   "harga": 39000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M130",
+   "nama": "Acuan/multipleks",
+   "satuan": "m2",
+   "harga": 59124,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M131",
+   "nama": "Coating anti UV min 100 mikron jenis PU (Poly Uretane) 0,25 ltr/m2",
+   "satuan": "ltr",
+   "harga": 150000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M132",
+   "nama": "Pipa Galvanis Dia 8\"",
+   "satuan": "m",
+   "harga": 376998,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M133",
+   "nama": "Pelat Baja - Mutu 345 MPa",
+   "satuan": "Kg",
+   "harga": 35000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M134",
+   "nama": "Baut Angkur",
+   "satuan": "Kg",
+   "harga": 30000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M135",
+   "nama": "Retarder",
+   "satuan": "Kg",
+   "harga": 20650,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M136",
+   "nama": "Cat Galvanis",
+   "satuan": "Kg",
+   "harga": 98000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M137",
+   "nama": "Baut Mutu Tinggi A325 1\" x 3\"",
+   "satuan": "Bh",
+   "harga": 55000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M141",
+   "nama": "Bahan Grouting",
+   "satuan": "Kg",
+   "harga": 3980,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M142",
+   "nama": "Kayu Kelas 1",
+   "satuan": "m3",
+   "harga": 15000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M143",
+   "nama": "Kerucut lalu lintas (rubber cone) tinggi 70 cm",
+   "satuan": "Bh",
+   "harga": 69000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M144",
+   "nama": "Timbunan/urugan Porous",
+   "satuan": "m3",
+   "harga": 259549,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M145",
+   "nama": "Topi pelindung (Safety helmet)",
+   "satuan": "Bh",
+   "harga": 42000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M146",
+   "nama": "Pelindung mata (Goggles, Spectacles)",
+   "satuan": "Set",
+   "harga": 9000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M147",
+   "nama": "Tameng muka (Face shield)",
+   "satuan": "Bh",
+   "harga": 31500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M148",
+   "nama": "Masker selam (Breathing apparatus)",
+   "satuan": "Bh",
+   "harga": 975000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M149",
+   "nama": "Pelindung telinga (Ear plug, ear nuff)",
+   "satuan": "Set",
+   "harga": 19000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M150",
+   "nama": "Pelindung pernafasan dan mulut (Masker)",
+   "satuan": "Bh",
+   "harga": 225,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M151",
+   "nama": "Sarung tangan (Safety gloves)",
+   "satuan": "Set",
+   "harga": 30000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M152",
+   "nama": "Sepatu keselamatan (Safety shoes)",
+   "satuan": "Set",
+   "harga": 430000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M153",
+   "nama": "Penunjang seluruh tubuh (Full bodu harness)",
+   "satuan": "Bh",
+   "harga": 115000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M154",
+   "nama": "Jaket pelampung (Life vest)",
+   "satuan": "Bh",
+   "harga": 57000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M155",
+   "nama": "Rompi keselamatan (Safety vest)",
+   "satuan": "Bh",
+   "harga": 31000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M156",
+   "nama": "Celemek (Apron/coveralls)",
+   "satuan": "Bh",
+   "harga": 85000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M157a",
+   "nama": "Pelindung jatuh (Fall arrester)",
+   "satuan": "Bh",
+   "harga": 380000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M15by",
+   "nama": "Penahan jatuh (Harness)",
+   "satuan": "Bh",
+   "harga": 43999,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M31a",
+   "nama": "Aspal Emulsi CSS-1 atau SS-1",
+   "satuan": "ltr",
+   "harga": 13600,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M31b",
+   "nama": "Aspal Emulsi CRS-1 atau RS-1",
+   "satuan": "ltr",
+   "harga": 15150,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M31d",
+   "nama": "Aspal Emulsi Modifikasi Polimer 2h",
+   "satuan": "ltr",
+   "harga": 13650,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M158",
+   "nama": "Serat Selulosa",
+   "satuan": "Kg",
+   "harga": 380000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M159",
+   "nama": "Zeolit",
+   "satuan": "Kg",
+   "harga": 3900,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M160",
+   "nama": "Wax",
+   "satuan": "Kg",
+   "harga": 89600,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M161",
+   "nama": "Asbuton B 5/20",
+   "satuan": "Kg",
+   "harga": 2080,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M162",
+   "nama": "CPHMA",
+   "satuan": "Ton",
+   "harga": 1630000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M163",
+   "nama": "Asbuton B 50/30",
+   "satuan": "Kg",
+   "harga": 3120,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M25a",
+   "nama": "Pipa Porous diameter 5\"",
+   "satuan": "m",
+   "harga": 49375,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M25b",
+   "nama": "Pipa Porous diameter 6\"",
+   "satuan": "m",
+   "harga": 80000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M25c",
+   "nama": "Pipa Porous diameter 8\"",
+   "satuan": "m",
+   "harga": 130500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M165",
+   "nama": "Backer rod 3/8 inci",
+   "satuan": "Kg",
+   "harga": 2300,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M166",
+   "nama": "Cairan Perekat (Epoxy Resin) 2 komponen",
+   "satuan": "ltr",
+   "harga": 145000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M168",
+   "nama": "Sirine",
+   "satuan": "Bh",
+   "harga": 105000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M169",
+   "nama": "Lampu darurat (Emergency lamp) LED",
+   "satuan": "Bh",
+   "harga": 179000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M170",
+   "nama": "Air",
+   "satuan": "ltr",
+   "harga": 250,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M171",
+   "nama": "Super plastiziser, maks 0,3 % Sm",
+   "satuan": "Kg",
+   "harga": 32000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M172",
+   "nama": "Tyfo S Priming",
+   "satuan": "ltr",
+   "harga": 425000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M173",
+   "nama": "Tyfo SEH51A",
+   "satuan": "ltr",
+   "harga": 800000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M174",
+   "nama": "Concrete Grouting Non srinkage HWR",
+   "satuan": "Kg",
+   "harga": 6759,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M176",
+   "nama": "Mortar semen cepat mengeras (RSC)",
+   "satuan": "Kg",
+   "harga": 6000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M177",
+   "nama": "Mortar pre-packed untuk stiching",
+   "satuan": "Kg",
+   "harga": 1140,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M178",
+   "nama": "Termoplastik (sealant tuang panas)",
+   "satuan": "Kg",
+   "harga": 28985,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M179",
+   "nama": "Backer rod 1 1/6 inci",
+   "satuan": "Kg",
+   "harga": 7000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M180",
+   "nama": "Termoseting (sealant tuang dingin)",
+   "satuan": "Kg",
+   "harga": 65333,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M181",
+   "nama": "Bahan grouting tersedia jenis preformed",
+   "satuan": "Kg",
+   "harga": 3980,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M182",
+   "nama": "Plasticizer",
+   "satuan": "Kg",
+   "harga": 32000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M183",
+   "nama": "Rapid Setting Material (Beton Semen Fast Track < 24 jam)",
+   "satuan": "m3",
+   "harga": 1788134,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M184",
+   "nama": "Thermocouple",
+   "satuan": "Bh",
+   "harga": 19200,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M185",
+   "nama": "Beton Struktur fc' 45 MPa",
+   "satuan": "m3",
+   "harga": 2692140,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M186",
+   "nama": "Beton Struktur fc' 20 MPa",
+   "satuan": "m3",
+   "harga": 1579077,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M187",
+   "nama": "Baja Struktur Grade 345 (Kuat Leleh 345 MPa)",
+   "satuan": "Kg",
+   "harga": 35000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M188",
+   "nama": "Baja Struktur Grade 485 (Kuat Leleh 485 MPa)",
+   "satuan": "Kg",
+   "harga": 40000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M189",
+   "nama": "Baja Struktur Grade 690 (Kuat Leleh 690 Mpa untuk Tebal Pelat ? 2,5 inch)",
+   "satuan": "Kg",
+   "harga": 22000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M190",
+   "nama": "Baja Struktur Grade 690 (Kuat Leleh 620 Mpa untuk Tebal Pelat > 2,5 - 4,0 inch)",
+   "satuan": "Kg",
+   "harga": 19000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M191",
+   "nama": "Casing, diameter 800 mm",
+   "satuan": "m",
+   "harga": 42465,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M192",
+   "nama": "Bahan turap kayu",
+   "satuan": "m3",
+   "harga": 1458333,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M193",
+   "nama": "Berat H Beam per m'",
+   "satuan": "Kg",
+   "harga": 294000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M194",
+   "nama": "Strand 1/2 inci",
+   "satuan": "Kg",
+   "harga": 17038,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M195",
+   "nama": "Perancah/ formwoks",
+   "satuan": "m2",
+   "harga": 197009,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M196",
+   "nama": "Backer rod 5/6 inci",
+   "satuan": "m",
+   "harga": 5000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M197",
+   "nama": "Kreosot",
+   "satuan": "Kg",
+   "harga": 37500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M198",
+   "nama": "Bonding Agent",
+   "satuan": "Kg",
+   "harga": 36000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M199",
+   "nama": "Cat dasar beton (epoxy zinc)",
+   "satuan": "Kg",
+   "harga": 88000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M200",
+   "nama": "Cat akhir protektif beton (MC Urethane)",
+   "satuan": "Kg",
+   "harga": 57917,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M201",
+   "nama": "Cat akhir dekoratif beton (polyurethane)",
+   "satuan": "Kg",
+   "harga": 175000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M202",
+   "nama": "Cat dasar baja (zinc rich)",
+   "satuan": "Kg",
+   "harga": 74600,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M203",
+   "nama": "Cat akhir protektif baja (alkyd)",
+   "satuan": "Kg",
+   "harga": 58000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M204",
+   "nama": "FRP jenis E-glass untuk daerah kering",
+   "satuan": "m2",
+   "harga": 1800000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M205",
+   "nama": "FRP jenis E-glass untuk daerah basah",
+   "satuan": "m2",
+   "harga": 2000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M206",
+   "nama": "FRP jenis glass untuk daerah kering",
+   "satuan": "m2",
+   "harga": 2000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M207",
+   "nama": "FRP jenis carbon untuk daerah kering",
+   "satuan": "m2",
+   "harga": 2200000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M208",
+   "nama": "FRP jenis carbon untuk daerah basah",
+   "satuan": "m2",
+   "harga": 2400000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M209",
+   "nama": "Baja untuk pelat buhul dan pelat ganjal",
+   "satuan": "Bh",
+   "harga": 15000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M210",
+   "nama": "Baut mutu tinggi A325 Tipe 1 diameter M25",
+   "satuan": "Bh",
+   "harga": 65000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M211",
+   "nama": "Baut Mutu Tinggi A490 Tipe 1 diameter M25",
+   "satuan": "Bh",
+   "harga": 75000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M212",
+   "nama": "Baut Biasa Grade A diameter M25",
+   "satuan": "Bh",
+   "harga": 40000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M213",
+   "nama": "Baut Biasa Grade B diameter M25",
+   "satuan": "Bh",
+   "harga": 40000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M214",
+   "nama": "Baut Biasa Grade C untuk anchor bolts diameter M25",
+   "satuan": "Bh",
+   "harga": 40000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M215",
+   "nama": "Elektroda Las SMAW",
+   "satuan": "Kg",
+   "harga": 130000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M216",
+   "nama": "Elektroda Las SAW",
+   "satuan": "Kg",
+   "harga": 130000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M217",
+   "nama": "Elektroda Las GMAW",
+   "satuan": "Kg",
+   "harga": 130000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M218",
+   "nama": "Elektroda Las FCAW",
+   "satuan": "Kg",
+   "harga": 130000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M219",
+   "nama": "Rotary Sand Paper",
+   "satuan": "m3",
+   "harga": 50000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M220",
+   "nama": "Paku jalan Tidak Memantul",
+   "satuan": "Bh",
+   "harga": 120000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M221",
+   "nama": "Paku Jalan Memantul Bujur Sangkar",
+   "satuan": "Bh",
+   "harga": 26000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M222",
+   "nama": "Paku Jalan Memantul Persegi Panjang",
+   "satuan": "Bh",
+   "harga": 40000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M223",
+   "nama": "Baut dan Mur",
+   "satuan": "Bh",
+   "harga": 65000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M224",
+   "nama": "Cat dasar kayu",
+   "satuan": "Kg",
+   "harga": 55000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M225",
+   "nama": "Cat akhir protektif kayu",
+   "satuan": "Kg",
+   "harga": 81000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M226",
+   "nama": "Perkerasan beton fast track <8 jam",
+   "satuan": "Kg",
+   "harga": 2329004,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M227",
+   "nama": "Silicon Seal",
+   "satuan": "Kg",
+   "harga": 74219,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M228",
+   "nama": "Karet Pengisi Sambungan Strip Seal",
+   "satuan": "m",
+   "harga": 2000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M229",
+   "nama": "Karet Pengisi Sambungan Compression Seal",
+   "satuan": "m",
+   "harga": 1000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M230",
+   "nama": "Sambungan siar muai tipe modular",
+   "satuan": "m",
+   "harga": 8200000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M231",
+   "nama": "Sambungan siar muai tipe finger plate",
+   "satuan": "m",
+   "harga": 27000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M232",
+   "nama": "Sambungan siar muai tipe dobel siku",
+   "satuan": "m",
+   "harga": 4300000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M233",
+   "nama": "Penutup karet neoprene",
+   "satuan": "m",
+   "harga": 200000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M234",
+   "nama": "Landasan logam berongga (Pot Bearing)",
+   "satuan": "Bh",
+   "harga": 25000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M235",
+   "nama": "Landasan logam jenis Spherical",
+   "satuan": "Bh",
+   "harga": 10000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M236",
+   "nama": "Stopper Lateral dan Horizontal",
+   "satuan": "Bh",
+   "harga": 10000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M237",
+   "nama": "Lem PVC",
+   "satuan": "Kg",
+   "harga": 31080,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M238",
+   "nama": "Tiang sandaran baja",
+   "satuan": "m",
+   "harga": 400000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M239",
+   "nama": "Deck Drain",
+   "satuan": "Bh",
+   "harga": 1100000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M240",
+   "nama": "Pipa PVC",
+   "satuan": "Btg",
+   "harga": 64000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M242",
+   "nama": "Sambungan Pipa PVC",
+   "satuan": "Bh",
+   "harga": 9100,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M243",
+   "nama": "Sambungan Pipa Baja",
+   "satuan": "Bh",
+   "harga": 52000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M15a",
+   "nama": "Bronjong dengan kawat dilapisi galvanis (kg)",
+   "satuan": "Kg",
+   "harga": 17700,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M15b",
+   "nama": "Bronjong dengan kawat dilapisi PVC (kg)",
+   "satuan": "Kg",
+   "harga": 28265,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M244",
+   "nama": "Turap Beton",
+   "satuan": "m3",
+   "harga": 1753431,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M245",
+   "nama": "Tiang Pancang Kayu",
+   "satuan": "m3",
+   "harga": 100000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M246",
+   "nama": "Plat sepatu tiang pancang / plat sambung",
+   "satuan": "Kg",
+   "harga": 15500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M247",
+   "nama": "Beton struktur bervolume besar, Fc'30 MPa",
+   "satuan": "m3",
+   "harga": 2546759,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M248",
+   "nama": "Beton struktur bervolume besar, Fc'25 MPa",
+   "satuan": "m3",
+   "harga": 2510493,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M249",
+   "nama": "Beton struktur bervolume besar, Fc'20 MPa",
+   "satuan": "m3",
+   "harga": 2429046,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M250",
+   "nama": "Beton struktur memadat sendiri, Fc'30 MPa",
+   "satuan": "m3",
+   "harga": 2517405,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M251",
+   "nama": "Beton struktur memadat sendiri, Fc'25 Mpa",
+   "satuan": "m3",
+   "harga": 2477396,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M252",
+   "nama": "Beton struktur memadat sendiri, Fc'20 MPa",
+   "satuan": "m3",
+   "harga": 2397167,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M253",
+   "nama": "Beton Struktur, Fc'35 Mpa",
+   "satuan": "m3",
+   "harga": 1753431,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M255",
+   "nama": "Asphaltic plug",
+   "satuan": "Kg",
+   "harga": 23000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M256x",
+   "nama": "Asphaltic plug Moveable",
+   "satuan": "Kg",
+   "harga": 23000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M256y",
+   "nama": "accelerator",
+   "satuan": "Kg",
+   "harga": 23000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M257",
+   "nama": "Insulasi",
+   "satuan": "m2",
+   "harga": 8333,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M258",
+   "nama": "Anyaman Kawat Baja Dilas",
+   "satuan": "Kg",
+   "harga": 825000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M259",
+   "nama": "Curing membrane",
+   "satuan": "Kg",
+   "harga": 11905,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M260",
+   "nama": "Sambungan siar muai tipe Karet (Preformed T-shape)",
+   "satuan": "Kg",
+   "harga": 1000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M261",
+   "nama": "Bridging Plate PL 125 x 6",
+   "satuan": "Kg",
+   "harga": 17000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M262",
+   "nama": "Perletakan logam tipe fixed 150 Ton",
+   "satuan": "Bh",
+   "harga": 1500000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M263",
+   "nama": "Perletakan logam tipe movable 150 Ton",
+   "satuan": "Bh",
+   "harga": 2000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M264",
+   "nama": "Elastomer bearing pad; (450x400x45) mm3",
+   "satuan": "Bh",
+   "harga": 891000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M265",
+   "nama": "Beton fc 10 MPa",
+   "satuan": "m3",
+   "harga": 789915,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M266",
+   "nama": "Marmer",
+   "satuan": "m2",
+   "harga": 1600000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M267",
+   "nama": "Pohon Perdu",
+   "satuan": "Bh",
+   "harga": 75000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M268",
+   "nama": "Pohon Mahoni 400 cm",
+   "satuan": "Btg",
+   "harga": 11000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M269",
+   "nama": "Grauting berbahan dasar semen",
+   "satuan": "Kg",
+   "harga": 145000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M270",
+   "nama": "Graut berbahan dasar Cellular Plastic",
+   "satuan": "Kg",
+   "harga": 145000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M271x",
+   "nama": "Tanah humus",
+   "satuan": "Kg",
+   "harga": 250000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M272",
+   "nama": "Pupuk",
+   "satuan": "Kg",
+   "harga": 15999,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M273",
+   "nama": "Gebalan/ Rumput",
+   "satuan": "m2",
+   "harga": 60000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M274",
+   "nama": "Tanah Liat",
+   "satuan": "m3",
+   "harga": 150000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M275",
+   "nama": "Pipa Galvanis Dia 6\"",
+   "satuan": "m",
+   "harga": 388886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M276",
+   "nama": "Lampu Tipe Merkuri 400 Watt",
+   "satuan": "Bh",
+   "harga": 92000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M277",
+   "nama": "Lampu Tipe Merkuri 250 Watt",
+   "satuan": "Bh",
+   "harga": 70000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M278",
+   "nama": "Lampu LED 100 watt",
+   "satuan": "Bh",
+   "harga": 250000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M279x",
+   "nama": "Mortar",
+   "satuan": "m3",
+   "harga": 296401,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M293",
+   "nama": "U-Ditch 40 x 60 cm",
+   "satuan": "m",
+   "harga": 468048,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M294",
+   "nama": "U-Ditch 60 x 80 cm",
+   "satuan": "m",
+   "harga": 705624,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M295",
+   "nama": "U-Ditch 80 x 80 cm",
+   "satuan": "m",
+   "harga": 912485,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M296",
+   "nama": "U-Ditch 80 x 100 cm",
+   "satuan": "m",
+   "harga": 1013408,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M297",
+   "nama": "U-Ditch 100 x 100 cm",
+   "satuan": "m",
+   "harga": 1511440,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M298",
+   "nama": "U-Ditch 120 x 120 cm",
+   "satuan": "m",
+   "harga": 2228870,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M299",
+   "nama": "U-Ditch 40 x 60 cm + Penutup",
+   "satuan": "m",
+   "harga": 723176,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M300",
+   "nama": "U-Ditch 60 x 80 cm + Penutup",
+   "satuan": "m",
+   "harga": 1163121,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M301",
+   "nama": "U-Ditch 80 x 80 cm + Penutup",
+   "satuan": "m",
+   "harga": 1579141,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M302",
+   "nama": "U-Ditch 80 x 100 cm + Penutup",
+   "satuan": "m",
+   "harga": 1680064,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M303",
+   "nama": "U-Ditch 100 x 100 cm + Penutup",
+   "satuan": "m",
+   "harga": 2426432,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M304",
+   "nama": "U-Ditch 120 x 120 cm + Penutup",
+   "satuan": "m",
+   "harga": 3460944,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M305",
+   "nama": "Box Culvert 0.50 x 0.50 x 1.00 m",
+   "satuan": "m",
+   "harga": 846000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M306",
+   "nama": "Box Culvert 1.00 x 1.00 x 1.00 m",
+   "satuan": "m",
+   "harga": 2194000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M307",
+   "nama": "Box Culvert 1.50 x 1.50 x 1.00 m",
+   "satuan": "m",
+   "harga": 6386000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M308",
+   "nama": "Box Culvert 2.00 x 1.00 x 1.00 m",
+   "satuan": "m",
+   "harga": 7779000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M309",
+   "nama": "Box Culvert 2.00 x 1.50 x 1.00 m",
+   "satuan": "m",
+   "harga": 9067000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M310",
+   "nama": "Box Culvert 2.00 x 2.00 x 1.00 m",
+   "satuan": "m",
+   "harga": 10742000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M311",
+   "nama": "Box Culvert 5.00 x 2.50 x 1.00 m",
+   "satuan": "m",
+   "harga": 49000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M312",
+   "nama": "Box Culvert 0.80 x 0.80 x 1.00 m",
+   "satuan": "m",
+   "harga": 1467000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M324",
+   "nama": "Rambu Batas Kecepatan",
+   "satuan": "Bh",
+   "harga": 470000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M325",
+   "nama": "Rambu Perintah Mengikuti Lajur",
+   "satuan": "Bh",
+   "harga": 470000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M326",
+   "nama": "Rambu Pengarah Tikungan",
+   "satuan": "Bh",
+   "harga": 470000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M327",
+   "nama": "Rambu Larangan Berjalan Terus (Giveaway)",
+   "satuan": "Bh",
+   "harga": 470000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M328",
+   "nama": "Rambu Larangan Menyalip Kendaraan Lain",
+   "satuan": "Bh",
+   "harga": 470000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M329",
+   "nama": "Rambu Peringatan Jalan Licin",
+   "satuan": "Bh",
+   "harga": 470000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M330",
+   "nama": "Rambu Pengarah Tikungan Ganda",
+   "satuan": "Bh",
+   "harga": 470000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M331",
+   "nama": "Rambu APILL",
+   "satuan": "Bh",
+   "harga": 470000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M332y",
+   "nama": "Rambu Peringatan dengan Kata-Kata",
+   "satuan": "Bh",
+   "harga": 470000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M333x",
+   "nama": "Rambu Peringatan Pekerjaan di Jalan",
+   "satuan": "Bh",
+   "harga": 470000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M334x",
+   "nama": "Rambu Peringatan Lalu Lintas Dua Arah",
+   "satuan": "Bh",
+   "harga": 470000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M335x",
+   "nama": "Water Barrier",
+   "satuan": "Bh",
+   "harga": 597465,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M336x",
+   "nama": "Traffic Cone",
+   "satuan": "Bh",
+   "harga": 54000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M337x",
+   "nama": "Police Line",
+   "satuan": "Bh",
+   "harga": 19000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M338",
+   "nama": "Concrete Barrier",
+   "satuan": "Bh",
+   "harga": 700800,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M339",
+   "nama": "Lampu Sementara",
+   "satuan": "Bh",
+   "harga": 67500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M340x",
+   "nama": "APILL Sementara",
+   "satuan": "Bh",
+   "harga": 1550000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M341x",
+   "nama": "Marka Jalan Sementara",
+   "satuan": "m2",
+   "harga": 220000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M342x",
+   "nama": "Jalur Evakuasi (Escape Road)",
+   "satuan": "Ls",
+   "harga": 600000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M343",
+   "nama": "Tongkat Pengatur Lalu Lintas (Warning Light Stick)",
+   "satuan": "Bh",
+   "harga": 31000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M344",
+   "nama": "Lampu Putar (Rotary Lamp)",
+   "satuan": "Bh",
+   "harga": 140000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M345",
+   "nama": "Lampu Selang Lalu Lintas",
+   "satuan": "Ls",
+   "harga": 7000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M346",
+   "nama": "Pagar jaring pengaman termasuk perlengkapannya",
+   "satuan": "m",
+   "harga": 6000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M347",
+   "nama": "Peralatan komunikasi dan Lainnya",
+   "satuan": "Set",
+   "harga": 950000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M348",
+   "nama": "Bahan untuk sambungan siar muai strip seal (baja profil, loop anchor, karet stripseal, dll)",
+   "satuan": "Set",
+   "harga": 7038288,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M352",
+   "nama": "Pembuatan dokumen RKK, RKPPL, RMLLP, RMPK",
+   "satuan": "Set",
+   "harga": 500000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M353",
+   "nama": "Pembuatan prosedur dan instruksi kerja",
+   "satuan": "Set",
+   "harga": 150000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M354",
+   "nama": "Penyusunan pelaporan penerapan SMKK",
+   "satuan": "Set",
+   "harga": 100000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M355",
+   "nama": "Induksi Keselamatan Konstruksi (Safety Induction)",
+   "satuan": "Org",
+   "harga": 100000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M357",
+   "nama": "Pertemuan keselamatan (Safety Talk dan/atau Tool Box Meeting)",
+   "satuan": "Org",
+   "harga": 100000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M358",
+   "nama": "Pelatihan Keselamatan Konstruksi",
+   "satuan": "Org",
+   "harga": 100000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M359",
+   "nama": "Simulasi Keselamatan Konstruksi",
+   "satuan": "Ls",
+   "harga": 500000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M360",
+   "nama": "Spanduk/Banner",
+   "satuan": "Bh",
+   "harga": 40000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M361",
+   "nama": "Poster/leaflet",
+   "satuan": "Lbr",
+   "harga": 6500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M362",
+   "nama": "Papan Informasi Keselamatan konstruksi",
+   "satuan": "Lbr",
+   "harga": 175000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M363",
+   "nama": "Peralatan P3K",
+   "satuan": "Set",
+   "harga": 500000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M364",
+   "nama": "Ruang P3K",
+   "satuan": "Set",
+   "harga": 2500000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M365",
+   "nama": "Fasilitas sarana, prasarana, dan alat kesehatan (Fogging)",
+   "satuan": "Set",
+   "harga": 350000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M367",
+   "nama": "Tes Swab",
+   "satuan": "Unit",
+   "harga": 250000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M368",
+   "nama": "Tempat Cuci tangan",
+   "satuan": "Unit",
+   "harga": 365000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M369",
+   "nama": "Vitamin",
+   "satuan": "Box",
+   "harga": 35500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M371",
+   "nama": "Ruangan kamar",
+   "satuan": "Set",
+   "harga": 2500000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M372",
+   "nama": "Tempat Minum",
+   "satuan": "Unit",
+   "harga": 129778,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M373",
+   "nama": "Tempat tidur",
+   "satuan": "Unit",
+   "harga": 165000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M374",
+   "nama": "Kompor dan peralatan lainya",
+   "satuan": "Set",
+   "harga": 285000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M375",
+   "nama": "Pembuatan Kartu Identitas Pekerja (KIP)",
+   "satuan": "Bh",
+   "harga": 10000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M376",
+   "nama": "Bambu",
+   "satuan": "m",
+   "harga": 3571,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M377",
+   "nama": "Pohon Ketapang Kencana tinggi s.d. 300 cm",
+   "satuan": "Bh",
+   "harga": 300000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M378",
+   "nama": "Gorong-gorong diameter 80 cm",
+   "satuan": "m",
+   "harga": 700000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M379",
+   "nama": "Box Culvert 2.50 x 1.20 x 1.00 m",
+   "satuan": "m",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M380",
+   "nama": "Box Culvert 4.00 x 3.00 x 1.00 m",
+   "satuan": "m",
+   "harga": 43000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M381",
+   "nama": "Box Culvert 5.00 x 3.00 x 1.00 m",
+   "satuan": "m",
+   "harga": 52000000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M382x",
+   "nama": "Pohon Matoa tinggi s.d. 150 cm",
+   "satuan": "Bh",
+   "harga": 65000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M383",
+   "nama": "Pohon Mangga Irwin tinggi s.d. 150 cm",
+   "satuan": "Bh",
+   "harga": 135000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M384",
+   "nama": "Pohon Alpukat Aligator tinggi s.d. 200 cm",
+   "satuan": "Bh",
+   "harga": 250000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M385",
+   "nama": "Epoxy resin",
+   "satuan": "Kg",
+   "harga": 60000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M386",
+   "nama": "Pipa diameter = 2 inch Galvanised",
+   "satuan": "m",
+   "harga": 76167,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M387",
+   "nama": "Panel Pagar BRC tinggi 1.5 m diameter 6 mm",
+   "satuan": "m",
+   "harga": 228792,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M388",
+   "nama": "Dudukan, mur, baut (untuk pagar)",
+   "satuan": "Kg",
+   "harga": 15500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M389",
+   "nama": "Saluran Precast 30*30 cm",
+   "satuan": "m",
+   "harga": 183333,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M390",
+   "nama": "Saluran Precast 30*30 cm + tutup",
+   "satuan": "m",
+   "harga": 291667,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M382",
+   "nama": "Pipa PVC 165 mm (6 inch)",
+   "satuan": "m",
+   "harga": 65000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M52",
+   "nama": "Pipa Baja",
+   "satuan": "Kg",
+   "harga": 300000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M241",
+   "nama": "Pipa Baja 6 inch",
+   "satuan": "Btg",
+   "harga": 300000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M242x",
+   "nama": "Sambungan Pipa PVC 6 inch",
+   "satuan": "Bh",
+   "harga": 55000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "356",
+   "nama": "Pengarahan Keselamatan Konstruksi (Safety Briefing) (khusus untuk pekerja)",
+   "satuan": "Kegiatan",
+   "harga": 100000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "391",
+   "nama": "Aspal Asbuton Pracampur",
+   "satuan": "Kg",
+   "harga": 14875,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M241x",
+   "nama": "Box Culvert 0.40 x 0.40 x 1.00 m",
+   "satuan": "m",
+   "harga": 920000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M242y",
+   "nama": "Box Culvert 0.60 x 0.60 x 1.00 m",
+   "satuan": "m",
+   "harga": 1500000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M243x",
+   "nama": "Box Culvert 1.2 x 1.2 x 1.00 m",
+   "satuan": "m",
+   "harga": 4200000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M244x",
+   "nama": "Box Culvert 1.4 x 1.4 x 1.00 m",
+   "satuan": "m",
+   "harga": 5300000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M245x",
+   "nama": "Box Culvert 1.5 x 1.5 x 1.00 m",
+   "satuan": "m",
+   "harga": 6400000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M246x",
+   "nama": "Box Culvert 1.6 x 1.6 x 1.00 m",
+   "satuan": "m",
+   "harga": 6830000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M247x",
+   "nama": "Box Culvert 1.8 x 1.8 x 1.00 m",
+   "satuan": "m",
+   "harga": 7680000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M248x",
+   "nama": "U-Ditch 140 x 140 Cm",
+   "satuan": "m",
+   "harga": 1563000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M249x",
+   "nama": "U-Ditch 140 x 140 Cm + tutup",
+   "satuan": "m",
+   "harga": 2288000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M250x",
+   "nama": "Pipa Beton Bertulang diameter 200 mm",
+   "satuan": "m",
+   "harga": 139959,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M251x",
+   "nama": "Pipa Beton Bertulang diameter 300 mm",
+   "satuan": "m",
+   "harga": 209959,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M252x",
+   "nama": "Pipa Beton Bertulang diameter 400 mm",
+   "satuan": "m",
+   "harga": 290369,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M253x",
+   "nama": "Pipa Beton Bertulang diameter 500 mm",
+   "satuan": "m",
+   "harga": 527500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M254",
+   "nama": "Pipa Beton Bertulang diameter 600 mm",
+   "satuan": "m",
+   "harga": 671107,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M255x",
+   "nama": "Pipa Beton Bertulang diameter 700 mm",
+   "satuan": "m",
+   "harga": 822090,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M256",
+   "nama": "Pipa Beton Bertulang diameter 800 mm",
+   "satuan": "m",
+   "harga": 1115000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M257x",
+   "nama": "Pipa Beton Bertulang diameter 900 mm",
+   "satuan": "m",
+   "harga": 1306516,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M258x",
+   "nama": "Pipa Beton Bertulang diameter 1000 mm",
+   "satuan": "m",
+   "harga": 1896598,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M259x",
+   "nama": "Pipa Beton Bertulang diameter 1100 mm",
+   "satuan": "m",
+   "harga": 2253238,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M260x",
+   "nama": "Pipa Beton Bertulang diameter 1200 mm",
+   "satuan": "m",
+   "harga": 2465164,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M261x",
+   "nama": "Pipa Beton Bertulang diameter 1500 mm",
+   "satuan": "m",
+   "harga": 3850000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M262x",
+   "nama": "Pipa Beton Bertulang diameter 1650 mm",
+   "satuan": "m",
+   "harga": 4514180,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M263x",
+   "nama": "Pipa Beton Bertulang diameter 1800 mm",
+   "satuan": "m",
+   "harga": 5630041,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M264x",
+   "nama": "Pipa Beton Bertulang diameter 2000 mm",
+   "satuan": "m",
+   "harga": 7106598,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M265x",
+   "nama": "Rod and Plate (untuk timbunan) - pelat dan batang besi",
+   "satuan": "Bh",
+   "harga": 55000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M266x",
+   "nama": "Aspal Emulsi Slow Setting",
+   "satuan": "ltr",
+   "harga": 10950,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M267x",
+   "nama": "Aspal Emulsi Rapid Setting",
+   "satuan": "ltr",
+   "harga": 11250,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M268x",
+   "nama": "Aspal Emulsi Rapid Setting - Polymer",
+   "satuan": "ltr",
+   "harga": 11800,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M269x",
+   "nama": "Semak / Perdu",
+   "satuan": "m2",
+   "harga": 115625,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M270x",
+   "nama": "Baja Grade 690 (Kuat Leleh 690 Mpa)",
+   "satuan": "Kg",
+   "harga": 43600,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M272x",
+   "nama": "Sewa alat pengecatan",
+   "satuan": "Jam",
+   "harga": 35000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M273x",
+   "nama": "Geomembrane",
+   "satuan": "m2",
+   "harga": 105000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M274x",
+   "nama": "Sewa Ambulance",
+   "satuan": "Bulan",
+   "harga": 10300000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M275x",
+   "nama": "Barium (Ba) terlarut",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M276x",
+   "nama": "Boron (B) terlarut",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M277x",
+   "nama": "Merkuri (Hg) terlarut",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M278x",
+   "nama": "Arsen (As) terlarut",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M279",
+   "nama": "Selenium (Se) terlarut",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M280x",
+   "nama": "Besi (Fe) terlarut",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M281x",
+   "nama": "Kadmium (Cd) terlarut",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M282x",
+   "nama": "Kobalt (Co) terlarut",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M283x",
+   "nama": "Mangan (Mn) terlarut",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M284x",
+   "nama": "Nikel (Ni) terlarut",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M285x",
+   "nama": "Seng (Zn) terlarut",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M286x",
+   "nama": "Tembaga (Cu) terlarut",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M287x",
+   "nama": "Timbal (Pb) terlarut",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M288x",
+   "nama": "Padatan terlarut total (TDS)",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M289x",
+   "nama": "Padatan tersuspensi total (TSS)",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M290x",
+   "nama": "Laporan Pengendalian Mutu/Formulir Mutu/Daftar Simak",
+   "satuan": "Bh",
+   "harga": 57886,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M291x",
+   "nama": "Sepatu keselamatan (Rubber safety boots)",
+   "satuan": "Set",
+   "harga": 117800,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M292x",
+   "nama": "Sarung tangan karet/sarung tangan listrik",
+   "satuan": "Set",
+   "harga": 55500,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M293x",
+   "nama": "Sarung tangan las",
+   "satuan": "Set",
+   "harga": 283333,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M294x",
+   "nama": "JMF Agregat Kelas A",
+   "satuan": "Laporan",
+   "harga": 627000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M295x",
+   "nama": "JMF Agregat Kelas B",
+   "satuan": "Laporan",
+   "harga": 627000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M296x",
+   "nama": "JMF Agregat Kelas S",
+   "satuan": "Laporan",
+   "harga": 627000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M297x",
+   "nama": "JMF Agregat Kelas C",
+   "satuan": "Laporan",
+   "harga": 627000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M298x",
+   "nama": "JMT Timbunan Biasa",
+   "satuan": "Laporan",
+   "harga": 432000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M299x",
+   "nama": "JMT Timbunan Pilihan",
+   "satuan": "Laporan",
+   "harga": 627000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M300x",
+   "nama": "JMF Beton",
+   "satuan": "Laporan",
+   "harga": 799000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M301x",
+   "nama": "JMF Campuran beraspal",
+   "satuan": "Laporan",
+   "harga": 627000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M330x",
+   "nama": "Densitas Lapangan (Sand Cone) + Pelaporan",
+   "satuan": "Titik",
+   "harga": 120000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M331x",
+   "nama": "JMF Mortar",
+   "satuan": "Laporan",
+   "harga": 799000,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M332",
+   "nama": "Box Culvert 250 cm x 150 cm",
+   "satuan": "m",
+   "harga": 20045045,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M333",
+   "nama": "Box Culvert 300 cm x 200 cm",
+   "satuan": "m",
+   "harga": 27927928,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M334",
+   "nama": "Box Culvert 300 cm x 250 cm",
+   "satuan": "m",
+   "harga": 28828829,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M335",
+   "nama": "Box Culvert 300 cm x 400 cm",
+   "satuan": "m",
+   "harga": 38738739,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M336",
+   "nama": "Box Culvert 400 cm x 250 cm",
+   "satuan": "m",
+   "harga": 36036036,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M337",
+   "nama": "Box culvert 500 cm x 300 cm",
+   "satuan": "m",
+   "harga": 46846847,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M332x",
+   "nama": "Box Culvert 200 cm x 200 cm",
+   "satuan": "m",
+   "harga": 15315315,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M240x",
+   "nama": "Pipa PVC 8 inch",
+   "satuan": "m",
+   "harga": 281667,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M340",
+   "nama": "Mur dan Baut diameter 19mm (3/4 inch) - untuk Rel Pengaman (0.251 kg)",
+   "satuan": "Bh",
+   "harga": 9850,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M341",
+   "nama": "Profil C 180 * 75 * 7 *10 - untuk Dudukan Rel Pengaman",
+   "satuan": "m",
+   "harga": 233235,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M342",
+   "nama": "Box Culvert 300 cm x 150 cm",
+   "satuan": "m",
+   "harga": 26126126,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "5.3.1a",
+   "nama": "Perkerasan Beton Semen",
+   "satuan": "m3",
+   "harga": 1637371,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M15ax",
+   "nama": "Bronjong dengan kawat dilapisi galvanis (m3)",
+   "satuan": "m3",
+   "harga": 721632,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "bahan",
+   "kode": "M15bx",
+   "nama": "Bronjong dengan kawat dilapisi PVC (m3)",
+   "satuan": "m3",
+   "harga": 1246652,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E33",
+   "nama": "BORE PILE MACHINE",
+   "satuan": "Cm",
+   "harga": 549529,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E01",
+   "nama": "ASPHALT MIXING PLANT",
+   "satuan": "ton/jam",
+   "harga": 10206597,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E01a",
+   "nama": "ASPHALT MIXING PLANT (WARM MIX)",
+   "satuan": "ton/jam",
+   "harga": 9508197,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E01b",
+   "nama": "ASPHALT MIXING PLANT (MODIFIKASI, ASBUTON)",
+   "satuan": "ton/jam",
+   "harga": 11008638,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E02",
+   "nama": "ASPHALT FINISHER",
+   "satuan": "Ton",
+   "harga": 449020,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E03",
+   "nama": "POWER BROOM",
+   "satuan": "m2/jam",
+   "harga": 83187,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E04",
+   "nama": "BULLDOZER (100-150 HP)",
+   "satuan": "Unit",
+   "harga": 813625,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E05",
+   "nama": "COMPRESSOR (4000-6500 l/m)",
+   "satuan": "CPM/(ltr/m)",
+   "harga": 188570,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E06",
+   "nama": "CONCRETE MIXER (0.3-0.6 m3)",
+   "satuan": "ltr",
+   "harga": 102327,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E07",
+   "nama": "CRANE (10-15 ton)",
+   "satuan": "Ton",
+   "harga": 378190,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E08",
+   "nama": "DUMP TRUCK (4 ton)",
+   "satuan": "Ton",
+   "harga": 424160,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E09",
+   "nama": "DUMP TRUCK (7 ton)",
+   "satuan": "Ton",
+   "harga": 637593,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E10",
+   "nama": "EXCAVATOR (80-140 HP)",
+   "satuan": "m3",
+   "harga": 579894,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E10a",
+   "nama": "MINI EXCAVATOR (40-60 HP)",
+   "satuan": "m3",
+   "harga": 263192,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E11",
+   "nama": "FLAT BED TRUCK (4 ton)",
+   "satuan": "Ton",
+   "harga": 424160,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E11a",
+   "nama": "FLAT BED TRUCK (10 ton)",
+   "satuan": "Ton",
+   "harga": 637593,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E12",
+   "nama": "GENERATOR SET",
+   "satuan": "kVA",
+   "harga": 494522,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E13",
+   "nama": "MOTOR GRADER (>100 HP)",
+   "satuan": "Unit",
+   "harga": 403420,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E14",
+   "nama": "TRACK LOADER (75-100 HP)",
+   "satuan": "m3",
+   "harga": 285916,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E15",
+   "nama": "WHEEL LOADER (1.0-1.6 m3)",
+   "satuan": "m3",
+   "harga": 283949,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E16",
+   "nama": "THREE WHEEL ROLLER (6-8 ton)",
+   "satuan": "Ton",
+   "harga": 170518,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E16a",
+   "nama": "SHEEPFOOT ROLLER (12-14 ton)",
+   "satuan": "Ton",
+   "harga": 428659,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E17",
+   "nama": "TANDEM ROLLER (6-8 ton)",
+   "satuan": "Ton",
+   "harga": 388628,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E17a",
+   "nama": "TANDEM ROLLER (8-10 ton)",
+   "satuan": "Ton",
+   "harga": 532551,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E18",
+   "nama": "TIRE ROLLER (8-10 ton)",
+   "satuan": "Ton",
+   "harga": 531525,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E19",
+   "nama": "VIBRATORY ROLLER (5-8 ton)",
+   "satuan": "Ton",
+   "harga": 293312,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E19a",
+   "nama": "BABY VIBRATORY ROLLER (1-2 ton)",
+   "satuan": "Ton",
+   "harga": 118918,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E19b",
+   "nama": "PADFOOT VIBRATORY ROLLER (25 ton)",
+   "satuan": "Ton",
+   "harga": 747468,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E20",
+   "nama": "CONCRETE VIBRATOR",
+   "satuan": "Unit",
+   "harga": 72228,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E21",
+   "nama": "STONE CRUSHER",
+   "satuan": "ton/jam",
+   "harga": 877816,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E22",
+   "nama": "WATER PUMP (70-100 mm)",
+   "satuan": "Unit",
+   "harga": 74543,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E23",
+   "nama": "WATER TANKER (3000-4500 l)",
+   "satuan": "ltr",
+   "harga": 514490,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E24",
+   "nama": "PEDESTRIAN ROLLER",
+   "satuan": "Ton",
+   "harga": 96147,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E25",
+   "nama": "TAMPER",
+   "satuan": "Kg",
+   "harga": 73520,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E26",
+   "nama": "JACK HAMMER",
+   "satuan": "Unit",
+   "harga": 63841,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E27",
+   "nama": "PULVI MIXER",
+   "satuan": "Unit",
+   "harga": 894633,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E28",
+   "nama": "CONCRETE PUMP",
+   "satuan": "m3/jam",
+   "harga": 1320449,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E29",
+   "nama": "SEMI TRAILER (20 ton)",
+   "satuan": "Ton",
+   "harga": 667816,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E29a",
+   "nama": "SEMI TRAILER (30 ton)",
+   "satuan": "Ton",
+   "harga": 695278,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E30",
+   "nama": "PILE DRIVER + HAMMER",
+   "satuan": "Ton",
+   "harga": 182413,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E31",
+   "nama": "CRANE ON TRACK (35 ton)",
+   "satuan": "Ton",
+   "harga": 634716,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E32",
+   "nama": "WELDING SET",
+   "satuan": "Amp",
+   "harga": 82002,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E34",
+   "nama": "ASPHALT LIQUID MIXER",
+   "satuan": "ltr",
+   "harga": 228517,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E34a",
+   "nama": "ASPHALT LIQUID MIXER (ASPAL MODIFIKASI)",
+   "satuan": "ltr",
+   "harga": 228517,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E35",
+   "nama": "DUMP TRUCK TRONTON (10 ton)",
+   "satuan": "Ton",
+   "harga": 628724,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E36",
+   "nama": "COLD MILLING",
+   "satuan": "m",
+   "harga": 808475,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E37",
+   "nama": "ROCK DRILL BREAKER",
+   "satuan": "m3",
+   "harga": 656830,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E38",
+   "nama": "COLD RECYCLER",
+   "satuan": "m",
+   "harga": 1907043,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E39",
+   "nama": "HOT RECYCLER",
+   "satuan": "m",
+   "harga": 1105806,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E40",
+   "nama": "AGGREGAT (CHIP) SPREADER",
+   "satuan": "m",
+   "harga": 663186,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E41",
+   "nama": "ASPHALT DISTRIBUTOR",
+   "satuan": "ltr",
+   "harga": 454773,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E42",
+   "nama": "SLIP FORM PAVER",
+   "satuan": "m",
+   "harga": 529141,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E43",
+   "nama": "CONCRETE PAN MIXER",
+   "satuan": "ltr",
+   "harga": 93299,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E44",
+   "nama": "CONCRETE BREAKER",
+   "satuan": "m3/jam",
+   "harga": 644583,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E45",
+   "nama": "ASPHALT TANKER",
+   "satuan": "ltr",
+   "harga": 578784,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E46",
+   "nama": "CEMENT TANKER",
+   "satuan": "ltr",
+   "harga": 580477,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E48",
+   "nama": "VIBRATING RAMMER",
+   "satuan": "Kg",
+   "harga": 82677,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E49",
+   "nama": "TRUK MIXER (AGITATOR)",
+   "satuan": "m3",
+   "harga": 721855,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E51",
+   "nama": "CRANE ON TRACK (75-100 ton)",
+   "satuan": "Ton",
+   "harga": 1874985,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E52",
+   "nama": "BLENDING EQUIPMENT",
+   "satuan": "Ton",
+   "harga": 238389,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E53",
+   "nama": "BAR BENDER",
+   "satuan": "Unit",
+   "harga": 69226,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E54",
+   "nama": "BAR CUTTER",
+   "satuan": "Unit",
+   "harga": 71657,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E55",
+   "nama": "BREAKER",
+   "satuan": "m3/jam",
+   "harga": 688046,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E56",
+   "nama": "GROUTING PUMP",
+   "satuan": "Ton",
+   "harga": 259867,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E57",
+   "nama": "JACK HIDROLIC",
+   "satuan": "Unit",
+   "harga": 95775,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E58",
+   "nama": "MESIN LAS",
+   "satuan": "kW",
+   "harga": 117826,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E59",
+   "nama": "PILE DRIVER LEADER (75 kW)",
+   "satuan": "kW",
+   "harga": 933807,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E60",
+   "nama": "PILE HAMMER (2 ton)",
+   "satuan": "Ton",
+   "harga": 380936,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E61",
+   "nama": "PILE HAMMER (2,5 ton)",
+   "satuan": "Ton",
+   "harga": 338795,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E62",
+   "nama": "STRESSING JACK",
+   "satuan": "Ton",
+   "harga": 228268,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E63",
+   "nama": "WELDING MACHINE (300 A)",
+   "satuan": "Unit",
+   "harga": 72315,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E64",
+   "nama": "WATER JET BLASTING",
+   "satuan": "ltr",
+   "harga": 78564,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E65",
+   "nama": "MESIN POTONG RUMPUT",
+   "satuan": "Unit",
+   "harga": 64820,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E67",
+   "nama": "SILICON SEAL PUMP",
+   "satuan": "Unit",
+   "harga": 62144,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E68",
+   "nama": "POMPA UNTUK EPOXY",
+   "satuan": "Unit",
+   "harga": 64891,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E69",
+   "nama": "GERINDA TANGAN GWS 750-100 (4\" 750 Watt 1 HP)",
+   "satuan": "Unit",
+   "harga": 68442,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E70",
+   "nama": "HAND MIXER",
+   "satuan": "Unit",
+   "harga": 74519,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E71",
+   "nama": "MESIN BOR",
+   "satuan": "Unit",
+   "harga": 63200,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E72",
+   "nama": "CRAWLER CRANE (25 ton)",
+   "satuan": "Ton",
+   "harga": 904080,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E73",
+   "nama": "CRAWLER CRANE (55 ton)",
+   "satuan": "Ton",
+   "harga": 1167275,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E74",
+   "nama": "KUNCI TORSI (200-1000 Nm)",
+   "satuan": "Bh",
+   "harga": 69651,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E75",
+   "nama": "POMPA + MIXER EPOXY (810 Watt)",
+   "satuan": "l/mnt",
+   "harga": 67386,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E76",
+   "nama": "CONCRETE CUTTER (0,5-0,7 m/menit)",
+   "satuan": "m/menit",
+   "harga": 96152,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E77",
+   "nama": "SAND BLASTING",
+   "satuan": "m2/jam",
+   "harga": 186980,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E78",
+   "nama": "MOBILE CRANE (1 ton)",
+   "satuan": "Ton",
+   "harga": 595100,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E79",
+   "nama": "DRUM MIXER",
+   "satuan": "ton/jam",
+   "harga": 395103,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E80",
+   "nama": "CONCRETE BATCHING PLANT",
+   "satuan": "m3/jam",
+   "harga": 612574,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E81",
+   "nama": "STAMPER",
+   "satuan": "m2/jam",
+   "harga": 112687,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E82",
+   "nama": "JACK HIDROLIK JEMBATAN",
+   "satuan": "Ton",
+   "harga": 117709,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E83",
+   "nama": "HYDROLIC PUMP",
+   "satuan": "MPa",
+   "harga": 101932,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E84",
+   "nama": "MANIFOLD GAUGE",
+   "satuan": "MPa",
+   "harga": 64640,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E85",
+   "nama": "THERMOPLASTIC ROAD MARKING MACHINE",
+   "satuan": "m/jam",
+   "harga": 103103,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E86",
+   "nama": "COLD PAINT SRAY MACHINE",
+   "satuan": "m/jam",
+   "harga": 89732,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E87",
+   "nama": "TRAILER (44 ton)",
+   "satuan": "Ton",
+   "harga": 989276,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E88",
+   "nama": "TRUCK (2 ton)",
+   "satuan": "Ton",
+   "harga": 333543,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E91",
+   "nama": "DROP HAMMER (2,5 ton)",
+   "satuan": "Ton",
+   "harga": 651336,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E92",
+   "nama": "DIESEL HAMMER SINGLE ACTING (2,5 ton)",
+   "satuan": "Ton",
+   "harga": 686625,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E93",
+   "nama": "DIESEL HAMMER DOUBLE ACTING (2,5 ton)",
+   "satuan": "Ton",
+   "harga": 739558,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E94",
+   "nama": "HOT COMPRESSOR AIR LANCE (HCA) 10000 C",
+   "satuan": "CPM/(ltr/m)",
+   "harga": 98270,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E95",
+   "nama": "PRE HEATER/BOILER",
+   "satuan": "CPM/(ltr/m)",
+   "harga": 113359,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E96",
+   "nama": "MACHINE BEAM LAUNCHER CRANE (100 ton)",
+   "satuan": "Ton",
+   "harga": 344443,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "E97",
+   "nama": "MACHINE BEAM LAUNCHER CRANE (300 ton)",
+   "satuan": "Ton",
+   "harga": 485598,
+   "wilayah": "Kota Serang"
+  },
+  {
+   "jenis": "alat",
+   "kode": "M271",
+   "nama": "Ponton + Tug Boat; 40 Ton; 80 HP",
+   "satuan": "Ton",
+   "harga": 7396783,
+   "wilayah": "Kota Serang"
+  }
+ ]
+}

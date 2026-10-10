@@ -145,6 +145,7 @@ module BoosokTools::Trowel
     source = find_void_source(owner)
     BoosokTools::Void.clear_roles(owner)
     source.erase! if source && source.valid?
+    BoosokTools::Void.invalidate_scan_cache
     BoosokTools::Void.rescan(model)
   end
 
