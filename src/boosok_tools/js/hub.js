@@ -568,7 +568,7 @@
     function onToolDisabledPrompt(id) { showToast(disabledMsg(id), 'error'); }
 
     /* Tool yang disembunyikan (daftar utama dari Ruby: S.data.hidden_tools) */
-    var HIDDEN_TOOLS_DEFAULT = ['rab'];
+    var HIDDEN_TOOLS_DEFAULT = [];
     function isHiddenTool(id) {
       return ((S.data && S.data.hidden_tools) || HIDDEN_TOOLS_DEFAULT).indexOf(id) >= 0;
     }

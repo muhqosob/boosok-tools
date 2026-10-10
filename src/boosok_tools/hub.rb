@@ -46,7 +46,7 @@ module BoosokTools
     # Kosongkan daftar ini (atau hapus id-nya) untuk memunculkan tool-nya lagi.
     # Di mode developer (ada file penanda .dev_mode di folder plugin) tool ini tetap tampil supaya bisa dikembangkan.
     remove_const(:HIDDEN_TOOLS) if defined?(HIDDEN_TOOLS)
-    HIDDEN_TOOLS = %w[rab].freeze
+    HIDDEN_TOOLS = %w[].freeze
 
     def self.dev_mode?
       File.exist?(File.join(BoosokTools::SUPPORT_DIR, '.dev_mode'))
