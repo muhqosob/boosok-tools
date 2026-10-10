@@ -10,7 +10,7 @@ module BoosokTools
   module Flags
     PREF_SECT  = "BoosokTools"  unless defined?(PREF_SECT)
     PREF_FLAGS = "tool_flags"   unless defined?(PREF_FLAGS)
-    INTERVAL   = 30 * 60        unless defined?(INTERVAL) # cek ulang tiap 30 menit selama SketchUp terbuka
+    INTERVAL   = 5 * 60         unless defined?(INTERVAL) # cek ulang tiap 5 menit selama SketchUp terbuka
 
     @flags = nil
     @fetching = false
@@ -51,8 +51,8 @@ module BoosokTools
       nil
     end
 
-    # Ambil daftar terbaru dari server (async). Gagal / offline: daftar lama dipertahankan. Blok dipanggil dengan true
-    # bila daftar berubah.
+    # Ambil daftar terbaru dari server (async). Gagal / offline: cek ini dilewati begitu saja, daftar lama dipertahankan
+    # dan dicoba lagi di putaran berikutnya. Blok dipanggil dengan true bila daftar berubah.
     def self.refresh(&callback)
       return unless License.online_configured? && !@fetching
 

@@ -90,7 +90,7 @@ module BoosokTools
     # berlaku di sini, selain itu lisensi yang sudah aktif tetap jalan offline tanpa batas waktu.
     # Ditunda: verifikasi token memuat OpenSSL, jangan memperlambat startup SketchUp.
     UI.start_timer(5, false) { License.maybe_refresh rescue nil }
-    # Kill-switch fitur dari server: cek saat startup lalu tiap 30 menit; tool yang dimatikan tidak bisa dibuka
+    # Kill-switch fitur dari server: cek saat startup lalu tiap 5 menit; tool yang dimatikan tidak bisa dibuka
     Flags.start { BoosokTools::Hub.flags_changed rescue nil }
 
     # ── Helpers Make Unique (dipakai context menu + bisa dipanggil internal) ──
